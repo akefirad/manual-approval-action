@@ -1,4 +1,4 @@
-name: Continuous Integration
+name: CI
 
 on:
   pull_request:
@@ -12,45 +12,52 @@ permissions:
   contents: read
 
 jobs:
-  test-typescript:
-    name: TypeScript Tests
+  checks:
+    name: Checks
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
-        id: checkout
         uses: actions/checkout@v4
 
       - name: Setup Node.js
-        id: setup-node
         uses: actions/setup-node@v4
         with:
           node-version-file: .node-version
           cache: npm
 
       - name: Install Dependencies
-        id: npm-ci
         run: npm ci
 
-      - name: Check Format
-        id: npm-format-check
-        run: npm run format:check
+      - name: Checks
+        run: npm run pre-push
 
-      - name: Lint
-        id: npm-lint
-        run: npm run lint
-
-      - name: Test
-        id: npm-ci-test
-        run: npm run ci-test
-
-  test-action:
-    name: GitHub Actions Test
+  unit-tests:
+    name: Unit Tests
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
-        id: checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Test
+        run: npm run test
+
+  int-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Test Local Action
@@ -60,5 +67,4 @@ jobs:
           milliseconds: 2000
 
       - name: Print Output
-        id: output
         run: echo "${{ steps.test-action.outputs.time }}"
