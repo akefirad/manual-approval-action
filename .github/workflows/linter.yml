@@ -39,7 +39,7 @@ jobs:
           DEFAULT_BRANCH: main
           FILTER_REGEX_EXCLUDE: dist/**/*
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          LINTER_RULES_PATH: ${{ github.workspace }}
+          LINTER_RULES_PATH: .github/config/linter
           VALIDATE_ALL_CODEBASE: true
           VALIDATE_JAVASCRIPT_ES: false
           VALIDATE_JAVASCRIPT_STANDARD: false
