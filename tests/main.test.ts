@@ -1,57 +1,244 @@
-/**
- * Unit tests for the action's main functionality, src/main.ts
- *
- * To mock dependencies in ESM, you can create fixtures that export mock
- * functions and objects. For example, the core module is mocked in this test,
- * so that the actual '@actions/core' module is not imported.
- */
-import { jest } from "@jest/globals";
-import * as core from "./fixtures/core.js";
-import { wait } from "./fixtures/wait.js";
+import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 
-// Mocks should be declared before the module being tested is imported.
-jest.unstable_mockModule("@actions/core", () => core);
-jest.unstable_mockModule("../src/wait.js", () => ({ wait }));
+// Create mock functions
+const mockGetInput = jest.fn<(name: string, _options?: object) => string>();
+const mockGetBooleanInput = jest.fn<(name: string) => boolean>();
+const mockSetOutput = jest.fn<(name: string, value: string) => void>();
+const mockSetFailed = jest.fn<(message: string) => void>();
+const mockDebug = jest.fn<(message: string) => void>();
+const mockInfo = jest.fn<(message: string) => void>();
+const mockWarning = jest.fn<(message: string) => void>();
+const mockSaveState = jest.fn<(name: string, value: string) => void>();
+const mockGetState = jest.fn<(name: string) => string>();
 
-// The module being tested should be imported dynamically. This ensures that the
-// mocks are used in place of any actual dependencies.
-const { run } = await import("../src/main.js");
+// Mock Octokit
+const mockOctokit = {
+  request: jest.fn<(url: string, options?: object) => Promise<{ data: unknown }>>(),
+};
 
-describe("main.ts", () => {
+const mockGetOctokit = jest.fn();
+
+// Mock modules using unstable_mockModule for ESM
+jest.unstable_mockModule("@actions/core", () => ({
+  getInput: mockGetInput,
+  getBooleanInput: mockGetBooleanInput,
+  setOutput: mockSetOutput,
+  setFailed: mockSetFailed,
+  debug: mockDebug,
+  info: mockInfo,
+  warning: mockWarning,
+  saveState: mockSaveState,
+  getState: mockGetState,
+}));
+
+jest.unstable_mockModule("@actions/github", () => ({
+  getOctokit: mockGetOctokit,
+}));
+
+describe("Manual Approval Action Integration", () => {
   beforeEach(() => {
-    // Set the action's inputs as return values from core.getInput().
-    core.getInput.mockImplementation(() => "500");
+    jest.clearAllMocks();
 
-    // Mock the wait function so that it does not actually wait.
-    wait.mockImplementation(() => Promise.resolve("done!"));
+    // Set up environment variables
+    process.env.GITHUB_REPOSITORY = "test-owner/test-repo";
+    process.env.GITHUB_WORKFLOW = "test-workflow";
+    process.env.GITHUB_JOB = "test-job";
+    process.env.GITHUB_ACTION = "test-action";
+    process.env.GITHUB_RUN_ID = "12345";
+    process.env.GITHUB_ACTOR = "test-actor";
+    process.env.GITHUB_EVENT_NAME = "push";
   });
 
-  afterEach(() => {
-    jest.resetAllMocks();
-  });
+  it("should handle a complete approval workflow with default inputs", async () => {
+    mockGetInput.mockImplementation((name: string) => {
+      const inputs: Record<string, string> = {
+        "timeout-seconds": "2",
+        "approval-keywords": "approved!",
+        "rejections-keywords": "reject!",
+        "issue-title": "",
+        "issue-body": "",
+        "poll-interval-seconds": "1",
+      };
+      return inputs[name] || "";
+    });
 
-  it("Sets the time output", async () => {
+    mockGetBooleanInput.mockImplementation((name: string) => {
+      const booleans: Record<string, boolean> = {
+        "fail-on-rejection": true,
+        "fail-on-timeout": true,
+      };
+      return booleans[name] || false;
+    });
+
+    mockOctokit.request.mockImplementation((route: string, _options?: object) => {
+      if (route === "POST /repos/{owner}/{repo}/issues") {
+        return Promise.resolve({
+          data: {
+            number: 1,
+            html_url: "https://github.com/test-owner/test-repo/issues/1",
+            state: "open",
+          },
+        });
+      }
+      if (route === "GET /repos/{owner}/{repo}/actions/runs/{run_id}") {
+        return Promise.resolve({
+          data: {
+            id: 12345,
+            html_url: "https://github.com/test-owner/test-repo/actions/runs/12345",
+            workflow_id: 67890,
+          },
+        });
+      }
+      if (route === "GET /repos/{owner}/{repo}/actions/runs/{run_id}/jobs") {
+        return Promise.resolve({
+          data: {
+            jobs: [
+              {
+                id: 1,
+                html_url: "https://github.com/test-owner/test-repo/actions/runs/12345/jobs/1",
+                name: "test-job",
+              },
+            ],
+          },
+        });
+      }
+      if (route === "GET /repos/{owner}/{repo}/issues/{issue_number}/comments") {
+        // Always return approval comment immediately for testing
+        return Promise.resolve({
+          data: [
+            {
+              id: 1,
+              body: "approved!",
+              user: { login: "test-actor" },
+              created_at: new Date().toISOString(),
+            },
+          ],
+        });
+      }
+      if (route === "GET /repos/{owner}/{repo}/collaborators/{username}/permission") {
+        return Promise.resolve({
+          data: {
+            permission: "write",
+          },
+        });
+      }
+      return Promise.resolve({ data: {} });
+    });
+
+    mockGetOctokit.mockReturnValue(mockOctokit);
+
+    // Import and run the action
+    const { run } = await import("../src/main.js");
+
+    // Run the action (this would normally be called by the action runner)
     await run();
 
-    // Verify the time output was set.
-    expect(core.setOutput).toHaveBeenNthCalledWith(
-      1,
-      "time",
-      // Simple regex to match a time string in the format HH:MM:SS.
-      expect.stringMatching(/^\d{2}:\d{2}:\d{2}/),
+    // Verify outputs were set
+    expect(mockSetOutput).toHaveBeenCalledWith("status", "approved");
+    expect(mockSetOutput).toHaveBeenCalledWith("approvers", "test-actor");
+    expect(mockSetOutput).toHaveBeenCalledWith(
+      "issue-url",
+      "https://github.com/test-owner/test-repo/issues/1",
     );
-  });
 
-  it("Sets a failed status", async () => {
-    // Clear the getInput mock and return an invalid value.
-    core.getInput.mockClear().mockReturnValueOnce("this is not a number");
+    // Verify no errors
+    expect(mockSetFailed).not.toHaveBeenCalled();
+  }, 3000);
 
-    // Clear the wait mock and return a rejected promise.
-    wait.mockClear().mockRejectedValueOnce(new Error("milliseconds is not a number"));
+  it("should handle a complete approval workflow with custom inputs", async () => {
+    mockGetInput.mockImplementation((name: string) => {
+      const inputs: Record<string, string> = {
+        "github-token": "mock-token",
+        "timeout-seconds": "2",
+        "approval-keywords": "LGTM,approved!",
+        "rejections-keywords": "reject!,denied",
+        "issue-title": "Test Approval Request",
+        "issue-body": "Please approve this custom test workflow",
+        "poll-interval-seconds": "1",
+      };
+      return inputs[name] || "";
+    });
 
+    mockGetBooleanInput.mockImplementation((name: string) => {
+      const booleans: Record<string, boolean> = {
+        "fail-on-rejection": true,
+        "fail-on-timeout": true,
+      };
+      return booleans[name] || false;
+    });
+
+    mockOctokit.request.mockImplementation((route: string, _options?: object) => {
+      if (route === "POST /repos/{owner}/{repo}/issues") {
+        return Promise.resolve({
+          data: {
+            number: 2,
+            html_url: "https://github.com/test-owner/test-repo/issues/2",
+            state: "open",
+          },
+        });
+      }
+      if (route === "GET /repos/{owner}/{repo}/actions/runs/{run_id}") {
+        return Promise.resolve({
+          data: {
+            id: 12345,
+            html_url: "https://github.com/test-owner/test-repo/actions/runs/12345",
+            workflow_id: 67890,
+          },
+        });
+      }
+      if (route === "GET /repos/{owner}/{repo}/actions/runs/{run_id}/jobs") {
+        return Promise.resolve({
+          data: {
+            jobs: [
+              {
+                id: 1,
+                html_url: "https://github.com/test-owner/test-repo/actions/runs/12345/jobs/1",
+                name: "test-job",
+              },
+            ],
+          },
+        });
+      }
+      if (route === "GET /repos/{owner}/{repo}/issues/{issue_number}/comments") {
+        // Return approval comment with custom keyword
+        return Promise.resolve({
+          data: [
+            {
+              id: 1,
+              body: "LGTM",
+              user: { login: "test-actor" },
+              created_at: new Date().toISOString(),
+            },
+          ],
+        });
+      }
+      if (route === "GET /repos/{owner}/{repo}/collaborators/{username}/permission") {
+        return Promise.resolve({
+          data: {
+            permission: "admin",
+          },
+        });
+      }
+      return Promise.resolve({ data: {} });
+    });
+
+    mockGetOctokit.mockReturnValue(mockOctokit);
+
+    // Import and run the action
+    const { run } = await import("../src/main.js");
+
+    // Run the action (this would normally be called by the action runner)
     await run();
 
-    // Verify that the action was marked as failed.
-    expect(core.setFailed).toHaveBeenNthCalledWith(1, "milliseconds is not a number");
-  });
+    // Verify outputs were set
+    expect(mockSetOutput).toHaveBeenCalledWith("status", "approved");
+    expect(mockSetOutput).toHaveBeenCalledWith("approvers", "test-actor");
+    expect(mockSetOutput).toHaveBeenCalledWith(
+      "issue-url",
+      "https://github.com/test-owner/test-repo/issues/2",
+    );
+
+    // Verify no errors
+    expect(mockSetFailed).not.toHaveBeenCalled();
+  }, 3000);
 });

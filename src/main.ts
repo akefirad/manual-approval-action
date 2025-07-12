@@ -1,27 +1,54 @@
 import * as core from "@actions/core";
-import { wait } from "./wait.js";
+import { getEnvironment, getInput } from "./action.js";
+import { GitHubService } from "./services/github.service.js";
+import { ApprovalServiceFactory } from "./services/approval.service.js";
 
 /**
- * The main function for the action.
+ * Runs the main phase of the action.
  *
- * @returns Resolves when the action is complete.
+ * @returns Resolves when the main phase is complete.
  */
 export async function run(): Promise<void> {
   try {
-    const ms: string = core.getInput("milliseconds");
+    core.info(`Starting approval workflow for ${process.env.GITHUB_ACTION}`);
 
-    // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
-    core.debug(`Waiting ${ms} milliseconds ...`);
+    // Get action inputs
+    const inputs = getInput();
+    const environment = getEnvironment();
+    const githubService = new GitHubService(environment);
 
-    // Log the current timestamp, wait, then log the new timestamp
-    core.debug(new Date().toTimeString());
-    await wait(parseInt(ms, 10));
-    core.debug(new Date().toTimeString());
+    const factory = new ApprovalServiceFactory(githubService);
+    const approval = await factory.request(inputs);
+    const response = await approval.await();
 
-    // Set outputs for other workflow steps to use
-    core.setOutput("time", new Date().toTimeString());
+    await approval.saveState();
+
+    core.debug(`Setting outputs: ${JSON.stringify(response)}`);
+
+    core.setOutput("status", response.status);
+    core.setOutput("approvers", response.approvers.join(","));
+    core.setOutput("issue-url", response.issueUrl);
+
+    if (response.status === "approved") {
+      core.info(`✅ Approval granted by: ${response.approvers.join(", ")}`);
+    } else if (response.status === "rejected") {
+      core.info("❌ Approval request was rejected");
+      if (inputs.failOnRejection) {
+        core.setFailed("Approval request was rejected");
+        return;
+      }
+    } else if (response.status === "timed-out") {
+      core.info("⏱️ Approval request timed out");
+      if (inputs.failOnTimeout) {
+        core.setFailed("Approval request timed out");
+        return;
+      }
+    }
+
+    core.debug("Main phase completed successfully");
   } catch (error) {
-    // Fail the workflow run if an error occurs
-    if (error instanceof Error) core.setFailed(error.message);
+    core.setFailed(`Action failed: ${error}`);
   }
 }
+
+run();

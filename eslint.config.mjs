@@ -76,6 +76,13 @@ export default [
       "no-shadow": "off",
       "no-unused-vars": "off",
       "prettier/prettier": "error",
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+        },
+      ],
     },
   },
 ];

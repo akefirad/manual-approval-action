@@ -1,24 +1,58 @@
-name: The name of your action here
-description: Provide a description here
-author: Your name or organization here
+name: "manual-approval-action"
+description: "GitHub Action for manual approvals"
+author: "Rad Akefirad"
 
-# Add your action's branding here. This will appear on the GitHub Marketplace.
 branding:
-  icon: heart
-  color: red
+  color: "green"
+  icon: "shield"
 
-# Define your inputs here.
 inputs:
-  milliseconds:
-    description: Your input description here
-    required: true
-    default: "1000"
+  github-token:
+    description: "GitHub token for API access"
+    required: false
+    default: "${{ github.token }}"
+  timeout-seconds:
+    description: "Time to wait for approval in seconds"
+    required: false
+    default: "60"
+  poll-interval-seconds:
+    description: "How often to check for comments in seconds"
+    required: false
+    default: "3"
+  approval-keywords:
+    description: "Keywords that trigger approval"
+    required: false
+    default: "approved!"
+  rejections-keywords:
+    description: "Keywords that trigger rejection"
+    required: false
+    default: ""
+  fail-on-rejection:
+    description: "Fail the job if explicitly rejected"
+    required: false
+    default: "true"
+  fail-on-timeout:
+    description: "Fail the job if timed out"
+    required: false
+    default: "true"
+  issue-title:
+    description: "Title for the approval issue, leave empty for default"
+    required: false
+    default: ""
+  issue-body:
+    description: "Body content for approval issue"
+    required: false
+    default: ""
 
-# Define your outputs here.
 outputs:
-  time:
-    description: Your output description here
+  status:
+    description: "Result of the approval process: approved, rejected, or timed-out"
+  approvers:
+    description: "Comma-separated list of users who approved"
+  issue-url:
+    description: "URL of the issue used for approval"
 
 runs:
   using: node20
-  main: dist/index.js
+  main: dist/main.js
+  post: dist/cleanup.js

@@ -4,13 +4,13 @@
 MD004:
   style: dash
 
-# Disable line length for tables
 MD013:
-  tables: false
+  line_length: 100
+  tables: false # Disable line length for tables
 
 # Ordered list item prefix
 MD029:
-  style: one
+  style: one_or_ordered
 
 # Spaces after list markers
 MD030:
