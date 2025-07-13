@@ -24,6 +24,7 @@
     "node": ">=20"
   },
   "scripts": {
+    "build": "wireit",
     "format": "npx prettier --write .",
     "local-action": "npx @github/local-action . src/main.ts .env",
     "package": "npx rollup --config rollup.config.ts --configPlugin @rollup/plugin-typescript",
@@ -32,6 +33,12 @@
     "test": "wireit"
   },
   "wireit": {
+    "build": {
+      "command": "npm run package",
+      "dependencies": [
+        "format"
+      ]
+    },
     "pre-push": {
       "dependencies": [
         "lint",
@@ -66,7 +73,8 @@
     }
   },
   "dependencies": {
-    "@actions/core": "^1.0.0"
+    "@actions/core": "^1.0.0",
+    "@actions/github": "^6.0.0"
   },
   "devDependencies": {
     "@eslint/compat": "^1.0.0",

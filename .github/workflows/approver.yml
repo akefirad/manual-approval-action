@@ -1,0 +1,73 @@
+name: Integration Tests Approver
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  reply-integration-test:
+    runs-on: ubuntu-latest
+    if: startsWith(github.event.issue.title, 'Integration Test - Run ')
+
+    steps:
+      - name: Reply to Integration Test
+        uses: actions/github-script@v7
+        with:
+          # TODO: use github-token when authorized-approvers is implemented!
+          # github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.INTEGRATION_TEST_APPROVER_TOKEN }}
+          script: |
+            const title = context.payload.issue.title;
+            const issueNumber = context.payload.issue.number;
+
+            console.log(`Processing issue #${issueNumber} with title: "${title}"`);
+
+            // Case 1: Extract keyword from title pattern: "Integration Test #<run-id> - Reply with <keyword>"
+            const replyMatch = title.match(/^Integration Test - Run (\d+) - Reply with `(.+)`$/);
+            if (replyMatch && replyMatch[2]) {
+              const runId = replyMatch[1];
+              const keyword = replyMatch[2];
+              
+              console.log(`Detected reply pattern for run ID ${runId}`);
+              console.log(`Extracted keyword: "${keyword}"`);
+              
+              // Post comment with the extracted keyword
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                body: keyword
+              });
+              
+              console.log(`✅ Posted comment with keyword: ${keyword}`);
+              return;
+            }
+
+            // Case 2: Close issue if title is "Integration Test #<run-id> - Close Me!"
+            const closeMatch = title.match(/^Integration Test - Run (\d+) - Close Me!$/);
+            if (closeMatch) {
+              const runId = closeMatch[1];
+              
+              console.log(`Detected close pattern for run ID ${runId}`);
+              
+              // Close the issue
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                state: 'closed'
+              });
+              
+              console.log(`✅ Closed issue #${issueNumber}`);
+              return;
+            }
+
+            // No matching pattern found
+            console.log('❌ Title does not match any expected integration test patterns');
+            console.log('Expected patterns:');
+            console.log('  - "Integration Test #<run-id> - Reply with <keyword>"');
+            console.log('  - "Integration Test #<run-id> - Close Me!"');

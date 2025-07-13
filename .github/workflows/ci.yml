@@ -55,16 +55,105 @@ jobs:
   int-tests:
     name: Integration Tests
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Test Local Action
-        id: test-action
+      - name: Timeout Test
+        id: test-timeout
+        continue-on-error: true
         uses: ./
         with:
-          milliseconds: 2000
+          timeout-seconds: 3
+          issue-title: Integration Test - Timeout!
 
-      - name: Print Output
-        run: echo "${{ steps.test-action.outputs.time }}"
+      - name: Verify Timeout Test
+        run: |
+          if [ "${{ steps.test-timeout.outcome }}" != "failure" ]; then
+            echo "ERROR: Test step outcome should have been 'failure' but is '${{ steps.test-timeout.outcome }}'"
+            exit 1
+          fi
+          echo "Approval Status: '${{ steps.test-timeout.outputs.status }}'"
+          if [ "${{ steps.test-timeout.outputs.status }}" != "timed-out" ]; then
+            echo "ERROR: Timeout test should have been timed-out but is '${{ steps.test-timeout.outputs.status }}'"
+            exit 1
+          fi
+          echo "Issue URL: '${{ steps.test-timeout.outputs.issue-url }}'"
+
+      - name: Approval Test
+        id: test-approval
+        uses: ./
+        with:
+          timeout-seconds: 30
+          approval-keywords: proceed! # it's also testing custom keywords!
+          issue-title: Integration Test - Run ${{ github.run_id }} - Reply with `proceed!`
+          github-token: ${{ secrets.INTEGRATION_TEST_APPROVER_TOKEN }}
+
+      - name: Verify Approval Test
+        run: |
+          if [ "${{ steps.test-approval.outcome }}" != "success" ]; then
+            echo "ERROR: Test step outcome should have been 'success' but is '${{ steps.test-approval.outcome }}'"
+            exit 1
+          fi
+          echo "Approval Status: '${{ steps.test-approval.outputs.status }}'"
+          if [ "${{ steps.test-approval.outputs.status }}" != "approved" ]; then
+            echo "ERROR: Approval test should have been approved but is '${{ steps.test-approval.outputs.status }}'"
+            exit 1
+          fi
+          echo "Approvers: '${{ steps.test-approval.outputs.approvers }}'"
+          # TODO: verify approvers
+          echo "Issue URL: '${{ steps.test-approval.outputs.issue-url }}'"
+
+      - name: Rejection Test
+        id: test-rejection
+        continue-on-error: true
+        uses: ./
+        with:
+          timeout-seconds: 30
+          rejections-keywords: stop! # it's also testing custom keywords!
+          issue-title: Integration Test - Run ${{ github.run_id }} - Reply with `stop!`
+          github-token: ${{ secrets.INTEGRATION_TEST_APPROVER_TOKEN }}
+
+      - name: Verify Rejection Test
+        run: |
+          if [ "${{ steps.test-rejection.outcome }}" != "failure" ]; then
+            echo "ERROR: Test step outcome should have been 'failure' but is '${{ steps.test-rejection.outcome }}'"
+            exit 1
+          fi
+          echo "Approval Status: '${{ steps.test-rejection.outputs.status }}'"
+          if [ "${{ steps.test-rejection.outputs.status }}" != "rejected" ]; then
+            echo "ERROR: Rejection test should have been rejected but is '${{ steps.test-rejection.outputs.status }}'"
+            exit 1
+          fi
+          echo "Approvers: '${{ steps.test-rejection.outputs.approvers }}'"
+          # TODO: verify approvers
+          echo "Issue URL: '${{ steps.test-rejection.outputs.issue-url }}'"
+
+      - name: Close Test
+        id: test-close
+        continue-on-error: true
+        uses: ./
+        with:
+          timeout-seconds: 30
+          issue-title: Integration Test - Run ${{ github.run_id }} - Close Me!
+          github-token: ${{ secrets.INTEGRATION_TEST_APPROVER_TOKEN }}
+
+      - name: Verify Close Test
+        run: |
+          if [ "${{ steps.test-close.outcome }}" != "failure" ]; then
+            echo "ERROR: Test step outcome should have been 'failure' but is '${{ steps.test-close.outcome }}'"
+            exit 1
+          fi
+          echo "Approval Status: '${{ steps.test-close.outputs.status }}'"
+          if [ "${{ steps.test-close.outputs.status }}" != "rejected" ]; then
+            echo "ERROR: Close test should have been rejected but is '${{ steps.test-close.outputs.status }}'"
+            exit 1
+          fi
+          echo "Approvers: '${{ steps.test-close.outputs.approvers }}'"
+          # TODO: verify approvers
+          echo "Issue URL: '${{ steps.test-close.outputs.issue-url }}'"
