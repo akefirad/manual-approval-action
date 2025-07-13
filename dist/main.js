@@ -31586,20 +31586,22 @@ class ContentService {
     }
     getDefaultIssueTitle() {
         const { workflowName: workflow, jobName: jobId, actionId } = this.environment;
-        return `Approval Request: ${workflow} - ${jobId} - ${actionId}`;
+        return `Approval Request: ${workflow}/${jobId}/${actionId}`;
     }
     async getBody() {
         const { issueBody, timeoutSeconds, approvalKeywords, rejectionKeywords } = this.inputs;
-        const { workflowName: workflow, jobName: jobId, actionId, actor } = this.environment;
+        const { workflowName, jobName, actionId, actor, owner, repo, runId } = this.environment;
         const templateBody = issueBody || this.getDefaultIssueBody();
+        const runUrl = `https://github.com/${owner}/${repo}/actions/runs/${runId}`;
         const processedBody = processTemplate(templateBody, {
             "timeout-seconds": timeoutSeconds,
-            workflow: workflow,
-            "job-id": jobId,
+            "workflow-name": workflowName,
+            "job-id": jobName, // TODO: fix job-id vs job-name issue!
             "action-id": actionId,
             actor: actor,
             "approval-keywords": approvalKeywords,
             "rejection-keywords": rejectionKeywords,
+            "run-url": runUrl,
         });
         return processedBody;
     }

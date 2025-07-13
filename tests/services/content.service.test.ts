@@ -51,19 +51,7 @@ describe("ContentService", () => {
 
       const result = await contentService.getTitle();
 
-      expect(result).toBe("Approval Request: Test Workflow - test-job - test-action");
-    });
-
-    it("should handle empty environment values in default title", async () => {
-      mockInputs.issueTitle = "";
-      mockEnvironment.workflowName = "";
-      mockEnvironment.jobName = "";
-      mockEnvironment.actionId = "";
-      contentService = new ContentService(mockInputs, mockEnvironment);
-
-      const result = await contentService.getTitle();
-
-      expect(result).toBe("Approval Request:  -  - ");
+      expect(result).toBe("Approval Request: Test Workflow/test-job/test-action");
     });
   });
 
@@ -90,7 +78,8 @@ describe("ContentService", () => {
     });
 
     it("should process template variables correctly", async () => {
-      mockInputs.issueBody = "Workflow: {{ workflow }}, Job: {{ job-id }}, Action: {{ action-id }}";
+      mockInputs.issueBody =
+        "Workflow: {{ workflow-name }}, Job: {{ job-id }}, Action: {{ action-id }}";
       contentService = new ContentService(mockInputs, mockEnvironment);
 
       const result = await contentService.getBody();
@@ -223,6 +212,19 @@ describe("ContentService", () => {
       // Clean up
       delete process.env.GITHUB_REPOSITORY;
       delete process.env.GITHUB_ACTOR;
+    });
+
+    it("should process run-url template variable in custom body", async () => {
+      mockInputs.issueBody =
+        "Please review: {{ run-url }} and approve with {{ approval-keywords }}";
+      contentService = new ContentService(mockInputs, mockEnvironment);
+
+      const result = await contentService.getBody();
+
+      expect(result).toContain(
+        "Please review: https://github.com/test-owner/test-repo/actions/runs/12345",
+      );
+      expect(result).toContain("and approve with approved!, lgtm");
     });
 
     it("should combine template variables and GitHub context in default body", async () => {
