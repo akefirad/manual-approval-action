@@ -1,12 +1,8 @@
 # Manual Approval GitHub Action
 
 A GitHub Action that pauses workflow execution and waits for manual approval before proceeding.
-Perfect for scenarios requiring human review, such as:
-
-- Terraform deployments (review plan before apply)
-- Production releases
-- Data migrations
-- Any workflow requiring manual verification
+Perfect for scenarios requiring human review, such as Terraform deployments (review plan before
+apply), or any workflow requiring manual verification.
 
 ## Features
 
@@ -23,38 +19,38 @@ Perfect for scenarios requiring human review, such as:
 
 ```yaml
 - name: Wait for approval
-  uses: radkesvat/manual-approval-action@v1
+  uses: akefirad/manual-approval-action@main
 ```
 
 ## Inputs
 
-| Input                   | Description                                  | Required | Default               |
-| ----------------------- | -------------------------------------------- | -------- | --------------------- |
-| `github-token`          | GitHub token for API access                  | No       | `${{ github.token }}` |
-| `timeout-seconds`       | Time to wait for approval in seconds         | No       | `60`                  |
-| `poll-interval-seconds` | How often to check for comments in seconds   | No       | `3`                   |
-| `approval-keywords`     | Keywords that trigger approval               | No       | `approved!`           |
-| `rejections-keywords`   | Keywords that trigger rejection              | No       | (empty - close issue) |
-| `fail-on-rejection`     | Fail the job if explicitly rejected          | No       | `true`                |
-| `fail-on-timeout`       | Fail the job if timed out                    | No       | `true`                |
-| `issue-title`           | Title for the approval issue                 | No       | See below             |
-| `issue-body`            | Body content or file path for approval issue | No       | See below             |
+| Input                   | Description                                | Required | Default               |
+| ----------------------- | ------------------------------------------ | -------- | --------------------- |
+| `github-token`          | GitHub token for API access                | No       | `${{ github.token }}` |
+| `timeout-seconds`       | Time to wait for approval in seconds       | No       | `60`                  |
+| `poll-interval-seconds` | How often to check for comments in seconds | No       | `3`                   |
+| `approval-keywords`     | Keywords that trigger approval             | No       | `approved!`           |
+| `rejections-keywords`   | Keywords that trigger rejection            | No       | (empty - close issue) |
+| `fail-on-rejection`     | Fail the job if explicitly rejected        | No       | `true`                |
+| `fail-on-timeout`       | Fail the job if timed out                  | No       | `true`                |
+| `issue-title`           | Title for the approval issue               | No       | See below             |
+| `issue-body`            | Body content for approval issue            | No       | See below             |
 
 ### Default Values
 
 **`issue-title`**:
 
 ```markdown
-Approval Request: {workflow} - {job} - {action}
+Approval Request: {{ workflow-name }}/{{ job-id }}/{{ action-id }}
 ```
 
 **`issue-body`**:
 
 ```markdown
-**Manual approval required:** [`{workflow}`/`{job}`/`{action}`]({run_url}) ✅ To approve, comment
-with `approved!` ❌ To reject, simply close the issue!
+**Manual approval required:** [`{{ workflow-id }}`/`{{ job-id }}`/`{{ action-id }}`]({{ run-url }})
+✅ To approve, comment with `approved!` ❌ To reject, simply close the issue!
 
-This request will timeout in {timeout} seconds.
+This request will timeout in {{ timeout-seconds }} seconds.
 ```
 
 Note: If no rejection keywords are specified, users can reject by simply closing the issue.
@@ -77,10 +73,7 @@ steps:
     run: terraform plan -out=tfplan
 
   - name: Wait for approval
-    uses: radkesvat/manual-approval-action@v1
-    with:
-      github-token: ${{ secrets.GITHUB_TOKEN }}
-      timeout-seconds: 600 # 10 minutes
+    uses: akefirad/manual-approval-action@main
 
   - name: Apply changes
     run: terraform apply tfplan
@@ -90,22 +83,20 @@ steps:
 
 ```yaml
 - name: Production deployment approval
-  uses: radkesvat/manual-approval-action@v1
+  uses: akefirad/manual-approval-action@main
   with:
-    github-token: ${{ secrets.GITHUB_TOKEN }}
     approval-keywords: "deploy,approved!"
     rejections-keywords: "cancel,reject!"
-    timeout-seconds: 1800 # 30 minutes
 ```
 
 ### Fast Polling for Quick Response
 
 ```yaml
 - name: Quick approval check
-  uses: radkesvat/manual-approval-action@v1
+  uses: akefirad/manual-approval-action@main
   with:
     github-token: ${{ secrets.GITHUB_TOKEN }}
-    poll-interval-seconds: 1 # Check every second for faster response
+    poll-interval-seconds: 1
     timeout-seconds: 300
 ```
 
@@ -113,16 +104,15 @@ steps:
 
 ```yaml
 - name: Database migration approval
-  uses: radkesvat/manual-approval-action@v1
+  uses: akefirad/manual-approval-action@main
   with:
-    github-token: ${{ secrets.GITHUB_TOKEN }}
+    timeout-seconds: 900
     issue-title: "⚠️ Database Migration Approval Required"
     issue-body: |
       ## Database Migration Details
 
       **Environment**: Production
-      **Workflow**: {{ workflow }}
-      **Actor**: {{ actor }}
+      **Workflow**: {{ workflow-name }}
       **Migration**: Add user_preferences table
       **Estimated downtime**: 5 minutes
 
@@ -131,18 +121,18 @@ steps:
       - `reject!` to cancel
 
       ⏰ This request will timeout in {{ timeout-seconds }} seconds.
-    timeout-seconds: 900
 ```
 
 #### Available Template Variables
 
 - `{{ timeout-seconds }}` - The configured timeout in seconds
-- `{{ workflow }}` - The workflow name
+- `{{ workflow-name }}` - The workflow name
 - `{{ job-id }}` - The job ID
 - `{{ action-id }}` - The action ID
 - `{{ actor }}` - The user who triggered the workflow
 - `{{ approval-keywords }}` - The configured approval keywords
 - `{{ rejection-keywords }}` - The configured rejection keywords
+- `{{ run-url }}` - The configured rejection keywords
 
 You can also use GitHub context variables:
 
@@ -160,7 +150,7 @@ When using approval/rejection keywords in templates, you can format them as list
 
 ```yaml
 - name: Formatted approval
-  uses: radkesvat/manual-approval-action@v1
+  uses: akefirad/manual-approval-action@main
   with:
     approval-keywords: "approve,lgtm,ship it"
     issue-body: |
@@ -182,10 +172,9 @@ Please review and approve by commenting with one of:
 
 ```yaml
 - name: Optional approval
-  uses: radkesvat/manual-approval-action@v1
+  uses: akefirad/manual-approval-action@main
   id: approval
   with:
-    github-token: ${{ secrets.GITHUB_TOKEN }}
     fail-on-timeout: false
     fail-on-rejection: true
 
@@ -255,44 +244,6 @@ The action is built with a clean, modular architecture:
 - **Service Layer**: Separated concerns for GitHub API, content generation, and approval logic
 - **Template Engine**: Safe variable substitution with support for arrays and GitHub context
 - **Robust Error Handling**: Graceful handling of API errors and edge cases
-
-## Advanced Usage
-
-### Using with Matrix Builds
-
-```yaml
-strategy:
-  matrix:
-    environment: [staging, production]
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Approval for ${{ matrix.environment }}
-        uses: radkesvat/manual-approval-action@v1
-        with:
-          issue-title: "Deploy to ${{ matrix.environment }} approval"
-          issue-body: |
-            Requesting approval to deploy to **${{ matrix.environment }}**
-
-            Workflow: {{ workflow }}
-            Triggered by: {{ actor }}
-```
-
-### Integrating with Slack/Teams Notifications
-
-```yaml
-- name: Request approval
-  id: approval
-  uses: radkesvat/manual-approval-action@v1
-
-- name: Send Slack notification
-  run: |
-    curl -X POST ${{ secrets.SLACK_WEBHOOK }} \
-      -H 'Content-type: application/json' \
-      -d '{"text":"Approval needed: ${{ steps.approval.outputs.issue-url }}"}'
-```
 
 ## Troubleshooting
 
