@@ -194,7 +194,6 @@ Please review and approve by commenting with one of:
 ## How It Works
 
 1. **Approval Process**:
-
    - Action creates a new issue with approval instructions
    - Issue includes a direct link to the workflow run for context
    - Continuously polls for new comments at the specified interval (default: every 3 seconds)
@@ -203,13 +202,11 @@ Please review and approve by commenting with one of:
    - Continues or fails based on response and configuration
 
 2. **Rejection**:
-
    - Closing the issue triggers immediate rejection (even without keywords)
    - Any comment containing rejection keywords also triggers rejection
    - Workflow fails if `fail-on-rejection` is true
 
 3. **Timeout**:
-
    - Action fails after specified timeout if `fail-on-timeout` is true
    - Otherwise, returns `timed-out` status
 
