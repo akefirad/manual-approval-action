@@ -1,11 +1,11 @@
-import { describe, it, expect, jest, beforeEach, afterEach } from "@jest/globals";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 // Create mock functions
-const mockDebug = jest.fn<(message: string) => void>();
-const mockWarning = jest.fn<(message: string) => void>();
+const mockDebug = vi.fn<(message: string) => void>();
+const mockWarning = vi.fn<(message: string) => void>();
 
-// Mock @actions/core using unstable_mockModule for ESM
-jest.unstable_mockModule("@actions/core", () => ({
+// Mock @actions/core using vi.mock for ESM
+vi.mock("@actions/core", () => ({
   debug: mockDebug,
   warning: mockWarning,
 }));
@@ -15,7 +15,7 @@ const { processTemplate } = await import("../../src/utils/template.utils.js");
 
 describe("template.utils", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   afterEach(() => {
@@ -230,7 +230,7 @@ describe("template.utils", () => {
     });
 
     describe("escaping behavior, not implemented", () => {
-      it.failing(
+      it.fails(
         "should handle quoted GitHub variables by NOT processing inner expressions",
         () => {
           process.env.GITHUB_JOB = "test-job";
@@ -247,7 +247,7 @@ describe("template.utils", () => {
         },
       );
 
-      it.failing("should respect quotes in nested expressions", () => {
+      it.fails("should respect quotes in nested expressions", () => {
         process.env.GITHUB_WORKFLOW = "CI";
         process.env.GITHUB_JOB = "build";
 
@@ -261,7 +261,7 @@ describe("template.utils", () => {
         expect(result).toBe("Outer: CI, Inner: ${{ github.job }}");
       });
 
-      it.failing("should support backslash escaping", () => {
+      it.fails("should support backslash escaping", () => {
         process.env.GITHUB_WORKFLOW = "test";
 
         const template = "Escaped: \\${{ github.workflow }}, Normal: ${{ github.workflow }}";
@@ -273,7 +273,7 @@ describe("template.utils", () => {
         expect(result).toBe("Escaped: ${{ github.workflow }}, Normal: test");
       });
 
-      it.failing("should support escaping to show literal GitHub variable syntax", () => {
+      it.fails("should support escaping to show literal GitHub variable syntax", () => {
         process.env.GITHUB_REPOSITORY = "owner/repo";
 
         // EXPECTED: Should be able to escape to show the literal syntax
@@ -286,7 +286,7 @@ describe("template.utils", () => {
         expect(result).toBe("I want to show: ${{ github.repository }} literally");
       });
 
-      it.failing("should support escaping regular template variables", () => {
+      it.fails("should support escaping regular template variables", () => {
         const template = "Escaped: \\{{ name }}, Normal: {{ name }}";
         const variables = { name: "John" };
 
@@ -296,7 +296,7 @@ describe("template.utils", () => {
         expect(result).toBe("Escaped: {{ name }}, Normal: John");
       });
 
-      it.failing("should handle double escaping", () => {
+      it.fails("should handle double escaping", () => {
         process.env.GITHUB_WORKFLOW = "test";
 
         const template = "Double: \\\\${{ github.workflow }}, Single: \\${{ github.workflow }}";

@@ -1,18 +1,18 @@
-import { describe, it, expect, jest, beforeEach } from "@jest/globals";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ApprovalInputs, ApprovalRequest } from "../../src/types/index.js";
 
 // Create mock functions for @actions/core
-const mockInfo = jest.fn<(message: string) => void>();
-const mockWarning = jest.fn<(message: string) => void>();
-const mockError = jest.fn<(message: string) => void>();
-const mockSetFailed = jest.fn<(message: string) => void>();
-const mockSetOutput = jest.fn<(name: string, value: string) => void>();
-const mockSaveState = jest.fn<(name: string, value: string) => void>();
-const mockGetState = jest.fn<(name: string) => string>();
-const mockDebug = jest.fn<(message: string) => void>();
+const mockInfo = vi.fn<(message: string) => void>();
+const mockWarning = vi.fn<(message: string) => void>();
+const mockError = vi.fn<(message: string) => void>();
+const mockSetFailed = vi.fn<(message: string) => void>();
+const mockSetOutput = vi.fn<(name: string, value: string) => void>();
+const mockSaveState = vi.fn<(name: string, value: string) => void>();
+const mockGetState = vi.fn<(name: string) => string>();
+const mockDebug = vi.fn<(message: string) => void>();
 
-// Mock @actions/core using unstable_mockModule for ESM
-jest.unstable_mockModule("@actions/core", () => ({
+// Mock @actions/core using vi.mock for ESM
+vi.mock("@actions/core", () => ({
   info: mockInfo,
   warning: mockWarning,
   error: mockError,
@@ -35,7 +35,7 @@ describe("ApprovalServiceFactory", () => {
   let mockInputs: ApprovalInputs;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockGitHubClient = new MockGitHubClient();
     factory = new ApprovalServiceFactory(mockGitHubClient);
 
@@ -104,7 +104,7 @@ describe("ApprovalService", () => {
   let mockRequest: ApprovalRequest;
 
   beforeEach(async () => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockGitHubClient = new MockGitHubClient();
 
     mockInputs = {

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "@jest/globals";
+import { describe, it, expect, beforeEach } from "vitest";
 import { ApprovalInputs, Environment } from "../../src/types/index.js";
 
 // Import without mocking - use real implementation
