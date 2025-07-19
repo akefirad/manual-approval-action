@@ -7,7 +7,7 @@ export class MockGitHubClient implements IGitHubClient {
   private issueCounter = 1;
   private commentCounter = 1;
 
-  async createIssue(title: string, body: string): Promise<Issue> {
+  async createIssue(_title: string, _body: string): Promise<Issue> {
     const issue: Issue = {
       number: this.issueCounter++,
       htmlUrl: `https://github.com/test/repo/issues/${this.issueCounter - 1}`,
@@ -72,34 +72,8 @@ export class MockGitHubClient implements IGitHubClient {
     }
   }
 
-  async getWorkflowRun(
-    runId: number,
-  ): Promise<import("../../src/interfaces/github-client.interface.js").WorkflowRun> {
-    return {
-      id: runId,
-      htmlUrl: `https://github.com/test-owner/test-repo/actions/runs/${runId}`,
-      workflowId: 123456,
-    };
-  }
-
-  async getWorkflowJobs(
-    runId: number,
-  ): Promise<import("../../src/interfaces/github-client.interface.js").Job[]> {
-    return [
-      {
-        id: 1,
-        htmlUrl: `https://github.com/test-owner/test-repo/actions/runs/${runId}/jobs/1`,
-        name: "test-job",
-      },
-    ];
-  }
-
-  async getEnvironmentWithUrls(): Promise<Environment> {
-    return createMockContext();
-  }
-
-  getEnvironment(): Environment {
-    return createMockContext();
+  getEnvironment(): Promise<Environment> {
+    return Promise.resolve(createMockContext());
   }
 }
 
@@ -107,15 +81,12 @@ export function createMockContext(overrides?: Partial<Environment>): Environment
   return {
     owner: "test-owner",
     repo: "test-repo",
-    workflow: "test-workflow",
-    jobId: "test-job",
+    workflowName: "test-workflow",
+    jobName: "test-job",
     runId: 12345,
     actionId: "test-action",
     actor: "test-actor",
     eventName: "push",
-    workflowUrl: "https://github.com/test-owner/test-repo/actions/workflows/123456",
-    jobUrl: "https://github.com/test-owner/test-repo/actions/runs/12345/jobs/1",
-    runUrl: "https://github.com/test-owner/test-repo/actions/runs/12345",
     ...overrides,
   };
 }

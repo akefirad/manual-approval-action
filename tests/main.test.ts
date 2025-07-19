@@ -1,25 +1,25 @@
-import { describe, it, expect, jest, beforeEach } from "@jest/globals";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Create mock functions
-const mockGetInput = jest.fn<(name: string, _options?: object) => string>();
-const mockGetBooleanInput = jest.fn<(name: string) => boolean>();
-const mockSetOutput = jest.fn<(name: string, value: string) => void>();
-const mockSetFailed = jest.fn<(message: string) => void>();
-const mockDebug = jest.fn<(message: string) => void>();
-const mockInfo = jest.fn<(message: string) => void>();
-const mockWarning = jest.fn<(message: string) => void>();
-const mockSaveState = jest.fn<(name: string, value: string) => void>();
-const mockGetState = jest.fn<(name: string) => string>();
+const mockGetInput = vi.fn<(name: string, _options?: object) => string>();
+const mockGetBooleanInput = vi.fn<(name: string) => boolean>();
+const mockSetOutput = vi.fn<(name: string, value: string) => void>();
+const mockSetFailed = vi.fn<(message: string) => void>();
+const mockDebug = vi.fn<(message: string) => void>();
+const mockInfo = vi.fn<(message: string) => void>();
+const mockWarning = vi.fn<(message: string) => void>();
+const mockSaveState = vi.fn<(name: string, value: string) => void>();
+const mockGetState = vi.fn<(name: string) => string>();
 
 // Mock Octokit
 const mockOctokit = {
-  request: jest.fn<(url: string, options?: object) => Promise<{ data: unknown }>>(),
+  request: vi.fn<(url: string, options?: object) => Promise<{ data: unknown }>>(),
 };
 
-const mockGetOctokit = jest.fn();
+const mockGetOctokit = vi.fn();
 
-// Mock modules using unstable_mockModule for ESM
-jest.unstable_mockModule("@actions/core", () => ({
+// Mock modules using vi.mock for ESM
+vi.mock("@actions/core", () => ({
   getInput: mockGetInput,
   getBooleanInput: mockGetBooleanInput,
   setOutput: mockSetOutput,
@@ -31,13 +31,13 @@ jest.unstable_mockModule("@actions/core", () => ({
   getState: mockGetState,
 }));
 
-jest.unstable_mockModule("@actions/github", () => ({
+vi.mock("@actions/github", () => ({
   getOctokit: mockGetOctokit,
 }));
 
 describe("Manual Approval Action Integration", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Set up environment variables
     process.env.GITHUB_REPOSITORY = "test-owner/test-repo";

@@ -1,15 +1,15 @@
-import { describe, it, expect, jest, beforeEach } from "@jest/globals";
+import { describe, it, expect, vi, beforeEach, MockedFunction } from "vitest";
 import { Environment } from "../../src/types/index.js";
 
 // Create mock functions for @actions/core
-const mockInfo = jest.fn<(message: string) => void>();
-const mockWarning = jest.fn<(message: string) => void>();
-const mockError = jest.fn<(message: string) => void>();
-const mockDebug = jest.fn<(message: string) => void>();
-const mockGetInput = jest.fn<(name: string, options?: object) => string>();
+const mockInfo = vi.fn<(message: string) => void>();
+const mockWarning = vi.fn<(message: string) => void>();
+const mockError = vi.fn<(message: string) => void>();
+const mockDebug = vi.fn<(message: string) => void>();
+const mockGetInput = vi.fn<(name: string, options?: object) => string>();
 
-// Mock @actions/core using unstable_mockModule for ESM
-jest.unstable_mockModule("@actions/core", () => ({
+// Mock @actions/core using vi.mock for ESM
+vi.mock("@actions/core", () => ({
   info: mockInfo,
   warning: mockWarning,
   error: mockError,
@@ -19,16 +19,18 @@ jest.unstable_mockModule("@actions/core", () => ({
 
 // Define the GitHubAPI interface for mocking
 interface GitHubAPI {
-  request(route: string, options?: Record<string, unknown>): Promise<{ data: unknown }>;
+  request: MockedFunction<
+    (route: string, options?: Record<string, unknown>) => Promise<{ data: unknown }>
+  >;
 }
 
 // Mock variables
-let mockOctokit: jest.Mocked<GitHubAPI>;
+let mockOctokit: GitHubAPI;
 let mockContext: Environment;
 
 // Mock @actions/github
-jest.unstable_mockModule("@actions/github", () => ({
-  getOctokit: jest.fn(() => mockOctokit),
+vi.mock("@actions/github", () => ({
+  getOctokit: vi.fn(() => mockOctokit),
 }));
 
 // No need to mock action module anymore since we pass environment directly
@@ -41,25 +43,15 @@ describe("GitHubService", () => {
   let githubService: InstanceType<typeof GitHubService>;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Create mock octokit
     mockOctokit = {
-      request: jest.fn(),
+      request: vi.fn(),
     };
 
-    // Create mock context without URL fields (as required by new constructor)
-    const fullMockContext = createMockContext();
-    mockContext = {
-      owner: fullMockContext.owner,
-      repo: fullMockContext.repo,
-      workflow: fullMockContext.workflow,
-      jobId: fullMockContext.jobId,
-      runId: fullMockContext.runId,
-      actionId: fullMockContext.actionId,
-      actor: fullMockContext.actor,
-      eventName: fullMockContext.eventName,
-    } as Environment;
+    // Create mock context
+    mockContext = createMockContext();
 
     // Mock the getInput to return a test token
     mockGetInput.mockImplementation((name: string) => {
@@ -96,15 +88,6 @@ describe("GitHubService", () => {
         htmlUrl: "https://github.com/test-owner/test-repo/issues/123",
         state: "open",
       });
-    });
-
-    it("should throw error when issue creation fails", async () => {
-      const error = new Error("API Error");
-      mockOctokit.request.mockRejectedValue(error);
-
-      await expect(githubService.createIssue("Test Issue", "Test body")).rejects.toThrow(
-        "Failed to create issue: Error: API Error",
-      );
     });
   });
 
@@ -216,15 +199,6 @@ describe("GitHubService", () => {
       );
 
       expect(result).toHaveLength(1);
-    });
-
-    it("should throw error when listing comments fails", async () => {
-      const error = new Error("List failed");
-      mockOctokit.request.mockRejectedValue(error);
-
-      await expect(githubService.listIssueComments(123)).rejects.toThrow(
-        "Failed to list issue comments: Error: List failed",
-      );
     });
   });
 
@@ -355,24 +329,6 @@ describe("GitHubService", () => {
   });
 
   describe("error handling", () => {
-    it("should handle network errors gracefully", async () => {
-      const networkError = new Error("Network timeout");
-      mockOctokit.request.mockRejectedValue(networkError);
-
-      await expect(githubService.createIssue("Test", "Body")).rejects.toThrow(
-        "Failed to create issue: Error: Network timeout",
-      );
-    });
-
-    it("should handle API rate limiting errors", async () => {
-      const rateLimitError = new Error("API rate limit exceeded");
-      mockOctokit.request.mockRejectedValue(rateLimitError);
-
-      await expect(githubService.listIssueComments(123)).rejects.toThrow(
-        "Failed to list issue comments: Error: API rate limit exceeded",
-      );
-    });
-
     it("should handle malformed API responses", async () => {
       const malformedResponse = { data: null };
       mockOctokit.request.mockResolvedValue(malformedResponse);

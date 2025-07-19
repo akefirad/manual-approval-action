@@ -31330,21 +31330,16 @@ class GitHubService {
     }
     async createIssue(title, body) {
         const { owner, repo } = this.environment;
-        try {
-            const request = { owner, repo, title, body };
-            coreExports.debug(`Creating issue in ${owner}/${repo} with request: ${JSON.stringify(request)}`);
-            const response = await this.octokit.request("POST /repos/{owner}/{repo}/issues", request);
-            const issue = {
-                number: response.data.number,
-                htmlUrl: response.data.html_url,
-                state: response.data.state,
-            };
-            coreExports.info(`Issue created successfully: ${issue.htmlUrl}`);
-            return issue;
-        }
-        catch (error) {
-            throw new Error(`Failed to create issue: ${error}`);
-        }
+        const request = { owner, repo, title, body };
+        coreExports.debug(`Creating issue in ${owner}/${repo} with request: ${JSON.stringify(request)}`);
+        const response = await this.octokit.request("POST /repos/{owner}/{repo}/issues", request);
+        const issue = {
+            number: response.data.number,
+            htmlUrl: response.data.html_url,
+            state: response.data.state,
+        };
+        coreExports.info(`Issue created successfully: ${issue.htmlUrl}`);
+        return issue;
     }
     async closeIssue(issueNumber) {
         const { owner, repo } = this.environment;
@@ -31360,44 +31355,34 @@ class GitHubService {
     }
     async getIssue(issueNumber) {
         const { owner, repo } = this.environment;
-        try {
-            const request = { owner, repo, issue_number: issueNumber };
-            coreExports.debug(`Getting ${owner}/${repo}/issues/${issueNumber}`);
-            const response = await this.octokit.request("GET /repos/{owner}/{repo}/issues/{issue_number}", request);
-            const issue = {
-                number: response.data.number,
-                htmlUrl: response.data.html_url,
-                state: response.data.state,
-            };
-            return issue;
-        }
-        catch (error) {
-            throw new Error(`Failed to get issue #${issueNumber}: ${error}`);
-        }
+        const request = { owner, repo, issue_number: issueNumber };
+        coreExports.debug(`Getting ${owner}/${repo}/issues/${issueNumber}`);
+        const response = await this.octokit.request("GET /repos/{owner}/{repo}/issues/{issue_number}", request);
+        const issue = {
+            number: response.data.number,
+            htmlUrl: response.data.html_url,
+            state: response.data.state,
+        };
+        return issue;
     }
     async listIssueComments(issueNumber, since) {
         const { owner, repo } = this.environment;
-        try {
-            const request = {
-                owner,
-                repo,
-                issue_number: issueNumber,
-                per_page: 100,
-                since: since?.toISOString(),
-            };
-            coreExports.debug(`Listing comments for ${owner}/${repo}/issues/${issueNumber}`);
-            const response = await this.octokit.request("GET /repos/{owner}/{repo}/issues/{issue_number}/comments", request);
-            const comments = response.data.map((comment) => ({
-                id: comment.id,
-                body: comment.body,
-                user: { login: comment.user.login },
-                createdAt: comment.created_at,
-            }));
-            return comments;
-        }
-        catch (error) {
-            throw new Error(`Failed to list issue comments: ${error}`);
-        }
+        const request = {
+            owner,
+            repo,
+            issue_number: issueNumber,
+            per_page: 100,
+            since: since?.toISOString(),
+        };
+        coreExports.debug(`Listing comments for ${owner}/${repo}/issues/${issueNumber}`);
+        const response = await this.octokit.request("GET /repos/{owner}/{repo}/issues/{issue_number}/comments", request);
+        const comments = response.data.map((comment) => ({
+            id: comment.id,
+            body: comment.body,
+            user: { login: comment.user.login },
+            createdAt: comment.created_at,
+        }));
+        return comments;
     }
     async checkUserPermission(username) {
         const { owner, repo } = this.environment;

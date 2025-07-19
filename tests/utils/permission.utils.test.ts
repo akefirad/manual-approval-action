@@ -1,12 +1,12 @@
-import { describe, it, expect, jest, beforeEach } from "@jest/globals";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Environment } from "../../src/types/index.js";
 
 // Create mock functions for @actions/core
-const mockDebug = jest.fn();
-const mockWarning = jest.fn();
+const mockDebug = vi.fn();
+const mockWarning = vi.fn();
 
-// Mock @actions/core using unstable_mockModule for ESM
-jest.unstable_mockModule("@actions/core", () => ({
+// Mock @actions/core using vi.mock for ESM
+vi.mock("@actions/core", () => ({
   debug: mockDebug,
   warning: mockWarning,
 }));
@@ -21,7 +21,7 @@ describe("PermissionChecker", () => {
   let mockContext: Environment;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockGitHubClient = new MockGitHubClient();
     mockContext = createMockContext();
     mockContext.actor = "test-author";
@@ -66,7 +66,7 @@ describe("PermissionChecker", () => {
     });
 
     it("should allow team members when team is in allowed approvers", async () => {
-      jest.spyOn(mockGitHubClient, "checkTeamMembership").mockResolvedValue(true);
+      vi.spyOn(mockGitHubClient, "checkTeamMembership").mockResolvedValue(true);
 
       const result = await permissionChecker.isApproverAllowed("team-member", ["team:developers"]);
 
@@ -78,7 +78,7 @@ describe("PermissionChecker", () => {
     });
 
     it("should not allow non-team members", async () => {
-      jest.spyOn(mockGitHubClient, "checkTeamMembership").mockResolvedValue(false);
+      vi.spyOn(mockGitHubClient, "checkTeamMembership").mockResolvedValue(false);
 
       const result = await permissionChecker.isApproverAllowed("non-member", ["team:developers"]);
 
@@ -87,8 +87,7 @@ describe("PermissionChecker", () => {
     });
 
     it("should check multiple teams if multiple teams are listed", async () => {
-      jest
-        .spyOn(mockGitHubClient, "checkTeamMembership")
+      vi.spyOn(mockGitHubClient, "checkTeamMembership")
         .mockResolvedValueOnce(false) // First team check fails
         .mockResolvedValueOnce(true); // Second team check succeeds
 
@@ -103,7 +102,7 @@ describe("PermissionChecker", () => {
     });
 
     it("should fall back to repository permissions when no approvers are configured", async () => {
-      jest.spyOn(mockGitHubClient, "checkUserPermission").mockResolvedValue(true);
+      vi.spyOn(mockGitHubClient, "checkUserPermission").mockResolvedValue(true);
 
       const result = await permissionChecker.isApproverAllowed("collaborator", []);
 
@@ -112,7 +111,7 @@ describe("PermissionChecker", () => {
     });
 
     it("should reject users without repository permissions when no approvers are configured", async () => {
-      jest.spyOn(mockGitHubClient, "checkUserPermission").mockResolvedValue(false);
+      vi.spyOn(mockGitHubClient, "checkUserPermission").mockResolvedValue(false);
 
       const result = await permissionChecker.isApproverAllowed("outsider", []);
 
@@ -121,7 +120,7 @@ describe("PermissionChecker", () => {
     });
 
     it("should handle mixed approver types correctly", async () => {
-      jest.spyOn(mockGitHubClient, "checkTeamMembership").mockResolvedValue(false);
+      vi.spyOn(mockGitHubClient, "checkTeamMembership").mockResolvedValue(false);
 
       const result = await permissionChecker.isApproverAllowed("test-author", [
         "other-user",
@@ -133,7 +132,7 @@ describe("PermissionChecker", () => {
     });
 
     it("should correctly parse team names from team: prefix", async () => {
-      jest.spyOn(mockGitHubClient, "checkTeamMembership").mockResolvedValue(true);
+      vi.spyOn(mockGitHubClient, "checkTeamMembership").mockResolvedValue(true);
 
       await permissionChecker.isApproverAllowed("user", ["team:frontend-team"]);
 
@@ -141,7 +140,7 @@ describe("PermissionChecker", () => {
     });
 
     it("should stop checking teams once a match is found", async () => {
-      jest.spyOn(mockGitHubClient, "checkTeamMembership").mockResolvedValueOnce(true); // First team check succeeds
+      vi.spyOn(mockGitHubClient, "checkTeamMembership").mockResolvedValueOnce(true); // First team check succeeds
 
       const result = await permissionChecker.isApproverAllowed("user", [
         "team:admins",
@@ -154,7 +153,7 @@ describe("PermissionChecker", () => {
     });
 
     it("should handle empty team name gracefully", async () => {
-      jest.spyOn(mockGitHubClient, "checkTeamMembership").mockResolvedValue(false);
+      vi.spyOn(mockGitHubClient, "checkTeamMembership").mockResolvedValue(false);
 
       const result = await permissionChecker.isApproverAllowed("user", ["team:"]);
 
@@ -163,7 +162,7 @@ describe("PermissionChecker", () => {
     });
 
     it("should handle team membership check errors gracefully", async () => {
-      jest.spyOn(mockGitHubClient, "checkTeamMembership").mockRejectedValue(new Error("API Error"));
+      vi.spyOn(mockGitHubClient, "checkTeamMembership").mockRejectedValue(new Error("API Error"));
 
       const result = await permissionChecker.isApproverAllowed("user", [
         "team:developers",
@@ -175,7 +174,7 @@ describe("PermissionChecker", () => {
     });
 
     it("should handle repository permission check errors gracefully", async () => {
-      jest.spyOn(mockGitHubClient, "checkUserPermission").mockRejectedValue(new Error("API Error"));
+      vi.spyOn(mockGitHubClient, "checkUserPermission").mockRejectedValue(new Error("API Error"));
 
       const result = await permissionChecker.isApproverAllowed("user", []);
 

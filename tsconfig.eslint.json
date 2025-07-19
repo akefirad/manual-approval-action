@@ -6,6 +6,6 @@
     "noEmit": true,
     "isolatedModules": true
   },
-  "include": ["tests", "src", "rollup.config.ts", "jest.config.mjs", "eslint.config.mjs"],
+  "include": ["tests", "src", "rollup.config.ts", "vitest.config.mts", "eslint.config.mjs"],
   "exclude": ["dist", "node_modules"]
 }
