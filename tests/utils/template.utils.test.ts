@@ -230,22 +230,19 @@ describe("template.utils", () => {
     });
 
     describe("escaping behavior, not implemented", () => {
-      it.fails(
-        "should handle quoted GitHub variables by NOT processing inner expressions",
-        () => {
-          process.env.GITHUB_JOB = "test-job";
+      it.fails("should handle quoted GitHub variables by NOT processing inner expressions", () => {
+        process.env.GITHUB_JOB = "test-job";
 
-          // This is the specific case mentioned: ${{ '${{ github.job }}' }}
-          // EXPECTED: The quoted inner expression should NOT be processed
-          const template = "${{ '${{ github.job }}' }}";
-          const variables = {};
+        // This is the specific case mentioned: ${{ '${{ github.job }}' }}
+        // EXPECTED: The quoted inner expression should NOT be processed
+        const template = "${{ '${{ github.job }}' }}";
+        const variables = {};
 
-          const result = processTemplate(template, variables);
+        const result = processTemplate(template, variables);
 
-          // EXPECTED: The inner expression should remain literal and the outer should resolve to the literal string
-          expect(result).toBe("${{ github.job }}");
-        },
-      );
+        // EXPECTED: The inner expression should remain literal and the outer should resolve to the literal string
+        expect(result).toBe("${{ github.job }}");
+      });
 
       it.fails("should respect quotes in nested expressions", () => {
         process.env.GITHUB_WORKFLOW = "CI";

@@ -19,7 +19,9 @@ vi.mock("@actions/core", () => ({
 
 // Define the GitHubAPI interface for mocking
 interface GitHubAPI {
-  request: MockedFunction<(route: string, options?: Record<string, unknown>) => Promise<{ data: unknown }>>;
+  request: MockedFunction<
+    (route: string, options?: Record<string, unknown>) => Promise<{ data: unknown }>
+  >;
 }
 
 // Mock variables

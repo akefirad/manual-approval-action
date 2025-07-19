@@ -87,8 +87,7 @@ describe("PermissionChecker", () => {
     });
 
     it("should check multiple teams if multiple teams are listed", async () => {
-      vi
-        .spyOn(mockGitHubClient, "checkTeamMembership")
+      vi.spyOn(mockGitHubClient, "checkTeamMembership")
         .mockResolvedValueOnce(false) // First team check fails
         .mockResolvedValueOnce(true); // Second team check succeeds
 

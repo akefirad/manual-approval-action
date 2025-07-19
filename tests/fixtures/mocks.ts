@@ -7,7 +7,7 @@ export class MockGitHubClient implements IGitHubClient {
   private issueCounter = 1;
   private commentCounter = 1;
 
-  async createIssue(title: string, body: string): Promise<Issue> {
+  async createIssue(_title: string, _body: string): Promise<Issue> {
     const issue: Issue = {
       number: this.issueCounter++,
       htmlUrl: `https://github.com/test/repo/issues/${this.issueCounter - 1}`,
