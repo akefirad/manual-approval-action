@@ -89,15 +89,6 @@ describe("GitHubService", () => {
         state: "open",
       });
     });
-
-    it("should throw error when issue creation fails", async () => {
-      const error = new Error("API Error");
-      mockOctokit.request.mockRejectedValue(error);
-
-      await expect(githubService.createIssue("Test Issue", "Test body")).rejects.toThrow(
-        "Failed to create issue: Error: API Error",
-      );
-    });
   });
 
   describe("closeIssue", () => {
@@ -208,15 +199,6 @@ describe("GitHubService", () => {
       );
 
       expect(result).toHaveLength(1);
-    });
-
-    it("should throw error when listing comments fails", async () => {
-      const error = new Error("List failed");
-      mockOctokit.request.mockRejectedValue(error);
-
-      await expect(githubService.listIssueComments(123)).rejects.toThrow(
-        "Failed to list issue comments: Error: List failed",
-      );
     });
   });
 
@@ -347,24 +329,6 @@ describe("GitHubService", () => {
   });
 
   describe("error handling", () => {
-    it("should handle network errors gracefully", async () => {
-      const networkError = new Error("Network timeout");
-      mockOctokit.request.mockRejectedValue(networkError);
-
-      await expect(githubService.createIssue("Test", "Body")).rejects.toThrow(
-        "Failed to create issue: Error: Network timeout",
-      );
-    });
-
-    it("should handle API rate limiting errors", async () => {
-      const rateLimitError = new Error("API rate limit exceeded");
-      mockOctokit.request.mockRejectedValue(rateLimitError);
-
-      await expect(githubService.listIssueComments(123)).rejects.toThrow(
-        "Failed to list issue comments: Error: API rate limit exceeded",
-      );
-    });
-
     it("should handle malformed API responses", async () => {
       const malformedResponse = { data: null };
       mockOctokit.request.mockResolvedValue(malformedResponse);

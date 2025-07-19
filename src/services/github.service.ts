@@ -29,22 +29,18 @@ export class GitHubService implements IGitHubClient {
 
   async createIssue(title: string, body: string): Promise<Issue> {
     const { owner, repo } = this.environment;
-    try {
-      const request = { owner, repo, title, body };
-      core.debug(`Creating issue in ${owner}/${repo} with request: ${JSON.stringify(request)}`);
-      const response = await this.octokit.request("POST /repos/{owner}/{repo}/issues", request);
+    const request = { owner, repo, title, body };
+    core.debug(`Creating issue in ${owner}/${repo} with request: ${JSON.stringify(request)}`);
+    const response = await this.octokit.request("POST /repos/{owner}/{repo}/issues", request);
 
-      const issue = {
-        number: response.data.number,
-        htmlUrl: response.data.html_url,
-        state: response.data.state,
-      };
+    const issue = {
+      number: response.data.number,
+      htmlUrl: response.data.html_url,
+      state: response.data.state,
+    };
 
-      core.info(`Issue created successfully: ${issue.htmlUrl}`);
-      return issue;
-    } catch (error) {
-      throw new Error(`Failed to create issue: ${error}`);
-    }
+    core.info(`Issue created successfully: ${issue.htmlUrl}`);
+    return issue;
   }
 
   async closeIssue(issueNumber: number): Promise<void> {
@@ -61,51 +57,43 @@ export class GitHubService implements IGitHubClient {
 
   async getIssue(issueNumber: number): Promise<Issue> {
     const { owner, repo } = this.environment;
-    try {
-      const request = { owner, repo, issue_number: issueNumber };
-      core.debug(`Getting ${owner}/${repo}/issues/${issueNumber}`);
-      const response = await this.octokit.request(
-        "GET /repos/{owner}/{repo}/issues/{issue_number}",
-        request,
-      );
+    const request = { owner, repo, issue_number: issueNumber };
+    core.debug(`Getting ${owner}/${repo}/issues/${issueNumber}`);
+    const response = await this.octokit.request(
+      "GET /repos/{owner}/{repo}/issues/{issue_number}",
+      request,
+    );
 
-      const issue = {
-        number: response.data.number,
-        htmlUrl: response.data.html_url,
-        state: response.data.state,
-      };
-      return issue;
-    } catch (error) {
-      throw new Error(`Failed to get issue #${issueNumber}: ${error}`);
-    }
+    const issue = {
+      number: response.data.number,
+      htmlUrl: response.data.html_url,
+      state: response.data.state,
+    };
+    return issue;
   }
 
   async listIssueComments(issueNumber: number, since?: Date): Promise<Comment[]> {
     const { owner, repo } = this.environment;
-    try {
-      const request = {
-        owner,
-        repo,
-        issue_number: issueNumber,
-        per_page: 100,
-        since: since?.toISOString(),
-      };
-      core.debug(`Listing comments for ${owner}/${repo}/issues/${issueNumber}`);
-      const response = await this.octokit.request(
-        "GET /repos/{owner}/{repo}/issues/{issue_number}/comments",
-        request,
-      );
+    const request = {
+      owner,
+      repo,
+      issue_number: issueNumber,
+      per_page: 100,
+      since: since?.toISOString(),
+    };
+    core.debug(`Listing comments for ${owner}/${repo}/issues/${issueNumber}`);
+    const response = await this.octokit.request(
+      "GET /repos/{owner}/{repo}/issues/{issue_number}/comments",
+      request,
+    );
 
-      const comments = response.data.map((comment: GitHubIssueComment) => ({
-        id: comment.id,
-        body: comment.body,
-        user: { login: comment.user.login },
-        createdAt: comment.created_at,
-      }));
-      return comments;
-    } catch (error) {
-      throw new Error(`Failed to list issue comments: ${error}`);
-    }
+    const comments = response.data.map((comment: GitHubIssueComment) => ({
+      id: comment.id,
+      body: comment.body,
+      user: { login: comment.user.login },
+      createdAt: comment.created_at,
+    }));
+    return comments;
   }
 
   async checkUserPermission(username: string): Promise<boolean> {

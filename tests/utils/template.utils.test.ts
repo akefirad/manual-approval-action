@@ -229,6 +229,19 @@ describe("template.utils", () => {
       expect(result).toBe("Malformed: ${{ github.workflow, Missing: ${{ github.job }");
     });
 
+    it("should fallback to original pattern when GitHub environment variable is not set", () => {
+      // Ensure the env var is NOT set
+      delete process.env.GITHUB_WORKFLOW;
+
+      const template = "Workflow: ${{ github.workflow }}";
+      const variables = {};
+
+      const result = processTemplate(template, variables);
+
+      // Should fallback to the original pattern since env var is not set
+      expect(result).toBe("Workflow: ${{ github.workflow }}");
+    });
+
     describe("escaping behavior, not implemented", () => {
       it.fails("should handle quoted GitHub variables by NOT processing inner expressions", () => {
         process.env.GITHUB_JOB = "test-job";
