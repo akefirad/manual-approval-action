@@ -31341,11 +31341,19 @@ class GitHubService {
         coreExports.info(`Issue created successfully: ${issue.htmlUrl}`);
         return issue;
     }
-    async closeIssue(issueNumber) {
+    async closeIssue(issueNumber, stateReason) {
         const { owner, repo } = this.environment;
         try {
-            const request = { owner, repo, issue_number: issueNumber, state: "closed" };
-            coreExports.debug(`Closing ${owner}/${repo}/issues/${issueNumber}`);
+            const request = {
+                owner,
+                repo,
+                issue_number: issueNumber,
+                state: "closed",
+            };
+            if (stateReason) {
+                request.state_reason = stateReason;
+            }
+            coreExports.debug(`Closing ${owner}/${repo}/issues/${issueNumber} with state_reason: ${stateReason || "default"}`);
             await this.octokit.request("PATCH /repos/{owner}/{repo}/issues/{issue_number}", request);
             coreExports.info(`Issue #${issueNumber} closed successfully`);
         }
@@ -31383,6 +31391,18 @@ class GitHubService {
             createdAt: comment.created_at,
         }));
         return comments;
+    }
+    async addIssueComment(issueNumber, body) {
+        const { owner, repo } = this.environment;
+        try {
+            const request = { owner, repo, issue_number: issueNumber, body };
+            coreExports.debug(`Adding comment to ${owner}/${repo}/issues/${issueNumber}`);
+            await this.octokit.request("POST /repos/{owner}/{repo}/issues/{issue_number}/comments", request);
+            coreExports.debug(`Comment added successfully to issue #${issueNumber}`);
+        }
+        catch (error) {
+            coreExports.warning(`Failed to add comment to issue #${issueNumber}: ${error}`);
+        }
     }
     async checkUserPermission(username) {
         const { owner, repo } = this.environment;
@@ -31657,7 +31677,7 @@ class ApprovalService {
                         issueUrl: this.request.issueUrl,
                         timestamp: new Date(),
                     };
-                    this.cleanup();
+                    this.cleanup("timed-out").then(() => this.saveState(true));
                     // Always resolve with the response, let main.ts handle the failure
                     resolve(response);
                 }
@@ -31687,7 +31707,7 @@ class ApprovalService {
                                 issueUrl: this.request.issueUrl,
                                 timestamp: new Date(),
                             };
-                            this.cleanup();
+                            this.cleanup("rejected").then(() => this.saveState(true));
                             // Always resolve with the response, let main.ts handle the failure
                             resolve(response);
                             return;
@@ -31714,7 +31734,7 @@ class ApprovalService {
                             issueUrl: this.request.issueUrl,
                             timestamp: new Date(),
                         };
-                        this.cleanup();
+                        this.cleanup(result, [comment.user.login]).then(() => this.saveState(true));
                         resolve(response); // Always resolve, let main.ts handle the failure
                         break;
                     }
@@ -31751,21 +31771,39 @@ class ApprovalService {
         coreExports.debug(`No relevant keywords found in comment from ${commenter}`);
         return "none";
     }
-    async saveState() {
+    async saveState(cleanupCompleted = false) {
         if (this.request) {
             coreExports.debug(`Saving approval request state: ${this.request.id}`);
             coreExports.saveState("approval_request", JSON.stringify(this.request));
+            coreExports.saveState("cleanup_completed", cleanupCompleted ? "true" : "false");
         }
         else {
             coreExports.debug("No approval request to save");
         }
     }
-    async cleanup() {
+    async cleanup(status, approvers) {
         coreExports.debug("Performing cleanup...");
         this.timeoutManager.cancel();
         try {
             const issueNumber = this.request.id;
-            await this.github.closeIssue(issueNumber);
+            // Add comment based on status
+            if (status === "approved") {
+                const approverText = approvers && approvers.length > 0 ? ` by @${approvers.join(", @")}` : "";
+                await this.github.addIssueComment(issueNumber, `✅ **Approval received${approverText}**\n\nThe manual approval request has been approved. Proceeding with the workflow.`);
+                await this.github.closeIssue(issueNumber, "completed");
+            }
+            else if (status === "rejected") {
+                await this.github.addIssueComment(issueNumber, `❌ **Approval rejected**\n\nThe manual approval request has been rejected. The workflow will not proceed.`);
+                await this.github.closeIssue(issueNumber, "not_planned");
+            }
+            else if (status === "timed-out") {
+                await this.github.addIssueComment(issueNumber, `⏱️ **Approval timed out**\n\nThe manual approval request has timed out after ${this.inputs.timeoutSeconds} seconds. The workflow will not proceed.`);
+                await this.github.closeIssue(issueNumber, "not_planned");
+            }
+            else {
+                // Default case - just close without comment
+                await this.github.closeIssue(issueNumber);
+            }
         }
         catch (error) {
             coreExports.warning(`Failed to cleanup from state: ${error}`);

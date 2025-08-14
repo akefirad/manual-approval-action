@@ -73,6 +73,8 @@ jobs:
           issue-title: Integration Test - Timeout!
 
       - name: Verify Timeout Test
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           if [ "${{ steps.test-timeout.outcome }}" != "failure" ]; then
             echo "ERROR: Test step outcome should have been 'failure' but is '${{ steps.test-timeout.outcome }}'"
@@ -85,6 +87,37 @@ jobs:
           fi
           echo "Issue URL: '${{ steps.test-timeout.outputs.issue-url }}'"
 
+          # Extract issue number from URL
+          ISSUE_URL="${{ steps.test-timeout.outputs.issue-url }}"
+          ISSUE_NUMBER=$(echo "$ISSUE_URL" | grep -oE '[0-9]+$')
+          echo "Issue Number: $ISSUE_NUMBER"
+
+          # Check issue is closed with 'not_planned' status
+          ISSUE_STATE=$(gh issue view "$ISSUE_NUMBER" --json state,stateReason --jq '.state')
+          ISSUE_REASON=$(gh issue view "$ISSUE_NUMBER" --json state,stateReason --jq '.stateReason')
+          echo "Issue State: $ISSUE_STATE"
+          echo "Issue State Reason: $ISSUE_REASON"
+
+          if [ "$ISSUE_STATE" != "CLOSED" ]; then
+            echo "ERROR: Issue should be closed but is '$ISSUE_STATE'"
+            exit 1
+          fi
+
+          if [ "$ISSUE_REASON" != "NOT_PLANNED" ]; then
+            echo "ERROR: Issue should be closed as 'not_planned' but is '$ISSUE_REASON'"
+            exit 1
+          fi
+
+          # Check for timeout comment
+          COMMENTS=$(gh issue view "$ISSUE_NUMBER" --json comments --jq '.comments[].body')
+          if ! echo "$COMMENTS" | grep -q "Approval timed out"; then
+            echo "ERROR: Issue should have a timeout comment"
+            echo "Comments found:"
+            echo "$COMMENTS"
+            exit 1
+          fi
+          echo "✓ Timeout test verified successfully"
+
       - name: Approval Test
         id: test-approval
         uses: ./
@@ -95,6 +128,8 @@ jobs:
           github-token: ${{ secrets.INTEGRATION_TEST_APPROVER_TOKEN }}
 
       - name: Verify Approval Test
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           if [ "${{ steps.test-approval.outcome }}" != "success" ]; then
             echo "ERROR: Test step outcome should have been 'success' but is '${{ steps.test-approval.outcome }}'"
@@ -105,9 +140,40 @@ jobs:
             echo "ERROR: Approval test should have been approved but is '${{ steps.test-approval.outputs.status }}'"
             exit 1
           fi
-          echo "Approvers: '${{ steps.test-approval.outputs.approvers }}'"
           # TODO: verify approvers
+          echo "Approvers: '${{ steps.test-approval.outputs.approvers }}'"
           echo "Issue URL: '${{ steps.test-approval.outputs.issue-url }}'"
+
+          # Extract issue number from URL
+          ISSUE_URL="${{ steps.test-approval.outputs.issue-url }}"
+          ISSUE_NUMBER=$(echo "$ISSUE_URL" | grep -oE '[0-9]+$')
+          echo "Issue Number: $ISSUE_NUMBER"
+
+          # Check issue is closed with 'completed' status
+          ISSUE_STATE=$(gh issue view "$ISSUE_NUMBER" --json state,stateReason --jq '.state')
+          ISSUE_REASON=$(gh issue view "$ISSUE_NUMBER" --json state,stateReason --jq '.stateReason')
+          echo "Issue State: $ISSUE_STATE"
+          echo "Issue State Reason: $ISSUE_REASON"
+
+          if [ "$ISSUE_STATE" != "CLOSED" ]; then
+            echo "ERROR: Issue should be closed but is '$ISSUE_STATE'"
+            exit 1
+          fi
+
+          if [ "$ISSUE_REASON" != "COMPLETED" ]; then
+            echo "ERROR: Issue should be closed as 'completed' but is '$ISSUE_REASON'"
+            exit 1
+          fi
+
+          # Check for approval comment
+          COMMENTS=$(gh issue view "$ISSUE_NUMBER" --json comments --jq '.comments[].body')
+          if ! echo "$COMMENTS" | grep -q "Approval received"; then
+            echo "ERROR: Issue should have an approval comment"
+            echo "Comments found:"
+            echo "$COMMENTS"
+            exit 1
+          fi
+          echo "✓ Approval test verified successfully"
 
       - name: Rejection Test
         id: test-rejection
@@ -120,6 +186,8 @@ jobs:
           github-token: ${{ secrets.INTEGRATION_TEST_APPROVER_TOKEN }}
 
       - name: Verify Rejection Test
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           if [ "${{ steps.test-rejection.outcome }}" != "failure" ]; then
             echo "ERROR: Test step outcome should have been 'failure' but is '${{ steps.test-rejection.outcome }}'"
@@ -130,9 +198,40 @@ jobs:
             echo "ERROR: Rejection test should have been rejected but is '${{ steps.test-rejection.outputs.status }}'"
             exit 1
           fi
+          # TODO: verify rejectors
           echo "Approvers: '${{ steps.test-rejection.outputs.approvers }}'"
-          # TODO: verify approvers
           echo "Issue URL: '${{ steps.test-rejection.outputs.issue-url }}'"
+
+          # Extract issue number from URL
+          ISSUE_URL="${{ steps.test-rejection.outputs.issue-url }}"
+          ISSUE_NUMBER=$(echo "$ISSUE_URL" | grep -oE '[0-9]+$')
+          echo "Issue Number: $ISSUE_NUMBER"
+
+          # Check issue is closed with 'not_planned' status
+          ISSUE_STATE=$(gh issue view "$ISSUE_NUMBER" --json state,stateReason --jq '.state')
+          ISSUE_REASON=$(gh issue view "$ISSUE_NUMBER" --json state,stateReason --jq '.stateReason')
+          echo "Issue State: $ISSUE_STATE"
+          echo "Issue State Reason: $ISSUE_REASON"
+
+          if [ "$ISSUE_STATE" != "CLOSED" ]; then
+            echo "ERROR: Issue should be closed but is '$ISSUE_STATE'"
+            exit 1
+          fi
+
+          if [ "$ISSUE_REASON" != "NOT_PLANNED" ]; then
+            echo "ERROR: Issue should be closed as 'not_planned' but is '$ISSUE_REASON'"
+            exit 1
+          fi
+
+          # Check for rejection comment
+          COMMENTS=$(gh issue view "$ISSUE_NUMBER" --json comments --jq '.comments[].body')
+          if ! echo "$COMMENTS" | grep -q "Approval rejected"; then
+            echo "ERROR: Issue should have a rejection comment"
+            echo "Comments found:"
+            echo "$COMMENTS"
+            exit 1
+          fi
+          echo "✓ Rejection test verified successfully"
 
       - name: Close Test
         id: test-close
@@ -144,6 +243,8 @@ jobs:
           github-token: ${{ secrets.INTEGRATION_TEST_APPROVER_TOKEN }}
 
       - name: Verify Close Test
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           if [ "${{ steps.test-close.outcome }}" != "failure" ]; then
             echo "ERROR: Test step outcome should have been 'failure' but is '${{ steps.test-close.outcome }}'"
@@ -155,5 +256,35 @@ jobs:
             exit 1
           fi
           echo "Approvers: '${{ steps.test-close.outputs.approvers }}'"
-          # TODO: verify approvers
           echo "Issue URL: '${{ steps.test-close.outputs.issue-url }}'"
+
+          # Extract issue number from URL
+          ISSUE_URL="${{ steps.test-close.outputs.issue-url }}"
+          ISSUE_NUMBER=$(echo "$ISSUE_URL" | grep -oE '[0-9]+$')
+          echo "Issue Number: $ISSUE_NUMBER"
+
+          # Check issue is closed with 'not_planned' status
+          ISSUE_STATE=$(gh issue view "$ISSUE_NUMBER" --json state,stateReason --jq '.state')
+          ISSUE_REASON=$(gh issue view "$ISSUE_NUMBER" --json state,stateReason --jq '.stateReason')
+          echo "Issue State: $ISSUE_STATE"
+          echo "Issue State Reason: $ISSUE_REASON"
+
+          if [ "$ISSUE_STATE" != "CLOSED" ]; then
+            echo "ERROR: Issue should be closed but is '$ISSUE_STATE'"
+            exit 1
+          fi
+
+          if [ "$ISSUE_REASON" != "NOT_PLANNED" ]; then
+            echo "ERROR: Issue should be closed as 'not_planned' but is '$ISSUE_REASON'"
+            exit 1
+          fi
+
+          # Check for rejection comment (closing an issue without keywords is treated as rejection)
+          COMMENTS=$(gh issue view "$ISSUE_NUMBER" --json comments --jq '.comments[].body')
+          if ! echo "$COMMENTS" | grep -q "Approval rejected"; then
+            echo "ERROR: Issue should have a rejection comment"
+            echo "Comments found:"
+            echo "$COMMENTS"
+            exit 1
+          fi
+          echo "✓ Close test verified successfully"

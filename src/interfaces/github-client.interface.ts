@@ -8,9 +8,10 @@ export interface Issue {
 
 export interface IGitHubClient {
   createIssue(title: string, body: string): Promise<Issue>;
-  closeIssue(issueNumber: number): Promise<void>;
+  closeIssue(issueNumber: number, stateReason?: "completed" | "not_planned"): Promise<void>;
   getIssue(issueNumber: number): Promise<Issue>;
   listIssueComments(issueNumber: number, since?: Date): Promise<Comment[]>;
+  addIssueComment(issueNumber: number, body: string): Promise<void>;
   checkUserPermission(username: string): Promise<boolean>;
   checkTeamMembership(teamSlug: string, username: string): Promise<boolean>;
   getEnvironment(): Promise<Environment>;

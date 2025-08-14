@@ -13,6 +13,13 @@ export async function run(): Promise<void> {
   try {
     core.info("Running post-phase cleanup...");
 
+    // Check if cleanup was already completed
+    const cleanupCompleted = core.getState("cleanup_completed");
+    if (cleanupCompleted === "true") {
+      core.info("Cleanup already completed during main phase");
+      return;
+    }
+
     // Check if there's saved state to cleanup
     const savedState = core.getState("approval_request");
     if (!savedState) {
@@ -34,6 +41,8 @@ export async function run(): Promise<void> {
 
     const request: ApprovalRequest = JSON.parse(savedState);
     const approval = new ApprovalService(githubService, inputs, request);
+    // Call cleanup without status - this is for unexpected termination
+    // In this case, we'll just close the issue without a specific comment
     await approval.cleanup();
   } catch (error) {
     core.warning(`Post-phase cleanup failed: ${error}`);
