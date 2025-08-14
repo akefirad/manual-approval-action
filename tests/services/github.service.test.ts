@@ -92,7 +92,7 @@ describe("GitHubService", () => {
   });
 
   describe("closeIssue", () => {
-    it("should successfully close an issue", async () => {
+    it("should successfully close an issue without state reason", async () => {
       mockOctokit.request.mockResolvedValue({ data: {} });
 
       await githubService.closeIssue(123);
@@ -104,6 +104,44 @@ describe("GitHubService", () => {
           repo: "test-repo",
           issue_number: 123,
           state: "closed",
+        },
+      );
+
+      expect(mockInfo).toHaveBeenCalledWith("Issue #123 closed successfully");
+    });
+
+    it("should successfully close an issue as completed", async () => {
+      mockOctokit.request.mockResolvedValue({ data: {} });
+
+      await githubService.closeIssue(123, "completed");
+
+      expect(mockOctokit.request).toHaveBeenCalledWith(
+        "PATCH /repos/{owner}/{repo}/issues/{issue_number}",
+        {
+          owner: "test-owner",
+          repo: "test-repo",
+          issue_number: 123,
+          state: "closed",
+          state_reason: "completed",
+        },
+      );
+
+      expect(mockInfo).toHaveBeenCalledWith("Issue #123 closed successfully");
+    });
+
+    it("should successfully close an issue as not_planned", async () => {
+      mockOctokit.request.mockResolvedValue({ data: {} });
+
+      await githubService.closeIssue(123, "not_planned");
+
+      expect(mockOctokit.request).toHaveBeenCalledWith(
+        "PATCH /repos/{owner}/{repo}/issues/{issue_number}",
+        {
+          owner: "test-owner",
+          repo: "test-repo",
+          issue_number: 123,
+          state: "closed",
+          state_reason: "not_planned",
         },
       );
 
@@ -199,6 +237,37 @@ describe("GitHubService", () => {
       );
 
       expect(result).toHaveLength(1);
+    });
+  });
+
+  describe("addIssueComment", () => {
+    it("should successfully add a comment to an issue", async () => {
+      mockOctokit.request.mockResolvedValue({ data: {} });
+
+      await githubService.addIssueComment(123, "Test comment");
+
+      expect(mockOctokit.request).toHaveBeenCalledWith(
+        "POST /repos/{owner}/{repo}/issues/{issue_number}/comments",
+        {
+          owner: "test-owner",
+          repo: "test-repo",
+          issue_number: 123,
+          body: "Test comment",
+        },
+      );
+
+      expect(mockDebug).toHaveBeenCalledWith("Comment added successfully to issue #123");
+    });
+
+    it("should handle error when adding comment fails", async () => {
+      const error = new Error("Add comment failed");
+      mockOctokit.request.mockRejectedValue(error);
+
+      await githubService.addIssueComment(123, "Test comment");
+
+      expect(mockWarning).toHaveBeenCalledWith(
+        "Failed to add comment to issue #123: Error: Add comment failed",
+      );
     });
   });
 

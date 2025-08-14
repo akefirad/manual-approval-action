@@ -31,7 +31,12 @@ export class ApprovalService {
   constructor(
     private readonly github: Pick<
       IGitHubClient,
-      "createIssue" | "closeIssue" | "getIssue" | "listIssueComments" | "checkUserPermission"
+      | "createIssue"
+      | "closeIssue"
+      | "getIssue"
+      | "listIssueComments"
+      | "addIssueComment"
+      | "checkUserPermission"
     >,
     private readonly inputs: Pick<
       ApprovalInputs,
@@ -71,7 +76,7 @@ export class ApprovalService {
             timestamp: new Date(),
           };
 
-          this.cleanup();
+          this.cleanup("timed-out").then(() => this.saveState(true));
 
           // Always resolve with the response, let main.ts handle the failure
           resolve(response);
@@ -107,7 +112,7 @@ export class ApprovalService {
                 timestamp: new Date(),
               };
 
-              this.cleanup();
+              this.cleanup("rejected").then(() => this.saveState(true));
               // Always resolve with the response, let main.ts handle the failure
               resolve(response);
               return;
@@ -139,7 +144,7 @@ export class ApprovalService {
               timestamp: new Date(),
             };
 
-            this.cleanup();
+            this.cleanup(result, [comment.user.login]).then(() => this.saveState(true));
             resolve(response); // Always resolve, let main.ts handle the failure
             break;
           }
@@ -182,21 +187,50 @@ export class ApprovalService {
     return "none";
   }
 
-  async saveState(): Promise<void> {
+  async saveState(cleanupCompleted: boolean = false): Promise<void> {
     if (this.request) {
       core.debug(`Saving approval request state: ${this.request.id}`);
       core.saveState("approval_request", JSON.stringify(this.request));
+      core.saveState("cleanup_completed", cleanupCompleted ? "true" : "false");
     } else {
       core.debug("No approval request to save");
     }
   }
 
-  async cleanup(): Promise<void> {
+  async cleanup(
+    status?: "approved" | "rejected" | "timed-out",
+    approvers?: string[],
+  ): Promise<void> {
     core.debug("Performing cleanup...");
     this.timeoutManager.cancel();
     try {
       const issueNumber = this.request.id;
-      await this.github.closeIssue(issueNumber);
+
+      // Add comment based on status
+      if (status === "approved") {
+        const approverText =
+          approvers && approvers.length > 0 ? ` by @${approvers.join(", @")}` : "";
+        await this.github.addIssueComment(
+          issueNumber,
+          `✅ **Approval received${approverText}**\n\nThe manual approval request has been approved. Proceeding with the workflow.`,
+        );
+        await this.github.closeIssue(issueNumber, "completed");
+      } else if (status === "rejected") {
+        await this.github.addIssueComment(
+          issueNumber,
+          `❌ **Approval rejected**\n\nThe manual approval request has been rejected. The workflow will not proceed.`,
+        );
+        await this.github.closeIssue(issueNumber, "not_planned");
+      } else if (status === "timed-out") {
+        await this.github.addIssueComment(
+          issueNumber,
+          `⏱️ **Approval timed out**\n\nThe manual approval request has timed out after ${this.inputs.timeoutSeconds} seconds. The workflow will not proceed.`,
+        );
+        await this.github.closeIssue(issueNumber, "not_planned");
+      } else {
+        // Default case - just close without comment
+        await this.github.closeIssue(issueNumber);
+      }
     } catch (error) {
       core.warning(`Failed to cleanup from state: ${error}`);
     }

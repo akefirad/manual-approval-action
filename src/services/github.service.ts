@@ -43,11 +43,21 @@ export class GitHubService implements IGitHubClient {
     return issue;
   }
 
-  async closeIssue(issueNumber: number): Promise<void> {
+  async closeIssue(issueNumber: number, stateReason?: "completed" | "not_planned"): Promise<void> {
     const { owner, repo } = this.environment;
     try {
-      const request = { owner, repo, issue_number: issueNumber, state: "closed" };
-      core.debug(`Closing ${owner}/${repo}/issues/${issueNumber}`);
+      const request: Record<string, unknown> = {
+        owner,
+        repo,
+        issue_number: issueNumber,
+        state: "closed",
+      };
+      if (stateReason) {
+        request.state_reason = stateReason;
+      }
+      core.debug(
+        `Closing ${owner}/${repo}/issues/${issueNumber} with state_reason: ${stateReason || "default"}`,
+      );
       await this.octokit.request("PATCH /repos/{owner}/{repo}/issues/{issue_number}", request);
       core.info(`Issue #${issueNumber} closed successfully`);
     } catch (error) {
@@ -94,6 +104,21 @@ export class GitHubService implements IGitHubClient {
       createdAt: comment.created_at,
     }));
     return comments;
+  }
+
+  async addIssueComment(issueNumber: number, body: string): Promise<void> {
+    const { owner, repo } = this.environment;
+    try {
+      const request = { owner, repo, issue_number: issueNumber, body };
+      core.debug(`Adding comment to ${owner}/${repo}/issues/${issueNumber}`);
+      await this.octokit.request(
+        "POST /repos/{owner}/{repo}/issues/{issue_number}/comments",
+        request,
+      );
+      core.debug(`Comment added successfully to issue #${issueNumber}`);
+    } catch (error) {
+      core.warning(`Failed to add comment to issue #${issueNumber}: ${error}`);
+    }
   }
 
   async checkUserPermission(username: string): Promise<boolean> {

@@ -18,11 +18,25 @@ export class MockGitHubClient implements IGitHubClient {
     return issue;
   }
 
-  async closeIssue(issueNumber: number): Promise<void> {
+  async closeIssue(issueNumber: number, stateReason?: "completed" | "not_planned"): Promise<void> {
     const issue = this.issues.get(issueNumber);
     if (issue) {
       issue.state = "closed";
+      // Store state reason for testing purposes
+      (issue as Issue & { stateReason?: string }).stateReason = stateReason;
     }
+  }
+
+  async addIssueComment(issueNumber: number, body: string): Promise<void> {
+    const key = `${issueNumber}`;
+    const comments = this.comments.get(key) || [];
+    comments.push({
+      id: this.commentCounter++,
+      body,
+      user: { login: "github-actions[bot]" },
+      createdAt: new Date().toISOString(),
+    });
+    this.comments.set(key, comments);
   }
 
   async getIssue(issueNumber: number): Promise<Issue> {
@@ -70,6 +84,17 @@ export class MockGitHubClient implements IGitHubClient {
     if (issue) {
       issue.state = "closed";
     }
+  }
+
+  // Test helper to get all comments for an issue
+  getComments(issueNumber: number): Comment[] {
+    return this.comments.get(`${issueNumber}`) || [];
+  }
+
+  // Test helper to get issue state reason
+  getIssueStateReason(issueNumber: number): string | undefined {
+    const issue = this.issues.get(issueNumber);
+    return issue ? (issue as Issue & { stateReason?: string }).stateReason : undefined;
   }
 
   getEnvironment(): Promise<Environment> {
