@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.1.0](https://github.com/akefirad/manual-approval-action/compare/v1.0.0...v1.1.0) - 2025-08-15
+
+### Changed
+
+- **Enhanced Issue Close Reason Logic**: Issues are now closed with appropriate reasons based on
+  workflow outcome
+  - When `fail-on-rejection: false`: Rejected issues close as `completed` (workflow continues)
+  - When `fail-on-timeout: false`: Timed-out issues close as `completed` (workflow continues)
+  - When fail flags are true: Issues close as `not_planned` (workflow fails) - unchanged behavior
+  - Provides better GitHub issue tracking and workflow insights
+
 ## [1.0.0](https://github.com/akefirad/manual-approval-action/commits/v1.0.0) - 2025-08-15
 
 ### Added
