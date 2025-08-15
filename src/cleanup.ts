@@ -37,6 +37,8 @@ export async function run(): Promise<void> {
       approvalKeywords: [],
       rejectionKeywords: [],
       pollIntervalSeconds: 0,
+      failOnRejection: true,
+      failOnTimeout: true,
     };
 
     const request: ApprovalRequest = JSON.parse(savedState);

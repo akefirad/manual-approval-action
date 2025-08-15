@@ -27487,7 +27487,15 @@ class ApprovalService {
             else {
                 const msg = status === "rejected" ? "Rejected" : "Timed Out";
                 await this.github.addIssueComment(issueNumber, `❌ **Approval ${msg}**\n\nThe manual approval request has been ${msg.toLowerCase()}.`);
-                await this.github.closeIssue(issueNumber, "not_planned");
+                // Determine close reason based on status and fail flags
+                let closeReason = "not_planned";
+                if (status === "rejected" && !this.inputs.failOnRejection) {
+                    closeReason = "completed";
+                }
+                else if (status === "timed-out" && !this.inputs.failOnTimeout) {
+                    closeReason = "completed";
+                }
+                await this.github.closeIssue(issueNumber, closeReason);
             }
         }
         catch (error) {
@@ -31605,6 +31613,8 @@ async function run() {
             approvalKeywords: [],
             rejectionKeywords: [],
             pollIntervalSeconds: 0,
+            failOnRejection: true,
+            failOnTimeout: true,
         };
         const request = JSON.parse(savedState);
         const approval = new ApprovalService(githubService, inputs, request);
