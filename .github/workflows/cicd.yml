@@ -64,15 +64,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Timeout Test
+      - name: Timeout Test (Explicit Approval)
         id: test-timeout
         continue-on-error: true
         uses: ./
         with:
           timeout-seconds: 3
-          issue-title: Integration Test - Timeout!
+          issue-title: Integration Test - Timeout (Explicit Approval)!
 
-      - name: Verify Timeout Test
+      - name: Verify Timeout Test (Explicit Approval)
         run: |
           if [ "${{ steps.test-timeout.outcome }}" != "failure" ]; then
             echo "ERROR: Test step outcome should have been 'failure' but is '${{ steps.test-timeout.outcome }}'"
@@ -85,7 +85,6 @@ jobs:
           fi
           echo "Issue URL: '${{ steps.test-timeout.outputs.issue-url }}'"
 
-          # Extract issue number from URL
           ISSUE_NUMBER=$(echo "${{ steps.test-timeout.outputs.issue-url }}" | grep -oE '[0-9]+$')
           ISSUE_API_URL="https://api.github.com/repos/${{ github.repository }}/issues/$ISSUE_NUMBER"
           echo "Issue API URL: $ISSUE_API_URL"
@@ -116,6 +115,58 @@ jobs:
           fi
           echo "✓ Timeout test verified successfully"
 
+      - name: Timeout Test (Explicit Rejection)
+        id: test-timeout-explicit-rejection
+        continue-on-error: true
+        uses: ./
+        with:
+          timeout-seconds: 3
+          fail-on-timeout: false
+          issue-title: Integration Test - Timeout (Explicit Rejection)!
+
+      - name: Verify Timeout Test (Explicit Rejection)
+        run: |
+          if [ "${{ steps.test-timeout-explicit-rejection.outcome }}" != "success" ]; then
+            echo "ERROR: Test step outcome should have been 'success' but is '${{ steps.test-timeout-explicit-rejection.outcome }}'"
+            exit 1
+          fi
+          echo "Approval Status: '${{ steps.test-timeout-explicit-rejection.outputs.status }}'"
+          if [ "${{ steps.test-timeout-explicit-rejection.outputs.status }}" != "timed-out" ]; then
+            echo "ERROR: Timeout test should have been timed-out but is '${{ steps.test-timeout-explicit-rejection.outputs.status }}'"
+            exit 1
+          fi
+          echo "Issue URL: '${{ steps.test-timeout-explicit-rejection.outputs.issue-url }}'"
+
+          ISSUE_NUMBER=$(echo "${{ steps.test-timeout-explicit-rejection.outputs.issue-url }}" | grep -oE '[0-9]+$')
+          ISSUE_API_URL="https://api.github.com/repos/${{ github.repository }}/issues/$ISSUE_NUMBER"
+          echo "Issue API URL: $ISSUE_API_URL"
+
+          ISSUE_JSON=$(curl -s "$ISSUE_API_URL")
+          ISSUE_STATE=$(echo "$ISSUE_JSON" | jq -r '.state')
+          ISSUE_REASON=$(echo "$ISSUE_JSON" | jq -r '.state_reason // empty')
+          echo "Issue State: $ISSUE_STATE"
+          echo "Issue State Reason: $ISSUE_REASON"
+
+          if [ "$ISSUE_STATE" != "closed" ]; then
+            echo "ERROR: Issue should be closed but is '$ISSUE_STATE'"
+            exit 1
+          fi
+
+          if [ "$ISSUE_REASON" != "completed" ]; then
+            echo "ERROR: Issue should be closed as 'completed' but is '$ISSUE_REASON'"
+            exit 1
+          fi
+
+          COMMENTS_JSON=$(curl -s "$ISSUE_API_URL/comments")
+          TIMEOUT_COMMENT_FOUND=$(echo "$COMMENTS_JSON" | jq -r '.[] | select(.body | contains("Approval Timed Out")) | .body' | head -1)
+          if [ -z "$TIMEOUT_COMMENT_FOUND" ]; then
+            echo "ERROR: Issue should have a timeout comment"
+            echo "Comments found:"
+            echo "$COMMENTS_JSON" | jq -r '.[].body'
+            exit 1
+          fi
+          echo "✓ Timeout test (explicit rejection) verified successfully"
+
       - name: Approval Test
         id: test-approval
         uses: ./
@@ -140,7 +191,6 @@ jobs:
           echo "Approvers: '${{ steps.test-approval.outputs.approvers }}'"
           echo "Issue URL: '${{ steps.test-approval.outputs.issue-url }}'"
 
-          # Extract issue number from URL
           ISSUE_NUMBER=$(echo "${{ steps.test-approval.outputs.issue-url }}" | grep -oE '[0-9]+$')
           ISSUE_API_URL="https://api.github.com/repos/${{ github.repository }}/issues/$ISSUE_NUMBER"
           echo "Issue API URL: $ISSUE_API_URL"
@@ -196,7 +246,6 @@ jobs:
           echo "Approvers: '${{ steps.test-rejection.outputs.approvers }}'"
           echo "Issue URL: '${{ steps.test-rejection.outputs.issue-url }}'"
 
-          # Extract issue number from URL
           ISSUE_NUMBER=$(echo "${{ steps.test-rejection.outputs.issue-url }}" | grep -oE '[0-9]+$')
           ISSUE_API_URL="https://api.github.com/repos/${{ github.repository }}/issues/$ISSUE_NUMBER"
           echo "Issue API URL: $ISSUE_API_URL"
@@ -250,7 +299,6 @@ jobs:
           echo "Approvers: '${{ steps.test-close.outputs.approvers }}'"
           echo "Issue URL: '${{ steps.test-close.outputs.issue-url }}'"
 
-          # Extract issue number from URL
           ISSUE_NUMBER=$(echo "${{ steps.test-close.outputs.issue-url }}" | grep -oE '[0-9]+$')
           ISSUE_API_URL="https://api.github.com/repos/${{ github.repository }}/issues/$ISSUE_NUMBER"
           echo "Issue API URL: $ISSUE_API_URL"

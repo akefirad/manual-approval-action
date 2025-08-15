@@ -99,7 +99,12 @@ describe("ApprovalService", () => {
   let approvalService: InstanceType<typeof ApprovalService>;
   let mockInputs: Pick<
     ApprovalInputs,
-    "timeoutSeconds" | "pollIntervalSeconds" | "rejectionKeywords" | "approvalKeywords"
+    | "timeoutSeconds"
+    | "pollIntervalSeconds"
+    | "rejectionKeywords"
+    | "approvalKeywords"
+    | "failOnRejection"
+    | "failOnTimeout"
   >;
   let mockRequest: ApprovalRequest;
 
@@ -112,6 +117,8 @@ describe("ApprovalService", () => {
       approvalKeywords: ["approved!"],
       rejectionKeywords: ["reject!"],
       pollIntervalSeconds: 0.05, // Very fast polling
+      failOnRejection: true,
+      failOnTimeout: true,
     };
 
     // Create a real issue in the mock client to test with
@@ -219,22 +226,95 @@ describe("ApprovalService", () => {
   });
 
   describe("cleanup", () => {
-    it("should close the issue", async () => {
+    it("should close the issue with 'completed' for approved status", async () => {
       // Create an issue first
       const issue = await mockGitHubClient.createIssue("Test", "Body");
       mockRequest.id = issue.number;
       approvalService = new ApprovalService(mockGitHubClient, mockInputs, mockRequest);
 
-      await approvalService.cleanup();
+      // Spy on closeIssue to check the reason
+      const closeIssueSpy = vi.spyOn(mockGitHubClient, "closeIssue");
 
-      // Verify the issue was closed
+      await approvalService.cleanup("approved", ["user1"]);
+
+      // Verify the issue was closed with 'completed'
+      expect(closeIssueSpy).toHaveBeenCalledWith(issue.number, "completed");
+      const closedIssue = await mockGitHubClient.getIssue(issue.number);
+      expect(closedIssue.state).toBe("closed");
+    });
+
+    it("should close the issue with 'not_planned' for rejected status when failOnRejection is true", async () => {
+      const issue = await mockGitHubClient.createIssue("Test", "Body");
+      mockRequest.id = issue.number;
+      mockInputs.failOnRejection = true;
+      approvalService = new ApprovalService(mockGitHubClient, mockInputs, mockRequest);
+
+      const closeIssueSpy = vi.spyOn(mockGitHubClient, "closeIssue");
+
+      await approvalService.cleanup("rejected");
+
+      expect(closeIssueSpy).toHaveBeenCalledWith(issue.number, "not_planned");
+      const closedIssue = await mockGitHubClient.getIssue(issue.number);
+      expect(closedIssue.state).toBe("closed");
+    });
+
+    it("should close the issue with 'completed' for rejected status when failOnRejection is false", async () => {
+      const issue = await mockGitHubClient.createIssue("Test", "Body");
+      mockRequest.id = issue.number;
+      mockInputs.failOnRejection = false;
+      approvalService = new ApprovalService(mockGitHubClient, mockInputs, mockRequest);
+
+      const closeIssueSpy = vi.spyOn(mockGitHubClient, "closeIssue");
+
+      await approvalService.cleanup("rejected");
+
+      expect(closeIssueSpy).toHaveBeenCalledWith(issue.number, "completed");
+      const closedIssue = await mockGitHubClient.getIssue(issue.number);
+      expect(closedIssue.state).toBe("closed");
+    });
+
+    it("should close the issue with 'not_planned' for timed-out status when failOnTimeout is true", async () => {
+      const issue = await mockGitHubClient.createIssue("Test", "Body");
+      mockRequest.id = issue.number;
+      mockInputs.failOnTimeout = true;
+      approvalService = new ApprovalService(mockGitHubClient, mockInputs, mockRequest);
+
+      const closeIssueSpy = vi.spyOn(mockGitHubClient, "closeIssue");
+
+      await approvalService.cleanup("timed-out");
+
+      expect(closeIssueSpy).toHaveBeenCalledWith(issue.number, "not_planned");
+      const closedIssue = await mockGitHubClient.getIssue(issue.number);
+      expect(closedIssue.state).toBe("closed");
+    });
+
+    it("should close the issue with 'completed' for timed-out status when failOnTimeout is false", async () => {
+      const issue = await mockGitHubClient.createIssue("Test", "Body");
+      mockRequest.id = issue.number;
+      mockInputs.failOnTimeout = false;
+      approvalService = new ApprovalService(mockGitHubClient, mockInputs, mockRequest);
+
+      const closeIssueSpy = vi.spyOn(mockGitHubClient, "closeIssue");
+
+      await approvalService.cleanup("timed-out");
+
+      expect(closeIssueSpy).toHaveBeenCalledWith(issue.number, "completed");
       const closedIssue = await mockGitHubClient.getIssue(issue.number);
       expect(closedIssue.state).toBe("closed");
     });
 
     it("should handle cleanup errors gracefully", async () => {
       // Create a custom mock that throws an error for closeIssue
-      expect(true).toBe(true); // TODO: Implement cleanup error handling test
+      const errorMockClient = Object.create(mockGitHubClient);
+      errorMockClient.closeIssue = async () => {
+        throw new Error("Failed to close issue");
+      };
+
+      approvalService = new ApprovalService(errorMockClient, mockInputs, mockRequest);
+
+      // Should not throw, just log a warning
+      await expect(approvalService.cleanup("approved")).resolves.not.toThrow();
+      expect(mockWarning).toHaveBeenCalledWith(expect.stringContaining("Failed to cleanup"));
     });
   });
 

@@ -40,7 +40,12 @@ export class ApprovalService {
     >,
     private readonly inputs: Pick<
       ApprovalInputs,
-      "timeoutSeconds" | "pollIntervalSeconds" | "rejectionKeywords" | "approvalKeywords"
+      | "timeoutSeconds"
+      | "pollIntervalSeconds"
+      | "rejectionKeywords"
+      | "approvalKeywords"
+      | "failOnRejection"
+      | "failOnTimeout"
     >,
     private readonly request: ApprovalRequest,
   ) {}
@@ -221,7 +226,16 @@ export class ApprovalService {
           issueNumber,
           `❌ **Approval ${msg}**\n\nThe manual approval request has been ${msg.toLowerCase()}.`,
         );
-        await this.github.closeIssue(issueNumber, "not_planned");
+
+        // Determine close reason based on status and fail flags
+        let closeReason: "completed" | "not_planned" = "not_planned";
+        if (status === "rejected" && !this.inputs.failOnRejection) {
+          closeReason = "completed";
+        } else if (status === "timed-out" && !this.inputs.failOnTimeout) {
+          closeReason = "completed";
+        }
+
+        await this.github.closeIssue(issueNumber, closeReason);
       }
     } catch (error) {
       core.warning(`Failed to cleanup from state: ${error}`);

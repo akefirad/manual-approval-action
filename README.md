@@ -192,6 +192,49 @@ Please review and approve by commenting with one of:
   run: echo "Approval timed out"
 ```
 
+### Explicit Rejection Mode (Implicit Approval)
+
+By default, the action uses "explicit approval" mode where approval must be actively given and
+timeouts are treated as failures. You can configure "explicit rejection" mode where the workflow
+continues unless explicitly rejected:
+
+```yaml
+- name: Deploy unless explicitly rejected
+  uses: akefirad/manual-approval-action@main
+  id: approval
+  with:
+    fail-on-timeout: false # Don't fail on timeout (implicit approval)
+    fail-on-rejection: true # Only fail on explicit rejection
+    timeout-seconds: 300
+    rejections-keywords: "stop,reject,cancel"
+    issue-body: |
+      ## Deployment Notification
+
+      Deployment to production will proceed automatically in {{ timeout-seconds }} seconds.
+
+      To **stop** the deployment, comment with one of: {{ rejection-keywords }}
+
+      If no rejection is received, deployment will continue.
+
+- name: Deploy application
+  if: steps.approval.outputs.status != 'rejected'
+  run: |
+    echo "Deploying (status: ${{ steps.approval.outputs.status }})"
+    # Deployment continues for both 'approved' and 'timed-out' statuses
+```
+
+In this mode:
+
+- **Timeout**: Issue is closed as `completed` (workflow continues)
+- **Rejection**: Issue is closed as `not_planned` (workflow fails)
+- **Approval**: Issue is closed as `completed` (workflow continues)
+
+This pattern is useful for:
+
+- Notification-style deployments that proceed unless stopped
+- Scheduled maintenance windows with opt-out capability
+- Automated processes that only need intervention in exceptional cases
+
 ## How It Works
 
 1. **Approval Process**:
@@ -213,8 +256,12 @@ Please review and approve by commenting with one of:
 
 4. **Issue Resolution & Cleanup**:
    - **Approved**: Posts "✅ Approval Received" comment and closes issue as `completed`
-   - **Rejected**: Posts "❌ Approval Rejected" comment and closes issue as `not_planned`
-   - **Timed Out**: Posts "❌ Approval Timed Out" comment and closes issue as `not_planned`
+   - **Rejected**: Posts "❌ Approval Rejected" comment and closes issue as:
+     - `not_planned` if `fail-on-rejection` is true (workflow fails)
+     - `completed` if `fail-on-rejection` is false (workflow continues)
+   - **Timed Out**: Posts "❌ Approval Timed Out" comment and closes issue as:
+     - `not_planned` if `fail-on-timeout` is true (workflow fails)
+     - `completed` if `fail-on-timeout` is false (workflow continues)
    - The post-action cleanup ensures no orphaned issues remain
    - All actions leave a clear audit trail via comments before closing
 
