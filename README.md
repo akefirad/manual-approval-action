@@ -9,8 +9,9 @@ apply), or any workflow requiring manual verification.
 - 🔐 Secure approval through GitHub issues with automatic write permission validation
 - ⏱️ Configurable timeout with automatic failure handling
 - 📝 Fully customizable approval messages with template variable support
-- 🚦 Clear approval/rejection status reporting
-- 🔄 Automatic issue cleanup after approval/rejection
+- 🚦 Clear approval/rejection status reporting with proper GitHub issue states
+- 💬 Automatic status comments before closing issues for audit trail
+- 🔄 Automatic issue cleanup with appropriate resolution states (completed/not_planned)
 - 🎯 Fast polling intervals for quick response times
 - 🏷️ Support for multiple approval/rejection keywords
 - 📍 Direct links to workflow run for easy context
@@ -210,9 +211,12 @@ Please review and approve by commenting with one of:
    - Action fails after specified timeout if `fail-on-timeout` is true
    - Otherwise, returns `timed-out` status
 
-4. **Cleanup**:
-   - Issues are automatically closed after approval, rejection, or timeout
+4. **Issue Resolution & Cleanup**:
+   - **Approved**: Posts "✅ Approval Received" comment and closes issue as `completed`
+   - **Rejected**: Posts "❌ Approval Rejected" comment and closes issue as `not_planned`
+   - **Timed Out**: Posts "❌ Approval Timed Out" comment and closes issue as `not_planned`
    - The post-action cleanup ensures no orphaned issues remain
+   - All actions leave a clear audit trail via comments before closing
 
 ## Performance Considerations
 
@@ -281,20 +285,66 @@ This will show detailed logs including:
 - Comment evaluation
 - Permission checks
 
+## Testing
+
+The action includes comprehensive test coverage with both unit and integration tests.
+
+### Unit Tests
+
+Unit tests cover all core functionality including approval logic, GitHub API interactions, template
+processing, and permission validation. Run with:
+
+```bash
+npm test
+```
+
+### Integration Tests
+
+The CI/CD pipeline includes live integration tests that verify the action works correctly with real
+GitHub issues. These tests cover four key scenarios:
+
+1. **Timeout Test**: Verifies that issues are closed as `not_planned` with a timeout comment when no
+   response is received
+2. **Approval Test**: Verifies that issues are closed as `completed` with an approval comment when
+   approved
+3. **Rejection Test**: Verifies that issues are closed as `not_planned` with a rejection comment
+   when explicitly rejected
+4. **Close Test**: Verifies that closing an issue without keywords treats it as rejection
+
+Each integration test validates:
+
+- Correct workflow outcome (success/failure)
+- Proper issue state (`closed`)
+- Correct resolution reason (`completed` or `not_planned`)
+- Presence of appropriate status comment
+
+### Running Tests Locally
+
+```bash
+# Run unit tests with coverage
+npm test
+
+# Run integration tests locally (requires act)
+npm run test:int
+
+# Run all checks (lint, format, tests)
+npm run pre-push
+```
+
 ## Development
 
 ```bash
 # Install dependencies
 npm install
 
-# Run tests
-npm test
-
 # Build the action
 npm run build
 
 # Run linting
 npm run lint
+
+# Format code
+npm run format
 
 # Run tests in watch mode
 npm run test:watch

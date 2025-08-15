@@ -1,7 +1,7 @@
 {
   "name": "manual-approval-action",
-  "description": "Manual Approval GitHubAction",
-  "version": "0.0.1",
+  "description": "Manual Approval GitHub Action",
+  "version": "1.0.0",
   "author": "Rad Akefirad",
   "type": "module",
   "license": "MIT",
