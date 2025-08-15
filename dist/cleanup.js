@@ -27479,23 +27479,15 @@ class ApprovalService {
         this.timeoutManager.cancel();
         try {
             const issueNumber = this.request.id;
-            // Add comment based on status
             if (status === "approved") {
                 const approverText = approvers && approvers.length > 0 ? ` by @${approvers.join(", @")}` : "";
-                await this.github.addIssueComment(issueNumber, `✅ **Approval received${approverText}**\n\nThe manual approval request has been approved. Proceeding with the workflow.`);
+                await this.github.addIssueComment(issueNumber, `✅ **Approval Received ${approverText}**\n\nThe manual approval request has been approved.`);
                 await this.github.closeIssue(issueNumber, "completed");
             }
-            else if (status === "rejected") {
-                await this.github.addIssueComment(issueNumber, `❌ **Approval rejected**\n\nThe manual approval request has been rejected. The workflow will not proceed.`);
-                await this.github.closeIssue(issueNumber, "not_planned");
-            }
-            else if (status === "timed-out") {
-                await this.github.addIssueComment(issueNumber, `⏱️ **Approval timed out**\n\nThe manual approval request has timed out after ${this.inputs.timeoutSeconds} seconds. The workflow will not proceed.`);
-                await this.github.closeIssue(issueNumber, "not_planned");
-            }
             else {
-                // Default case - just close without comment
-                await this.github.closeIssue(issueNumber);
+                const msg = status === "rejected" ? "Rejected" : "Timed Out";
+                await this.github.addIssueComment(issueNumber, `❌ **Approval ${msg}**\n\nThe manual approval request has been ${msg.toLowerCase()}.`);
+                await this.github.closeIssue(issueNumber, "not_planned");
             }
         }
         catch (error) {

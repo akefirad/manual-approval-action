@@ -107,7 +107,7 @@ jobs:
           fi
 
           COMMENTS_JSON=$(curl -s "$ISSUE_API_URL/comments")
-          TIMEOUT_COMMENT_FOUND=$(echo "$COMMENTS_JSON" | jq -r '.[] | select(.body | contains("⏱️ **Approval timed out**")) | .body' | head -1)
+          TIMEOUT_COMMENT_FOUND=$(echo "$COMMENTS_JSON" | jq -r '.[] | select(.body | contains("Approval Timed Out")) | .body' | head -1)
           if [ -z "$TIMEOUT_COMMENT_FOUND" ]; then
             echo "ERROR: Issue should have a timeout comment"
             echo "Comments found:"
@@ -162,7 +162,7 @@ jobs:
           fi
 
           COMMENTS_JSON=$(curl -s "$ISSUE_API_URL/comments")
-          APPROVAL_COMMENT_FOUND=$(echo "$COMMENTS_JSON" | jq -r '.[] | select(.body | contains("✅ **Approval received")) | .body' | head -1)
+          APPROVAL_COMMENT_FOUND=$(echo "$COMMENTS_JSON" | jq -r '.[] | select(.body | contains("Approval Received")) | .body' | head -1)
           if [ -z "$APPROVAL_COMMENT_FOUND" ]; then
             echo "ERROR: Issue should have an approval comment"
             echo "Comments found:"
@@ -218,7 +218,7 @@ jobs:
           fi
 
           COMMENTS_JSON=$(curl -s "$ISSUE_API_URL/comments")
-          REJECTION_COMMENT_FOUND=$(echo "$COMMENTS_JSON" | jq -r '.[] | select(.body | contains("❌ **Approval rejected**")) | .body' | head -1)
+          REJECTION_COMMENT_FOUND=$(echo "$COMMENTS_JSON" | jq -r '.[] | select(.body | contains("Approval Rejected")) | .body' | head -1)
           if [ -z "$REJECTION_COMMENT_FOUND" ]; then
             echo "ERROR: Issue should have a rejection comment"
             echo "Comments found:"
@@ -272,7 +272,7 @@ jobs:
           fi
 
           COMMENTS_JSON=$(curl -s "$ISSUE_API_URL/comments")
-          REJECTION_COMMENT_FOUND=$(echo "$COMMENTS_JSON" | jq -r '.[] | select(.body | contains("❌ **Approval rejected**")) | .body' | head -1)
+          REJECTION_COMMENT_FOUND=$(echo "$COMMENTS_JSON" | jq -r '.[] | select(.body | contains("Approval Rejected")) | .body' | head -1)
           if [ -z "$REJECTION_COMMENT_FOUND" ]; then
             echo "ERROR: Issue should have a rejection comment"
             echo "Comments found:"
