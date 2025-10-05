@@ -1,4 +1,4 @@
-import { ApprovalInputs, Environment } from "../types/index.js";
+import type { ApprovalInputs, Environment } from "../types/index.js";
 import { processTemplate } from "../utils/template.utils.js";
 
 export class ContentService {
@@ -41,7 +41,7 @@ export class ContentService {
     const approve = approvalKeywords.join(", ") || "approved!";
     const approveMsg = `comment with \`${approve}\``;
     const reject = rejectionKeywords.join(", ");
-    const rejectMsg = (reject ? `comment with \`${reject}\` or ` : "") + "simply close the issue!";
+    const rejectMsg = `${reject ? `comment with \`${reject}\` or ` : ""}simply close the issue!`;
     const runUrl = `https://github.com/${owner}/${repo}/actions/runs/${runId}`;
 
     return `

@@ -2,7 +2,7 @@ import * as core from "@actions/core";
 import { getEnvironment } from "./action.js";
 import { ApprovalService } from "./services/approval.service.js";
 import { GitHubService } from "./services/github.service.js";
-import { ApprovalRequest } from "./types/index.js";
+import type { ApprovalRequest } from "./types/index.js";
 
 /**
  * Runs the post-phase cleanup.

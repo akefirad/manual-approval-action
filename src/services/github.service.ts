@@ -1,7 +1,7 @@
 import * as core from "@actions/core";
 import { getOctokit } from "@actions/github";
-import { IGitHubClient, Issue } from "../interfaces/github-client.interface.js";
-import { Comment, Environment } from "../types/index.js";
+import type { IGitHubClient, Issue } from "../interfaces/github-client.interface.js";
+import type { Comment, Environment } from "../types/index.js";
 
 type GitHubResponse = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

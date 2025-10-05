@@ -1,5 +1,5 @@
-import { IGitHubClient, Issue } from "../../src/interfaces/github-client.interface";
-import { Comment, Environment } from "../../src/types";
+import type { IGitHubClient, Issue } from "../../src/interfaces/github-client.interface";
+import type { Comment, Environment } from "../../src/types";
 
 export class MockGitHubClient implements IGitHubClient {
   private issues: Map<number, Issue> = new Map();

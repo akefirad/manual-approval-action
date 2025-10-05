@@ -1,5 +1,5 @@
 import * as core from "@actions/core";
-import { ApprovalInputs, Environment } from "./types/index.js";
+import type { ApprovalInputs, Environment } from "./types/index.js";
 
 /**
  * Gets environment context from GitHub Actions environment variables.
@@ -90,7 +90,7 @@ function parseKeywords(inputName: string): string[] {
 function getPositiveNumber(input: string): number {
   const value = core.getInput(input);
   const number = parseFloat(value);
-  if (isNaN(number) || number <= 0) {
+  if (Number.isNaN(number) || number <= 0) {
     throw new Error(`Invalid ${input}: ${value}`);
   }
   return number;

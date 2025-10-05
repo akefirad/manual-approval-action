@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ApprovalInputs, ApprovalRequest } from "../../src/types/index.js";
+import type { ApprovalInputs, ApprovalRequest } from "../../src/types/index.js";
 
 // Create mock functions for @actions/core
 const mockInfo = vi.fn<(message: string) => void>();

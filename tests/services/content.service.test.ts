@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { ApprovalInputs, Environment } from "../../src/types/index.js";
+import type { ApprovalInputs, Environment } from "../../src/types/index.js";
 
 // Import without mocking - use real implementation
 const { ContentService } = await import("../../src/services/content.service.js");
