@@ -5,7 +5,7 @@ import type { Comment, Environment } from "../types/index.js";
 
 type GitHubResponse = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  data: any;
+  data: any; // FIXME: This is a hack!
 };
 
 type GitHubIssueComment = {
