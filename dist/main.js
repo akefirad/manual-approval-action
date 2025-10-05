@@ -27358,6 +27358,379 @@ function getPositiveNumber(input) {
     return number;
 }
 
+class TimeoutManager {
+    timeoutId = null;
+    createTimeout(seconds, onTimeout) {
+        coreExports.debug(`Creating timeout: ${seconds} seconds`);
+        this.cancel();
+        this.timeoutId = setTimeout(() => {
+            coreExports.debug(`Timeout triggered after ${seconds} seconds`);
+            this.timeoutId = null;
+            onTimeout();
+        }, seconds * 1000);
+        return {
+            cancel: () => this.cancel(),
+        };
+    }
+    cancel() {
+        if (this.timeoutId) {
+            coreExports.debug("Canceling timeout");
+            clearTimeout(this.timeoutId);
+            this.timeoutId = null;
+        }
+    }
+}
+
+// Whitelist of allowed GitHub context variables
+const ALLOWED_GITHUB_CONTEXT_VARIABLES = new Set([
+    "workflow", // GITHUB_WORKFLOW
+    "job", // GITHUB_JOB
+    "action", // GITHUB_ACTION
+    "actor", // GITHUB_ACTOR
+    "repository", // GITHUB_REPOSITORY
+    "event_name", // GITHUB_EVENT_NAME
+    "ref", // GITHUB_REF
+    "sha", // GITHUB_SHA
+    "run_id", // GITHUB_RUN_ID
+    "run_number", // GITHUB_RUN_NUMBER
+    "run_attempt", // GITHUB_RUN_ATTEMPT
+    "head_ref", // GITHUB_HEAD_REF
+    "base_ref", // GITHUB_BASE_REF
+    "server_url", // GITHUB_SERVER_URL
+    "api_url", // GITHUB_API_URL
+    "graphql_url", // GITHUB_GRAPHQL_URL
+]);
+function formatArray(array, tags) {
+    if (!Array.isArray(array) || array.length === 0) {
+        return "";
+    }
+    let items = [...array]; // Create a copy to avoid mutating original
+    // Apply code formatting if <code> tag is present
+    if (tags.includes("code")) {
+        items = items.map((item) => `\`${item}\``);
+    }
+    // Apply list formatting - ol takes precedence over ul if both are present
+    if (tags.includes("ol")) {
+        return items.map((item, index) => `${index + 1}. ${item}`).join("\n");
+    }
+    else if (tags.includes("ul")) {
+        return items.map((item) => `- ${item}`).join("\n");
+    }
+    else {
+        // Default: comma-separated
+        return items.join(", ");
+    }
+}
+function processFormattedVariables(template, variables) {
+    // Pattern to match {{ ...content... }} where content may include HTML tags and variable name
+    const formattedPattern = /{{[\s]*([^}]+)[\s]*}}/g;
+    return template.replace(formattedPattern, (match, content) => {
+        // Extract variable name - look for kebab-case variable names that aren't inside angle brackets
+        const variableMatch = content.match(/([\w-]+)(?![^<]*>)/);
+        if (!variableMatch) {
+            return match; // Can't find variable name
+        }
+        const variableName = variableMatch[1].trim();
+        const value = variables[variableName];
+        if (value === undefined) {
+            coreExports.debug(`Template variable not found: ${variableName}`);
+            return match; // Return original if variable not found
+        }
+        // If it's not an array, treat as simple variable
+        if (!Array.isArray(value)) {
+            coreExports.debug(`Replacing formatted variable (non-array): ${variableName} -> ${value}`);
+            return String(value);
+        }
+        // Extract all opening tags (handle tags with or without attributes)
+        const tagMatches = content.match(/<(\w+)(?:\s[^>]*)?>|<(\w+)$/g);
+        const tags = [];
+        if (tagMatches) {
+            tagMatches.forEach((tag) => {
+                // Extract just the tag name, ignoring attributes and malformed tags
+                const tagNameMatch = tag.match(/<(\w+)/);
+                if (tagNameMatch) {
+                    tags.push(tagNameMatch[1]);
+                }
+            });
+        }
+        const formatted = formatArray(value, tags);
+        coreExports.debug(`Replacing formatted variable (array): ${variableName} with tags [${tags.join(", ")}] -> ${formatted}`);
+        return formatted;
+    });
+}
+function processTemplate(template, variables) {
+    coreExports.debug(`Processing template with variables: ${JSON.stringify(variables)}`);
+    let result = template;
+    // Replace {{ <tag>variable</tag> }} patterns with HTML formatting
+    result = processFormattedVariables(result, variables);
+    // Replace {{ variable }} patterns
+    Object.entries(variables).forEach(([key, value]) => {
+        const pattern = new RegExp(`{{\\s*${key}\\s*}}`, "g");
+        const replacements = result.match(pattern);
+        const occurrences = replacements?.length || 0;
+        if (replacements) {
+            coreExports.debug(`Replacing template variable (${occurrences} occurrences): ${key} -> ${value}`);
+            result = result.replace(pattern, String(value));
+        }
+    });
+    // Replace GitHub context variables like ${{ github.workflow }}
+    const githubContextPattern = /\${{[\s]*github\.([\w]+)[\s]*}}/g;
+    result = result.replace(githubContextPattern, (match, property) => {
+        if (!ALLOWED_GITHUB_CONTEXT_VARIABLES.has(property.toLowerCase())) {
+            coreExports.warning(`Blocked access to potentially sensitive GitHub context variable: ${property}`);
+            return match;
+        }
+        const envVar = `GITHUB_${property.toUpperCase()}`;
+        const value = process.env[envVar] || match;
+        coreExports.debug(`Replacing GitHub context variable: ${match} -> ${value}`);
+        return value;
+    });
+    coreExports.debug(`Template processing completed (result length: ${result.length})`);
+    return result;
+}
+
+class ContentService {
+    inputs;
+    environment;
+    constructor(inputs, environment) {
+        this.inputs = inputs;
+        this.environment = environment;
+    }
+    async getTitle() {
+        const { issueTitle } = this.inputs;
+        return issueTitle || this.getDefaultIssueTitle();
+    }
+    getDefaultIssueTitle() {
+        const { workflowName: workflow, jobName: jobId, actionId } = this.environment;
+        return `Approval Request: ${workflow}/${jobId}/${actionId}`;
+    }
+    async getBody() {
+        const { issueBody, timeoutSeconds, approvalKeywords, rejectionKeywords } = this.inputs;
+        const { workflowName, jobName, actionId, actor, owner, repo, runId } = this.environment;
+        const templateBody = issueBody || this.getDefaultIssueBody();
+        const runUrl = `https://github.com/${owner}/${repo}/actions/runs/${runId}`;
+        const processedBody = processTemplate(templateBody, {
+            "timeout-seconds": timeoutSeconds,
+            "workflow-name": workflowName,
+            "job-id": jobName, // TODO: fix job-id vs job-name issue!
+            "action-id": actionId,
+            actor: actor,
+            "approval-keywords": approvalKeywords,
+            "rejection-keywords": rejectionKeywords,
+            "run-url": runUrl,
+        });
+        return processedBody;
+    }
+    getDefaultIssueBody() {
+        const { owner, repo, workflowName, runId, jobName: jobId, actionId } = this.environment;
+        const { approvalKeywords, rejectionKeywords, timeoutSeconds } = this.inputs;
+        const approve = approvalKeywords.join(", ") || "approved!";
+        const approveMsg = `comment with \`${approve}\``;
+        const reject = rejectionKeywords.join(", ");
+        const rejectMsg = (reject ? `comment with \`${reject}\` or ` : "") + "simply close the issue!";
+        const runUrl = `https://github.com/${owner}/${repo}/actions/runs/${runId}`;
+        return `
+**Manual approval required:** [\`${workflowName}\`/\`${jobId}\`/\`${actionId}\`](${runUrl})
+✅ To approve, ${approveMsg}
+❌ To reject, ${rejectMsg}
+
+This request will timeout in ${timeoutSeconds} seconds.
+`.trim();
+    }
+}
+
+class ApprovalServiceFactory {
+    github;
+    constructor(github) {
+        this.github = github;
+    }
+    async request(inputs) {
+        const env = await this.github.getEnvironment();
+        const content = new ContentService(inputs, env);
+        const title = await content.getTitle();
+        const body = await content.getBody();
+        const issue = await this.github.createIssue(title, body);
+        const request = {
+            id: issue.number,
+            issueUrl: issue.htmlUrl,
+            createdAt: new Date(),
+            expiresAt: new Date(Date.now() + inputs.timeoutSeconds * 1000),
+        };
+        return new ApprovalService(this.github, inputs, request);
+    }
+}
+class ApprovalService {
+    github;
+    inputs;
+    request;
+    timeoutManager = new TimeoutManager();
+    constructor(github, inputs, request) {
+        this.github = github;
+        this.inputs = inputs;
+        this.request = request;
+    }
+    async await() {
+        try {
+            coreExports.debug(`Starting approval request process with ${JSON.stringify(this.request)}`);
+            coreExports.info(`Approval request created at ${this.request.issueUrl}`);
+            coreExports.info(`Waiting for approval at ${this.request.issueUrl}`);
+            return await this.waitForApproval();
+        }
+        catch (error) {
+            coreExports.error(`Failed to request approval: ${error}`);
+            throw error;
+        }
+    }
+    async waitForApproval() {
+        const { timeoutSeconds, pollIntervalSeconds } = this.inputs;
+        const { id, issueUrl, createdAt } = this.request;
+        return new Promise((resolve) => {
+            let isResolved = false;
+            const timeoutHandle = this.timeoutManager.createTimeout(timeoutSeconds, () => {
+                if (!isResolved) {
+                    coreExports.debug("Approval request timed out");
+                    isResolved = true;
+                    clearInterval(logInterval);
+                    const response = {
+                        status: "timed-out",
+                        approvers: [],
+                        issueUrl: this.request.issueUrl,
+                        timestamp: new Date(),
+                    };
+                    this.cleanup("timed-out").then(() => this.saveState(true));
+                    // Always resolve with the response, let main.ts handle the failure
+                    resolve(response);
+                }
+            });
+            const logInterval = setInterval(() => {
+                if (!isResolved)
+                    coreExports.info(`Still waiting for approval, visit ${issueUrl}`);
+            }, 3 * 1000);
+            const pollInterval = setInterval(async () => {
+                if (isResolved) {
+                    clearInterval(pollInterval);
+                    clearInterval(logInterval);
+                    return;
+                }
+                try {
+                    try {
+                        const { state } = await this.github.getIssue(id);
+                        if (state === "closed") {
+                            coreExports.info("Issue was closed unexpectedly, treating as rejection");
+                            isResolved = true;
+                            clearInterval(pollInterval);
+                            clearInterval(logInterval);
+                            timeoutHandle.cancel();
+                            const response = {
+                                status: "rejected",
+                                approvers: [], // TODO: add who closed the issue!
+                                issueUrl: this.request.issueUrl,
+                                timestamp: new Date(),
+                            };
+                            this.cleanup("rejected").then(() => this.saveState(true));
+                            // Always resolve with the response, let main.ts handle the failure
+                            resolve(response);
+                            return;
+                        }
+                    }
+                    catch (error) {
+                        coreExports.warning(`Error checking issue status: ${error}`);
+                    }
+                    const comments = await this.github.listIssueComments(id, createdAt);
+                    coreExports.debug(`Found ${comments.length} comments to process`);
+                    for (const comment of comments) {
+                        const result = await this.processComment(comment, this.inputs);
+                        if (result === "none") {
+                            coreExports.debug(`No relevant keywords found in comment from ${comment.user.login}`);
+                            continue;
+                        }
+                        isResolved = true;
+                        clearInterval(pollInterval);
+                        clearInterval(logInterval);
+                        timeoutHandle.cancel();
+                        const response = {
+                            status: result,
+                            approvers: [comment.user.login],
+                            issueUrl: this.request.issueUrl,
+                            timestamp: new Date(),
+                        };
+                        this.cleanup(result, [comment.user.login]).then(() => this.saveState(true));
+                        resolve(response); // Always resolve, let main.ts handle the failure
+                        break;
+                    }
+                }
+                catch (error) {
+                    coreExports.warning(`Error checking comments: ${error}`);
+                }
+            }, pollIntervalSeconds * 1000);
+        });
+    }
+    async processComment(comment, inputs) {
+        const commenter = comment.user.login;
+        const body = comment.body.toLowerCase();
+        coreExports.debug(`Processing comment from ${commenter}: "${body.substring(0, 100)}..."`);
+        const { rejectionKeywords, approvalKeywords } = inputs;
+        if (rejectionKeywords.some((k) => body.includes(k.toLowerCase()))) {
+            const hasPermission = await this.github.checkUserPermission(commenter);
+            if (hasPermission) {
+                return "rejected";
+            }
+            else {
+                coreExports.debug(`Rejection ignored from unauthorized user ${commenter}`);
+            }
+        }
+        if (approvalKeywords.some((k) => body.includes(k.toLowerCase()))) {
+            const hasPermission = await this.github.checkUserPermission(commenter);
+            if (hasPermission) {
+                return "approved";
+            }
+            else {
+                coreExports.debug(`Approval ignored from unauthorized user ${commenter}`);
+            }
+        }
+        coreExports.debug(`No relevant keywords found in comment from ${commenter}`);
+        return "none";
+    }
+    async saveState(cleanupCompleted = false) {
+        if (this.request) {
+            coreExports.debug(`Saving approval request state: ${this.request.id}`);
+            coreExports.saveState("approval_request", JSON.stringify(this.request));
+            coreExports.saveState("cleanup_completed", cleanupCompleted ? "true" : "false");
+        }
+        else {
+            coreExports.debug("No approval request to save");
+        }
+    }
+    async cleanup(status, approvers) {
+        coreExports.debug("Performing cleanup...");
+        this.timeoutManager.cancel();
+        try {
+            const issueNumber = this.request.id;
+            if (status === "approved") {
+                const approverText = approvers && approvers.length > 0 ? ` by @${approvers.join(", @")}` : "";
+                await this.github.addIssueComment(issueNumber, `✅ **Approval Received ${approverText}**\n\nThe manual approval request has been approved.`);
+                await this.github.closeIssue(issueNumber, "completed");
+            }
+            else {
+                const msg = status === "rejected" ? "Rejected" : "Timed Out";
+                await this.github.addIssueComment(issueNumber, `❌ **Approval ${msg}**\n\nThe manual approval request has been ${msg.toLowerCase()}.`);
+                // Determine close reason based on status and fail flags
+                let closeReason = "not_planned";
+                if (status === "rejected" && !this.inputs.failOnRejection) {
+                    closeReason = "completed";
+                }
+                else if (status === "timed-out" && !this.inputs.failOnTimeout) {
+                    closeReason = "completed";
+                }
+                await this.github.closeIssue(issueNumber, closeReason);
+            }
+        }
+        catch (error) {
+            coreExports.warning(`Failed to cleanup from state: ${error}`);
+        }
+    }
+}
+
 var github = {};
 
 var context = {};
@@ -31435,379 +31808,6 @@ class GitHubService {
     }
     async getEnvironment() {
         return this.environment;
-    }
-}
-
-class TimeoutManager {
-    timeoutId = null;
-    createTimeout(seconds, onTimeout) {
-        coreExports.debug(`Creating timeout: ${seconds} seconds`);
-        this.cancel();
-        this.timeoutId = setTimeout(() => {
-            coreExports.debug(`Timeout triggered after ${seconds} seconds`);
-            this.timeoutId = null;
-            onTimeout();
-        }, seconds * 1000);
-        return {
-            cancel: () => this.cancel(),
-        };
-    }
-    cancel() {
-        if (this.timeoutId) {
-            coreExports.debug("Canceling timeout");
-            clearTimeout(this.timeoutId);
-            this.timeoutId = null;
-        }
-    }
-}
-
-// Whitelist of allowed GitHub context variables
-const ALLOWED_GITHUB_CONTEXT_VARIABLES = new Set([
-    "workflow", // GITHUB_WORKFLOW
-    "job", // GITHUB_JOB
-    "action", // GITHUB_ACTION
-    "actor", // GITHUB_ACTOR
-    "repository", // GITHUB_REPOSITORY
-    "event_name", // GITHUB_EVENT_NAME
-    "ref", // GITHUB_REF
-    "sha", // GITHUB_SHA
-    "run_id", // GITHUB_RUN_ID
-    "run_number", // GITHUB_RUN_NUMBER
-    "run_attempt", // GITHUB_RUN_ATTEMPT
-    "head_ref", // GITHUB_HEAD_REF
-    "base_ref", // GITHUB_BASE_REF
-    "server_url", // GITHUB_SERVER_URL
-    "api_url", // GITHUB_API_URL
-    "graphql_url", // GITHUB_GRAPHQL_URL
-]);
-function formatArray(array, tags) {
-    if (!Array.isArray(array) || array.length === 0) {
-        return "";
-    }
-    let items = [...array]; // Create a copy to avoid mutating original
-    // Apply code formatting if <code> tag is present
-    if (tags.includes("code")) {
-        items = items.map((item) => `\`${item}\``);
-    }
-    // Apply list formatting - ol takes precedence over ul if both are present
-    if (tags.includes("ol")) {
-        return items.map((item, index) => `${index + 1}. ${item}`).join("\n");
-    }
-    else if (tags.includes("ul")) {
-        return items.map((item) => `- ${item}`).join("\n");
-    }
-    else {
-        // Default: comma-separated
-        return items.join(", ");
-    }
-}
-function processFormattedVariables(template, variables) {
-    // Pattern to match {{ ...content... }} where content may include HTML tags and variable name
-    const formattedPattern = /{{[\s]*([^}]+)[\s]*}}/g;
-    return template.replace(formattedPattern, (match, content) => {
-        // Extract variable name - look for kebab-case variable names that aren't inside angle brackets
-        const variableMatch = content.match(/([\w-]+)(?![^<]*>)/);
-        if (!variableMatch) {
-            return match; // Can't find variable name
-        }
-        const variableName = variableMatch[1].trim();
-        const value = variables[variableName];
-        if (value === undefined) {
-            coreExports.debug(`Template variable not found: ${variableName}`);
-            return match; // Return original if variable not found
-        }
-        // If it's not an array, treat as simple variable
-        if (!Array.isArray(value)) {
-            coreExports.debug(`Replacing formatted variable (non-array): ${variableName} -> ${value}`);
-            return String(value);
-        }
-        // Extract all opening tags (handle tags with or without attributes)
-        const tagMatches = content.match(/<(\w+)(?:\s[^>]*)?>|<(\w+)$/g);
-        const tags = [];
-        if (tagMatches) {
-            tagMatches.forEach((tag) => {
-                // Extract just the tag name, ignoring attributes and malformed tags
-                const tagNameMatch = tag.match(/<(\w+)/);
-                if (tagNameMatch) {
-                    tags.push(tagNameMatch[1]);
-                }
-            });
-        }
-        const formatted = formatArray(value, tags);
-        coreExports.debug(`Replacing formatted variable (array): ${variableName} with tags [${tags.join(", ")}] -> ${formatted}`);
-        return formatted;
-    });
-}
-function processTemplate(template, variables) {
-    coreExports.debug(`Processing template with variables: ${JSON.stringify(variables)}`);
-    let result = template;
-    // Replace {{ <tag>variable</tag> }} patterns with HTML formatting
-    result = processFormattedVariables(result, variables);
-    // Replace {{ variable }} patterns
-    Object.entries(variables).forEach(([key, value]) => {
-        const pattern = new RegExp(`{{\\s*${key}\\s*}}`, "g");
-        const replacements = result.match(pattern);
-        const occurrences = replacements?.length || 0;
-        if (replacements) {
-            coreExports.debug(`Replacing template variable (${occurrences} occurrences): ${key} -> ${value}`);
-            result = result.replace(pattern, String(value));
-        }
-    });
-    // Replace GitHub context variables like ${{ github.workflow }}
-    const githubContextPattern = /\${{[\s]*github\.([\w]+)[\s]*}}/g;
-    result = result.replace(githubContextPattern, (match, property) => {
-        if (!ALLOWED_GITHUB_CONTEXT_VARIABLES.has(property.toLowerCase())) {
-            coreExports.warning(`Blocked access to potentially sensitive GitHub context variable: ${property}`);
-            return match;
-        }
-        const envVar = `GITHUB_${property.toUpperCase()}`;
-        const value = process.env[envVar] || match;
-        coreExports.debug(`Replacing GitHub context variable: ${match} -> ${value}`);
-        return value;
-    });
-    coreExports.debug(`Template processing completed (result length: ${result.length})`);
-    return result;
-}
-
-class ContentService {
-    inputs;
-    environment;
-    constructor(inputs, environment) {
-        this.inputs = inputs;
-        this.environment = environment;
-    }
-    async getTitle() {
-        const { issueTitle } = this.inputs;
-        return issueTitle || this.getDefaultIssueTitle();
-    }
-    getDefaultIssueTitle() {
-        const { workflowName: workflow, jobName: jobId, actionId } = this.environment;
-        return `Approval Request: ${workflow}/${jobId}/${actionId}`;
-    }
-    async getBody() {
-        const { issueBody, timeoutSeconds, approvalKeywords, rejectionKeywords } = this.inputs;
-        const { workflowName, jobName, actionId, actor, owner, repo, runId } = this.environment;
-        const templateBody = issueBody || this.getDefaultIssueBody();
-        const runUrl = `https://github.com/${owner}/${repo}/actions/runs/${runId}`;
-        const processedBody = processTemplate(templateBody, {
-            "timeout-seconds": timeoutSeconds,
-            "workflow-name": workflowName,
-            "job-id": jobName, // TODO: fix job-id vs job-name issue!
-            "action-id": actionId,
-            actor: actor,
-            "approval-keywords": approvalKeywords,
-            "rejection-keywords": rejectionKeywords,
-            "run-url": runUrl,
-        });
-        return processedBody;
-    }
-    getDefaultIssueBody() {
-        const { owner, repo, workflowName, runId, jobName: jobId, actionId } = this.environment;
-        const { approvalKeywords, rejectionKeywords, timeoutSeconds } = this.inputs;
-        const approve = approvalKeywords.join(", ") || "approved!";
-        const approveMsg = `comment with \`${approve}\``;
-        const reject = rejectionKeywords.join(", ");
-        const rejectMsg = (reject ? `comment with \`${reject}\` or ` : "") + "simply close the issue!";
-        const runUrl = `https://github.com/${owner}/${repo}/actions/runs/${runId}`;
-        return `
-**Manual approval required:** [\`${workflowName}\`/\`${jobId}\`/\`${actionId}\`](${runUrl})
-✅ To approve, ${approveMsg}
-❌ To reject, ${rejectMsg}
-
-This request will timeout in ${timeoutSeconds} seconds.
-`.trim();
-    }
-}
-
-class ApprovalServiceFactory {
-    github;
-    constructor(github) {
-        this.github = github;
-    }
-    async request(inputs) {
-        const env = await this.github.getEnvironment();
-        const content = new ContentService(inputs, env);
-        const title = await content.getTitle();
-        const body = await content.getBody();
-        const issue = await this.github.createIssue(title, body);
-        const request = {
-            id: issue.number,
-            issueUrl: issue.htmlUrl,
-            createdAt: new Date(),
-            expiresAt: new Date(Date.now() + inputs.timeoutSeconds * 1000),
-        };
-        return new ApprovalService(this.github, inputs, request);
-    }
-}
-class ApprovalService {
-    github;
-    inputs;
-    request;
-    timeoutManager = new TimeoutManager();
-    constructor(github, inputs, request) {
-        this.github = github;
-        this.inputs = inputs;
-        this.request = request;
-    }
-    async await() {
-        try {
-            coreExports.debug(`Starting approval request process with ${JSON.stringify(this.request)}`);
-            coreExports.info(`Approval request created at ${this.request.issueUrl}`);
-            coreExports.info(`Waiting for approval at ${this.request.issueUrl}`);
-            return await this.waitForApproval();
-        }
-        catch (error) {
-            coreExports.error(`Failed to request approval: ${error}`);
-            throw error;
-        }
-    }
-    async waitForApproval() {
-        const { timeoutSeconds, pollIntervalSeconds } = this.inputs;
-        const { id, issueUrl, createdAt } = this.request;
-        return new Promise((resolve) => {
-            let isResolved = false;
-            const timeoutHandle = this.timeoutManager.createTimeout(timeoutSeconds, () => {
-                if (!isResolved) {
-                    coreExports.debug("Approval request timed out");
-                    isResolved = true;
-                    clearInterval(logInterval);
-                    const response = {
-                        status: "timed-out",
-                        approvers: [],
-                        issueUrl: this.request.issueUrl,
-                        timestamp: new Date(),
-                    };
-                    this.cleanup("timed-out").then(() => this.saveState(true));
-                    // Always resolve with the response, let main.ts handle the failure
-                    resolve(response);
-                }
-            });
-            const logInterval = setInterval(() => {
-                if (!isResolved)
-                    coreExports.info(`Still waiting for approval, visit ${issueUrl}`);
-            }, 3 * 1000);
-            const pollInterval = setInterval(async () => {
-                if (isResolved) {
-                    clearInterval(pollInterval);
-                    clearInterval(logInterval);
-                    return;
-                }
-                try {
-                    try {
-                        const { state } = await this.github.getIssue(id);
-                        if (state === "closed") {
-                            coreExports.info("Issue was closed unexpectedly, treating as rejection");
-                            isResolved = true;
-                            clearInterval(pollInterval);
-                            clearInterval(logInterval);
-                            timeoutHandle.cancel();
-                            const response = {
-                                status: "rejected",
-                                approvers: [], // TODO: add who closed the issue!
-                                issueUrl: this.request.issueUrl,
-                                timestamp: new Date(),
-                            };
-                            this.cleanup("rejected").then(() => this.saveState(true));
-                            // Always resolve with the response, let main.ts handle the failure
-                            resolve(response);
-                            return;
-                        }
-                    }
-                    catch (error) {
-                        coreExports.warning(`Error checking issue status: ${error}`);
-                    }
-                    const comments = await this.github.listIssueComments(id, createdAt);
-                    coreExports.debug(`Found ${comments.length} comments to process`);
-                    for (const comment of comments) {
-                        const result = await this.processComment(comment, this.inputs);
-                        if (result === "none") {
-                            coreExports.debug(`No relevant keywords found in comment from ${comment.user.login}`);
-                            continue;
-                        }
-                        isResolved = true;
-                        clearInterval(pollInterval);
-                        clearInterval(logInterval);
-                        timeoutHandle.cancel();
-                        const response = {
-                            status: result,
-                            approvers: [comment.user.login],
-                            issueUrl: this.request.issueUrl,
-                            timestamp: new Date(),
-                        };
-                        this.cleanup(result, [comment.user.login]).then(() => this.saveState(true));
-                        resolve(response); // Always resolve, let main.ts handle the failure
-                        break;
-                    }
-                }
-                catch (error) {
-                    coreExports.warning(`Error checking comments: ${error}`);
-                }
-            }, pollIntervalSeconds * 1000);
-        });
-    }
-    async processComment(comment, inputs) {
-        const commenter = comment.user.login;
-        const body = comment.body.toLowerCase();
-        coreExports.debug(`Processing comment from ${commenter}: "${body.substring(0, 100)}..."`);
-        const { rejectionKeywords, approvalKeywords } = inputs;
-        if (rejectionKeywords.some((k) => body.includes(k.toLowerCase()))) {
-            const hasPermission = await this.github.checkUserPermission(commenter);
-            if (hasPermission) {
-                return "rejected";
-            }
-            else {
-                coreExports.debug(`Rejection ignored from unauthorized user ${commenter}`);
-            }
-        }
-        if (approvalKeywords.some((k) => body.includes(k.toLowerCase()))) {
-            const hasPermission = await this.github.checkUserPermission(commenter);
-            if (hasPermission) {
-                return "approved";
-            }
-            else {
-                coreExports.debug(`Approval ignored from unauthorized user ${commenter}`);
-            }
-        }
-        coreExports.debug(`No relevant keywords found in comment from ${commenter}`);
-        return "none";
-    }
-    async saveState(cleanupCompleted = false) {
-        if (this.request) {
-            coreExports.debug(`Saving approval request state: ${this.request.id}`);
-            coreExports.saveState("approval_request", JSON.stringify(this.request));
-            coreExports.saveState("cleanup_completed", cleanupCompleted ? "true" : "false");
-        }
-        else {
-            coreExports.debug("No approval request to save");
-        }
-    }
-    async cleanup(status, approvers) {
-        coreExports.debug("Performing cleanup...");
-        this.timeoutManager.cancel();
-        try {
-            const issueNumber = this.request.id;
-            if (status === "approved") {
-                const approverText = approvers && approvers.length > 0 ? ` by @${approvers.join(", @")}` : "";
-                await this.github.addIssueComment(issueNumber, `✅ **Approval Received ${approverText}**\n\nThe manual approval request has been approved.`);
-                await this.github.closeIssue(issueNumber, "completed");
-            }
-            else {
-                const msg = status === "rejected" ? "Rejected" : "Timed Out";
-                await this.github.addIssueComment(issueNumber, `❌ **Approval ${msg}**\n\nThe manual approval request has been ${msg.toLowerCase()}.`);
-                // Determine close reason based on status and fail flags
-                let closeReason = "not_planned";
-                if (status === "rejected" && !this.inputs.failOnRejection) {
-                    closeReason = "completed";
-                }
-                else if (status === "timed-out" && !this.inputs.failOnTimeout) {
-                    closeReason = "completed";
-                }
-                await this.github.closeIssue(issueNumber, closeReason);
-            }
-        }
-        catch (error) {
-            coreExports.warning(`Failed to cleanup from state: ${error}`);
-        }
     }
 }
 
