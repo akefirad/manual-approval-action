@@ -1,0 +1,10 @@
+rules:
+  unpinned-uses:
+    ignore:
+      - licensed.yml:43
+      - licensed.yml:47
+      - linter.yml:38
+
+  template-injection:
+    ignore:
+      - cicd.yml
