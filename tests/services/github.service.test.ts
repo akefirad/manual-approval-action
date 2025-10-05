@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, MockedFunction } from "vitest";
+import { beforeEach, describe, expect, it, MockedFunction, vi } from "vitest";
 import { Environment } from "../../src/types/index.js";
 
 // Create mock functions for @actions/core
