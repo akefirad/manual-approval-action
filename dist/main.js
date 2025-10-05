@@ -27352,7 +27352,7 @@ function parseKeywords(inputName) {
 function getPositiveNumber(input) {
     const value = coreExports.getInput(input);
     const number = parseFloat(value);
-    if (isNaN(number) || number <= 0) {
+    if (Number.isNaN(number) || number <= 0) {
         throw new Error(`Invalid ${input}: ${value}`);
     }
     return number;
@@ -27527,7 +27527,7 @@ class ContentService {
         const approve = approvalKeywords.join(", ") || "approved!";
         const approveMsg = `comment with \`${approve}\``;
         const reject = rejectionKeywords.join(", ");
-        const rejectMsg = (reject ? `comment with \`${reject}\` or ` : "") + "simply close the issue!";
+        const rejectMsg = `${reject ? `comment with \`${reject}\` or ` : ""}simply close the issue!`;
         const runUrl = `https://github.com/${owner}/${repo}/actions/runs/${runId}`;
         return `
 **Manual approval required:** [\`${workflowName}\`/\`${jobId}\`/\`${actionId}\`](${runUrl})
@@ -27594,7 +27594,7 @@ class ApprovalService {
                     const response = {
                         status: "timed-out",
                         approvers: [],
-                        issueUrl: this.request.issueUrl,
+                        issueUrl: this.request?.issueUrl,
                         timestamp: new Date(),
                     };
                     this.cleanup("timed-out").then(() => this.saveState(true));
@@ -27624,7 +27624,7 @@ class ApprovalService {
                             const response = {
                                 status: "rejected",
                                 approvers: [], // TODO: add who closed the issue!
-                                issueUrl: this.request.issueUrl,
+                                issueUrl: this.request?.issueUrl,
                                 timestamp: new Date(),
                             };
                             this.cleanup("rejected").then(() => this.saveState(true));
@@ -27651,7 +27651,7 @@ class ApprovalService {
                         const response = {
                             status: result,
                             approvers: [comment.user.login],
-                            issueUrl: this.request.issueUrl,
+                            issueUrl: this.request?.issueUrl,
                             timestamp: new Date(),
                         };
                         this.cleanup(result, [comment.user.login]).then(() => this.saveState(true));
