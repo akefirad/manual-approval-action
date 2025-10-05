@@ -55,7 +55,7 @@ export default [
 
       parserOptions: {
         project: ["tsconfig.eslint.json"],
-        tsconfigRootDir: ".",
+        tsconfigRootDir: __dirname,
       },
     },
 
@@ -78,6 +78,7 @@ export default [
       "no-shadow": "off",
       "no-unused-vars": "off",
       "prettier/prettier": "error",
+      "vitest/prefer-called-exactly-once-with": "off",
       "@typescript-eslint/no-unused-vars": [
         "warn",
         {
