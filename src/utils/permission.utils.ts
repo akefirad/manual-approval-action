@@ -1,6 +1,6 @@
 import * as core from "@actions/core";
-import { IGitHubClient } from "../interfaces/github-client.interface.js";
-import { Environment } from "../types/index.js";
+import type { IGitHubClient } from "../interfaces/github-client.interface.js";
+import type { Environment } from "../types/index.js";
 
 export class PermissionChecker {
   constructor(

@@ -1,6 +1,6 @@
 import * as core from "@actions/core";
-import { IGitHubClient } from "../interfaces/github-client.interface.js";
-import { ApprovalInputs, ApprovalRequest, ApprovalResponse, Comment } from "../types/index.js";
+import type { IGitHubClient } from "../interfaces/github-client.interface.js";
+import type { ApprovalInputs, ApprovalRequest, ApprovalResponse, Comment } from "../types/index.js";
 import { TimeoutManager } from "../utils/timeout.utils.js";
 import { ContentService } from "./content.service.js";
 
@@ -77,7 +77,7 @@ export class ApprovalService {
           const response: ApprovalResponse = {
             status: "timed-out",
             approvers: [],
-            issueUrl: this.request!.issueUrl,
+            issueUrl: this.request?.issueUrl,
             timestamp: new Date(),
           };
 
@@ -113,7 +113,7 @@ export class ApprovalService {
               const response: ApprovalResponse = {
                 status: "rejected",
                 approvers: [], // TODO: add who closed the issue!
-                issueUrl: this.request!.issueUrl,
+                issueUrl: this.request?.issueUrl,
                 timestamp: new Date(),
               };
 
@@ -145,7 +145,7 @@ export class ApprovalService {
             const response: ApprovalResponse = {
               status: result,
               approvers: [comment.user.login],
-              issueUrl: this.request!.issueUrl,
+              issueUrl: this.request?.issueUrl,
               timestamp: new Date(),
             };
 

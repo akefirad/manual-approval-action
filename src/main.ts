@@ -1,7 +1,7 @@
 import * as core from "@actions/core";
 import { getEnvironment, getInput } from "./action.js";
-import { GitHubService } from "./services/github.service.js";
 import { ApprovalServiceFactory } from "./services/approval.service.js";
+import { GitHubService } from "./services/github.service.js";
 
 /**
  * Runs the main phase of the action.

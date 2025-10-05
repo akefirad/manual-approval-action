@@ -1,16 +1,16 @@
 // See: https://eslint.org/docs/latest/use/configure/configuration-files
 
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { fixupPluginRules } from "@eslint/compat";
 import { FlatCompat } from "@eslint/eslintrc";
 import js from "@eslint/js";
 import typescriptEslint from "@typescript-eslint/eslint-plugin";
 import tsParser from "@typescript-eslint/parser";
-import _import from "eslint-plugin-import";
 import vitest from "@vitest/eslint-plugin";
+import _import from "eslint-plugin-import";
 import prettier from "eslint-plugin-prettier";
 import globals from "globals";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -55,7 +55,7 @@ export default [
 
       parserOptions: {
         project: ["tsconfig.eslint.json"],
-        tsconfigRootDir: ".",
+        tsconfigRootDir: __dirname,
       },
     },
 
@@ -78,6 +78,7 @@ export default [
       "no-shadow": "off",
       "no-unused-vars": "off",
       "prettier/prettier": "error",
+      "vitest/prefer-called-exactly-once-with": "off",
       "@typescript-eslint/no-unused-vars": [
         "warn",
         {

@@ -1,4 +1,4 @@
-import { Comment, Environment } from "../types/index.js";
+import type { Comment, Environment } from "../types/index.js";
 
 export interface Issue {
   number: number;
