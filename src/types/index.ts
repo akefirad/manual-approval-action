@@ -16,12 +16,34 @@ export interface ApprovalRequest {
   expiresAt: Date;
 }
 
-export interface ApprovalResponse {
-  status: "approved" | "rejected" | "timed-out";
-  approvers: string[];
+type BaseApprovalResponse = {
   issueUrl: string;
   timestamp: Date;
-}
+};
+
+export type ApprovedApprovalResponse = BaseApprovalResponse & {
+  status: "approved";
+  failed: false;
+  approvers: string[];
+};
+
+export type RejectedApprovalResponse = BaseApprovalResponse & {
+  status: "rejected";
+  failed: boolean;
+  approvers: string[];
+};
+
+export type TimedOutApprovalResponse = BaseApprovalResponse & {
+  status: "timed-out";
+  failed: boolean;
+};
+
+export type RepliedApprovalResponse = ApprovedApprovalResponse | RejectedApprovalResponse;
+
+export type ApprovalResponse =
+  | ApprovedApprovalResponse
+  | RejectedApprovalResponse
+  | TimedOutApprovalResponse;
 
 export interface Comment {
   id: number;

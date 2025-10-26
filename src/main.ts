@@ -1,54 +1,31 @@
-import * as core from "@actions/core";
-import { getEnvironment, getInput } from "./action.js";
-import { ApprovalServiceFactory } from "./services/approval.service.js";
-import { GitHubService } from "./services/github.service.js";
+import * as E from "effect/Effect";
+import { ApprovalService } from "./approval/service.js";
+import * as core from "./github/core.js";
 
-/**
- * Runs the main phase of the action.
- *
- * @returns Resolves when the main phase is complete.
- */
-export async function run(): Promise<void> {
-  try {
-    core.info(`Starting approval workflow for ${process.env.GITHUB_ACTION}`);
+const exit = await E.gen(function* () {
+  const approvalService = yield* ApprovalService;
+  const response = yield* approvalService.await();
 
-    // Get action inputs
-    const inputs = getInput();
-    const environment = getEnvironment();
-    const githubService = new GitHubService(environment);
+  const { status, issueUrl, failed } = response;
+  const approvers = status === "timed-out" ? [] : response.approvers;
 
-    const factory = new ApprovalServiceFactory(githubService);
-    const approval = await factory.request(inputs);
-    const response = await approval.await();
+  yield* core.setOutput("status", status);
+  yield* core.setOutput("approvers", approvers.join(","));
+  yield* core.setOutput("issue-url", issueUrl);
 
-    await approval.saveState();
-
-    core.debug(`Setting outputs: ${JSON.stringify(response)}`);
-
-    core.setOutput("status", response.status);
-    core.setOutput("approvers", response.approvers.join(","));
-    core.setOutput("issue-url", response.issueUrl);
-
-    if (response.status === "approved") {
-      core.info(`✅ Approval granted by: ${response.approvers.join(", ")}`);
-    } else if (response.status === "rejected") {
-      core.info("❌ Approval request was rejected");
-      if (inputs.failOnRejection) {
-        core.setFailed("Approval request was rejected");
-        return;
-      }
-    } else if (response.status === "timed-out") {
-      core.info("⏱️ Approval request timed out");
-      if (inputs.failOnTimeout) {
-        core.setFailed("Approval request timed out");
-        return;
-      }
+  if (status === "approved") {
+    yield* core.info(`✅ Approval granted by: ${approvers.join(", ")}`);
+  } else {
+    const msg =
+      status === "rejected" //
+        ? "❌ Approval request was rejected"
+        : "⏱️ Approval request timed out";
+    yield* core.info(msg);
+    if (failed) {
+      yield* core.setFailed(msg);
     }
-
-    core.debug("Main phase completed successfully");
-  } catch (error) {
-    core.setFailed(`Action failed: ${error}`);
   }
-}
 
-run();
+  return response;
+}).pipe(E.provide(ApprovalService.Default), E.runPromiseExit);
+console.log(exit);

@@ -1,54 +1,16 @@
-import * as core from "@actions/core";
-import { getEnvironment } from "./action.js";
-import { ApprovalService } from "./services/approval.service.js";
-import { GitHubService } from "./services/github.service.js";
-import type { ApprovalRequest } from "./types/index.js";
+import * as E from "effect/Effect";
+import * as core from "./github/core.js";
+import { GitHubService } from "./github/service.js";
 
-/**
- * Runs the post-phase cleanup.
- *
- * @returns Resolves when the post-phase cleanup is complete.
- */
-export async function run(): Promise<void> {
-  try {
-    core.info("Running post-phase cleanup...");
-
-    // Check if cleanup was already completed
-    const cleanupCompleted = core.getState("cleanup_completed");
-    if (cleanupCompleted === "true") {
-      core.info("Cleanup already completed during main phase");
-      return;
-    }
-
-    // Check if there's saved state to cleanup
-    const savedState = core.getState("approval_request");
-    if (!savedState) {
-      core.info("No saved state found for cleanup");
-      return;
-    }
-
-    // Create GitHub service
-    const environment = getEnvironment();
-    const githubService = new GitHubService(environment);
-
-    // Create minimal inputs and request for cleanup, TODO: remove this
-    const inputs = {
-      timeoutSeconds: 0,
-      approvalKeywords: [],
-      rejectionKeywords: [],
-      pollIntervalSeconds: 0,
-      failOnRejection: true,
-      failOnTimeout: true,
-    };
-
-    const request: ApprovalRequest = JSON.parse(savedState);
-    const approval = new ApprovalService(githubService, inputs, request);
-    // Call cleanup without status - this is for unexpected termination
-    // In this case, we'll just close the issue without a specific comment
-    await approval.cleanup();
-  } catch (error) {
-    core.warning(`Post-phase cleanup failed: ${error}`);
+const exit = await E.gen(function* () {
+  const github = yield* GitHubService;
+  const approvalRequest = yield* core.getState("approval_request");
+  if (!approvalRequest) {
+    yield* core.info("No approval request found for cleanup");
+    return;
   }
-}
+  const request = JSON.parse(approvalRequest);
+  yield* github.closeIssue(request.id, "not_planned");
+}).pipe(E.provide(GitHubService.Default), E.runPromiseExit);
 
-run();
+console.log(exit);

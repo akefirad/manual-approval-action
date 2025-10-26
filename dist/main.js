@@ -26,6 +26,16426 @@ import require$$0$7 from 'diagnostics_channel';
 import require$$2$3 from 'child_process';
 import require$$6$1 from 'timers';
 
+/**
+ * Tests if a value is a `function`.
+ *
+ * @example
+ * ```ts
+ * import * as assert from "node:assert"
+ * import { isFunction } from "effect/Predicate"
+ *
+ * assert.deepStrictEqual(isFunction(isFunction), true)
+ * assert.deepStrictEqual(isFunction("function"), false)
+ * ```
+ *
+ * @category guards
+ * @since 2.0.0
+ */
+const isFunction$1 = input => typeof input === "function";
+/**
+ * Creates a function that can be used in a data-last (aka `pipe`able) or
+ * data-first style.
+ *
+ * The first parameter to `dual` is either the arity of the uncurried function
+ * or a predicate that determines if the function is being used in a data-first
+ * or data-last style.
+ *
+ * Using the arity is the most common use case, but there are some cases where
+ * you may want to use a predicate. For example, if you have a function that
+ * takes an optional argument, you can use a predicate to determine if the
+ * function is being used in a data-first or data-last style.
+ *
+ * You can pass either the arity of the uncurried function or a predicate
+ * which determines if the function is being used in a data-first or
+ * data-last style.
+ *
+ * **Example** (Using arity to determine data-first or data-last style)
+ *
+ * ```ts
+ * import { dual, pipe } from "effect/Function"
+ *
+ * const sum = dual<
+ *   (that: number) => (self: number) => number,
+ *   (self: number, that: number) => number
+ * >(2, (self, that) => self + that)
+ *
+ * console.log(sum(2, 3)) // 5
+ * console.log(pipe(2, sum(3))) // 5
+ * ```
+ *
+ * **Example** (Using call signatures to define the overloads)
+ *
+ * ```ts
+ * import { dual, pipe } from "effect/Function"
+ *
+ * const sum: {
+ *   (that: number): (self: number) => number
+ *   (self: number, that: number): number
+ * } = dual(2, (self: number, that: number): number => self + that)
+ *
+ * console.log(sum(2, 3)) // 5
+ * console.log(pipe(2, sum(3))) // 5
+ * ```
+ *
+ * **Example** (Using a predicate to determine data-first or data-last style)
+ *
+ * ```ts
+ * import { dual, pipe } from "effect/Function"
+ *
+ * const sum = dual<
+ *   (that: number) => (self: number) => number,
+ *   (self: number, that: number) => number
+ * >(
+ *   (args) => args.length === 2,
+ *   (self, that) => self + that
+ * )
+ *
+ * console.log(sum(2, 3)) // 5
+ * console.log(pipe(2, sum(3))) // 5
+ * ```
+ *
+ * @since 2.0.0
+ */
+const dual = function (arity, body) {
+  if (typeof arity === "function") {
+    return function () {
+      if (arity(arguments)) {
+        // @ts-expect-error
+        return body.apply(this, arguments);
+      }
+      return self => body(self, ...arguments);
+    };
+  }
+  switch (arity) {
+    case 0:
+    case 1:
+      throw new RangeError(`Invalid arity ${arity}`);
+    case 2:
+      return function (a, b) {
+        if (arguments.length >= 2) {
+          return body(a, b);
+        }
+        return function (self) {
+          return body(self, a);
+        };
+      };
+    case 3:
+      return function (a, b, c) {
+        if (arguments.length >= 3) {
+          return body(a, b, c);
+        }
+        return function (self) {
+          return body(self, a, b);
+        };
+      };
+    case 4:
+      return function (a, b, c, d) {
+        if (arguments.length >= 4) {
+          return body(a, b, c, d);
+        }
+        return function (self) {
+          return body(self, a, b, c);
+        };
+      };
+    case 5:
+      return function (a, b, c, d, e) {
+        if (arguments.length >= 5) {
+          return body(a, b, c, d, e);
+        }
+        return function (self) {
+          return body(self, a, b, c, d);
+        };
+      };
+    default:
+      return function () {
+        if (arguments.length >= arity) {
+          // @ts-expect-error
+          return body.apply(this, arguments);
+        }
+        const args = arguments;
+        return function (self) {
+          return body(self, ...args);
+        };
+      };
+  }
+};
+/**
+ * The identity function, i.e. A function that returns its input argument.
+ *
+ * @example
+ * ```ts
+ * import * as assert from "node:assert"
+ * import { identity } from "effect/Function"
+ *
+ * assert.deepStrictEqual(identity(5), 5)
+ * ```
+ *
+ * @since 2.0.0
+ */
+const identity = a => a;
+/**
+ * Creates a constant value that never changes.
+ *
+ * This is useful when you want to pass a value to a higher-order function (a function that takes another function as its argument)
+ * and want that inner function to always use the same value, no matter how many times it is called.
+ *
+ * @example
+ * ```ts
+ * import * as assert from "node:assert"
+ * import { constant } from "effect/Function"
+ *
+ * const constNull = constant(null)
+ *
+ * assert.deepStrictEqual(constNull(), null)
+ * assert.deepStrictEqual(constNull(), null)
+ * ```
+ *
+ * @since 2.0.0
+ */
+const constant = value => () => value;
+/**
+ * A thunk that returns always `true`.
+ *
+ * @example
+ * ```ts
+ * import * as assert from "node:assert"
+ * import { constTrue } from "effect/Function"
+ *
+ * assert.deepStrictEqual(constTrue(), true)
+ * ```
+ *
+ * @since 2.0.0
+ */
+const constTrue = /*#__PURE__*/constant(true);
+/**
+ * A thunk that returns always `false`.
+ *
+ * @example
+ * ```ts
+ * import * as assert from "node:assert"
+ * import { constFalse } from "effect/Function"
+ *
+ * assert.deepStrictEqual(constFalse(), false)
+ * ```
+ *
+ * @since 2.0.0
+ */
+const constFalse = /*#__PURE__*/constant(false);
+/**
+ * A thunk that returns always `undefined`.
+ *
+ * @example
+ * ```ts
+ * import * as assert from "node:assert"
+ * import { constUndefined } from "effect/Function"
+ *
+ * assert.deepStrictEqual(constUndefined(), undefined)
+ * ```
+ *
+ * @since 2.0.0
+ */
+const constUndefined = /*#__PURE__*/constant(undefined);
+/**
+ * A thunk that returns always `void`.
+ *
+ * @example
+ * ```ts
+ * import * as assert from "node:assert"
+ * import { constVoid } from "effect/Function"
+ *
+ * assert.deepStrictEqual(constVoid(), undefined)
+ * ```
+ *
+ * @since 2.0.0
+ */
+const constVoid = constUndefined;
+function pipe(a, ab, bc, cd, de, ef, fg, gh, hi) {
+  switch (arguments.length) {
+    case 1:
+      return a;
+    case 2:
+      return ab(a);
+    case 3:
+      return bc(ab(a));
+    case 4:
+      return cd(bc(ab(a)));
+    case 5:
+      return de(cd(bc(ab(a))));
+    case 6:
+      return ef(de(cd(bc(ab(a)))));
+    case 7:
+      return fg(ef(de(cd(bc(ab(a))))));
+    case 8:
+      return gh(fg(ef(de(cd(bc(ab(a)))))));
+    case 9:
+      return hi(gh(fg(ef(de(cd(bc(ab(a))))))));
+    default:
+      {
+        let ret = arguments[0];
+        for (let i = 1; i < arguments.length; i++) {
+          ret = arguments[i](ret);
+        }
+        return ret;
+      }
+  }
+}
+
+/**
+ * This module provides an implementation of the `Equivalence` type class, which defines a binary relation
+ * that is reflexive, symmetric, and transitive. In other words, it defines a notion of equivalence between values of a certain type.
+ * These properties are also known in mathematics as an "equivalence relation".
+ *
+ * @since 2.0.0
+ */
+/**
+ * @category constructors
+ * @since 2.0.0
+ */
+const make$t = isEquivalent => (self, that) => self === that || isEquivalent(self, that);
+/**
+ * @category mapping
+ * @since 2.0.0
+ */
+const mapInput$1 = /*#__PURE__*/dual(2, (self, f) => make$t((x, y) => self(f(x), f(y))));
+/**
+ * Creates a new `Equivalence` for an array of values based on a given `Equivalence` for the elements of the array.
+ *
+ * @category combinators
+ * @since 2.0.0
+ */
+const array$1 = item => make$t((self, that) => {
+  if (self.length !== that.length) {
+    return false;
+  }
+  for (let i = 0; i < self.length; i++) {
+    const isEq = item(self[i], that[i]);
+    if (!isEq) {
+      return false;
+    }
+  }
+  return true;
+});
+
+/**
+ * The `GlobalValue` module ensures that a single instance of a value is created globally,
+ * even when modules are imported multiple times (e.g., due to mixing CommonJS and ESM builds)
+ * or during hot-reloading in development environments like Next.js or Remix.
+ *
+ * It achieves this by using a versioned global store, identified by a unique `Symbol` tied to
+ * the current version of the `effect` library. The store holds values that are keyed by an identifier,
+ * allowing the reuse of previously computed instances across imports or reloads.
+ *
+ * This pattern is particularly useful in scenarios where frequent reloading can cause services or
+ * single-instance objects to be recreated unnecessarily, such as in development environments with hot-reloading.
+ *
+ * @since 2.0.0
+ */
+const globalStoreId = `effect/GlobalValue`;
+let globalStore;
+/**
+ * Retrieves or computes a global value associated with the given `id`. If the value for this `id`
+ * has already been computed, it will be returned from the global store. If it does not exist yet,
+ * the provided `compute` function will be executed to compute the value, store it, and then return it.
+ *
+ * This ensures that even in cases where the module is imported multiple times (e.g., in mixed environments
+ * like CommonJS and ESM, or during hot-reloading in development), the value is computed only once and reused
+ * thereafter.
+ *
+ * @example
+ * ```ts
+ * import { globalValue } from "effect/GlobalValue"
+ *
+ * // This cache will persist as long as the module is running,
+ * // even if reloaded or imported elsewhere
+ * const myCache = globalValue(
+ *   Symbol.for("myCache"),
+ *   () => new WeakMap<object, number>()
+ * )
+ * ```
+ *
+ * @since 2.0.0
+ */
+const globalValue = (id, compute) => {
+  if (!globalStore) {
+    // @ts-expect-error
+    globalThis[globalStoreId] ??= new Map();
+    // @ts-expect-error
+    globalStore = globalThis[globalStoreId];
+  }
+  if (!globalStore.has(id)) {
+    globalStore.set(id, compute());
+  }
+  return globalStore.get(id);
+};
+
+/**
+ * This module provides a collection of functions for working with predicates and refinements.
+ *
+ * A `Predicate<A>` is a function that takes a value of type `A` and returns a boolean.
+ * It is used to check if a value satisfies a certain condition.
+ *
+ * A `Refinement<A, B>` is a special type of predicate that not only checks a condition
+ * but also provides a type guard, allowing TypeScript to narrow the type of the input
+ * value from `A` to a more specific type `B` within a conditional block.
+ *
+ * The module includes:
+ * - Basic predicates and refinements for common types (e.g., `isString`, `isNumber`).
+ * - Combinators to create new predicates from existing ones (e.g., `and`, `or`, `not`).
+ * - Advanced combinators for working with data structures (e.g., `tuple`, `struct`).
+ * - Type-level utilities for inspecting predicate and refinement types.
+ *
+ * @since 2.0.0
+ */
+/**
+ * A refinement that checks if a value is a `string`.
+ *
+ * @example
+ * ```ts
+ * import * as assert from "node:assert"
+ * import { isString } from "effect/Predicate"
+ *
+ * assert.strictEqual(isString("hello"), true)
+ * assert.strictEqual(isString(""), true)
+ *
+ * assert.strictEqual(isString(123), false)
+ * assert.strictEqual(isString(null), false)
+ * ```
+ *
+ * @category guards
+ * @since 2.0.0
+ */
+const isString = input => typeof input === "string";
+/**
+ * A refinement that checks if a value is a `number`.
+ *
+ * @example
+ * ```ts
+ * import * as assert from "node:assert"
+ * import { isNumber } from "effect/Predicate"
+ *
+ * assert.strictEqual(isNumber(123), true)
+ * assert.strictEqual(isNumber(0), true)
+ * assert.strictEqual(isNumber(-1.5), true)
+ * assert.strictEqual(isNumber(NaN), true)
+ *
+ * assert.strictEqual(isNumber("123"), false)
+ * ```
+ *
+ * @category guards
+ * @since 2.0.0
+ */
+const isNumber = input => typeof input === "number";
+/**
+ * A refinement that checks if a value is a `bigint`.
+ *
+ * @example
+ * ```ts
+ * import * as assert from "node:assert"
+ * import { isBigInt } from "effect/Predicate"
+ *
+ * assert.strictEqual(isBigInt(1n), true)
+ *
+ * assert.strictEqual(isBigInt(1), false)
+ * assert.strictEqual(isBigInt("1"), false)
+ * ```
+ *
+ * @category guards
+ * @since 2.0.0
+ */
+const isBigInt = input => typeof input === "bigint";
+/**
+ * A refinement that checks if a value is a `Function`.
+ *
+ * @example
+ * ```ts
+ * import * as assert from "node:assert"
+ * import { isFunction } from "effect/Predicate"
+ *
+ * assert.strictEqual(isFunction(() => {}), true)
+ * assert.strictEqual(isFunction(isFunction), true)
+ *
+ * assert.strictEqual(isFunction("function"), false)
+ * ```
+ *
+ * @category guards
+ * @since 2.0.0
+ */
+const isFunction = isFunction$1;
+/**
+ * Checks if the input is an object or an array.
+ * @internal
+ */
+const isRecordOrArray = input => typeof input === "object" && input !== null;
+/**
+ * A refinement that checks if a value is an `object`. Note that in JavaScript,
+ * arrays and functions are also considered objects.
+ *
+ * @example
+ * ```ts
+ * import * as assert from "node:assert"
+ * import { isObject } from "effect/Predicate"
+ *
+ * assert.strictEqual(isObject({}), true)
+ * assert.strictEqual(isObject([]), true)
+ * assert.strictEqual(isObject(() => {}), true)
+ *
+ * assert.strictEqual(isObject(null), false)
+ * assert.strictEqual(isObject("hello"), false)
+ * ```
+ *
+ * @category guards
+ * @since 2.0.0
+ * @see isRecord to check for plain objects (excluding arrays and functions).
+ */
+const isObject = input => isRecordOrArray(input) || isFunction(input);
+/**
+ * A refinement that checks if a value is an object-like value and has a specific property key.
+ *
+ * @example
+ * ```ts
+ * import * as assert from "node:assert"
+ * import { hasProperty } from "effect/Predicate"
+ *
+ * assert.strictEqual(hasProperty({ a: 1 }, "a"), true)
+ * assert.strictEqual(hasProperty({ a: 1 }, "b"), false)
+ *
+ * const value: unknown = { name: "Alice" };
+ * if (hasProperty(value, "name")) {
+ *   // The type of `value` is narrowed to `{ name: unknown }`
+ *   // and we can safely access `value.name`
+ *   console.log(value.name)
+ * }
+ * ```
+ *
+ * @category guards
+ * @since 2.0.0
+ */
+const hasProperty = /*#__PURE__*/dual(2, (self, property) => isObject(self) && property in self);
+/**
+ * A refinement that checks if a value is an object with a `_tag` property
+ * that matches the given tag. This is a powerful tool for working with
+ * discriminated union types.
+ *
+ * @example
+ * ```ts
+ * import * as assert from "node:assert"
+ * import { isTagged } from "effect/Predicate"
+ *
+ * type Shape = { _tag: "circle"; radius: number } | { _tag: "square"; side: number }
+ *
+ * const isCircle = isTagged("circle")
+ *
+ * const shape1: Shape = { _tag: "circle", radius: 10 }
+ * const shape2: Shape = { _tag: "square", side: 5 }
+ *
+ * assert.strictEqual(isCircle(shape1), true)
+ * assert.strictEqual(isCircle(shape2), false)
+ *
+ * if (isCircle(shape1)) {
+ *   // shape1 is now narrowed to { _tag: "circle"; radius: number }
+ *   assert.strictEqual(shape1.radius, 10)
+ * }
+ * ```
+ *
+ * @category guards
+ * @since 2.0.0
+ */
+const isTagged = /*#__PURE__*/dual(2, (self, tag) => hasProperty(self, "_tag") && self["_tag"] === tag);
+/**
+ * A refinement that checks if a value is either `null` or `undefined`.
+ *
+ * @example
+ * ```ts
+ * import * as assert from "node:assert"
+ * import { isNullable } from "effect/Predicate"
+ *
+ * assert.strictEqual(isNullable(null), true)
+ * assert.strictEqual(isNullable(undefined), true)
+ *
+ * assert.strictEqual(isNullable(0), false)
+ * assert.strictEqual(isNullable(""), false)
+ * ```
+ *
+ * @category guards
+ * @since 2.0.0
+ * @see isNotNullable
+ */
+const isNullable = input => input === null || input === undefined;
+/**
+ * A refinement that checks if a value is an `Iterable`.
+ * Many built-in types are iterable, such as `Array`, `string`, `Map`, and `Set`.
+ *
+ * @example
+ * ```ts
+ * import * as assert from "node:assert"
+ * import { isIterable } from "effect/Predicate"
+ *
+ * assert.strictEqual(isIterable([]), true)
+ * assert.strictEqual(isIterable("hello"), true)
+ * assert.strictEqual(isIterable(new Set()), true)
+ *
+ * assert.strictEqual(isIterable({}), false)
+ * assert.strictEqual(isIterable(123), false)
+ * ```
+ *
+ * @category guards
+ * @since 2.0.0
+ */
+const isIterable = input => typeof input === "string" || hasProperty(input, Symbol.iterator);
+/**
+ * A refinement that checks if a value is `PromiseLike`. It performs a duck-typing
+ * check for a `.then` method.
+ *
+ * @example
+ * ```ts
+ * import * as assert from "node:assert"
+ * import { isPromiseLike } from "effect/Predicate"
+ *
+ * assert.strictEqual(isPromiseLike(Promise.resolve(1)), true)
+ * assert.strictEqual(isPromiseLike({ then: () => {} }), true)
+ *
+ * assert.strictEqual(isPromiseLike({}), false)
+ * ```
+ *
+ * @category guards
+ * @since 2.0.0
+ * @see isPromise
+ */
+const isPromiseLike = input => hasProperty(input, "then") && isFunction(input.then);
+
+/**
+ * @since 2.0.0
+ */
+/** @internal */
+const getBugErrorMessage = message => `BUG: ${message} - please report an issue at https://github.com/Effect-TS/effect/issues`;
+
+/**
+ * @since 2.0.0
+ */
+/**
+ * @category constructors
+ * @since 2.0.0
+ */
+let SingleShotGen$1 = class SingleShotGen {
+  self;
+  called = false;
+  constructor(self) {
+    this.self = self;
+  }
+  /**
+   * @since 2.0.0
+   */
+  next(a) {
+    return this.called ? {
+      value: a,
+      done: true
+    } : (this.called = true, {
+      value: this.self,
+      done: false
+    });
+  }
+  /**
+   * @since 2.0.0
+   */
+  return(a) {
+    return {
+      value: a,
+      done: true
+    };
+  }
+  /**
+   * @since 2.0.0
+   */
+  throw(e) {
+    throw e;
+  }
+  /**
+   * @since 2.0.0
+   */
+  [Symbol.iterator]() {
+    return new SingleShotGen(this.self);
+  }
+};
+const defaultIncHi = 0x14057b7e;
+const defaultIncLo = 0xf767814f;
+const MUL_HI = 0x5851f42d >>> 0;
+const MUL_LO = 0x4c957f2d >>> 0;
+const BIT_53 = 9007199254740992.0;
+const BIT_27 = 134217728.0;
+/**
+ * PCG is a family of simple fast space-efficient statistically good algorithms
+ * for random number generation. Unlike many general-purpose RNGs, they are also
+ * hard to predict.
+ *
+ * @category model
+ * @since 2.0.0
+ */
+class PCGRandom {
+  _state;
+  constructor(seedHi, seedLo, incHi, incLo) {
+    if (isNullable(seedLo) && isNullable(seedHi)) {
+      seedLo = Math.random() * 0xffffffff >>> 0;
+      seedHi = 0;
+    } else if (isNullable(seedLo)) {
+      seedLo = seedHi;
+      seedHi = 0;
+    }
+    if (isNullable(incLo) && isNullable(incHi)) {
+      incLo = this._state ? this._state[3] : defaultIncLo;
+      incHi = this._state ? this._state[2] : defaultIncHi;
+    } else if (isNullable(incLo)) {
+      incLo = incHi;
+      incHi = 0;
+    }
+    this._state = new Int32Array([0, 0, incHi >>> 0, ((incLo || 0) | 1) >>> 0]);
+    this._next();
+    add64(this._state, this._state[0], this._state[1], seedHi >>> 0, seedLo >>> 0);
+    this._next();
+    return this;
+  }
+  /**
+   * Returns a copy of the internal state of this random number generator as a
+   * JavaScript Array.
+   *
+   * @category getters
+   * @since 2.0.0
+   */
+  getState() {
+    return [this._state[0], this._state[1], this._state[2], this._state[3]];
+  }
+  /**
+   * Restore state previously retrieved using `getState()`.
+   *
+   * @since 2.0.0
+   */
+  setState(state) {
+    this._state[0] = state[0];
+    this._state[1] = state[1];
+    this._state[2] = state[2];
+    this._state[3] = state[3] | 1;
+  }
+  /**
+   * Get a uniformly distributed 32 bit integer between [0, max).
+   *
+   * @category getter
+   * @since 2.0.0
+   */
+  integer(max) {
+    return Math.round(this.number() * Number.MAX_SAFE_INTEGER) % max;
+  }
+  /**
+   * Get a uniformly distributed IEEE-754 double between 0.0 and 1.0, with
+   * 53 bits of precision (every bit of the mantissa is randomized).
+   *
+   * @category getters
+   * @since 2.0.0
+   */
+  number() {
+    const hi = (this._next() & 0x03ffffff) * 1.0;
+    const lo = (this._next() & 0x07ffffff) * 1.0;
+    return (hi * BIT_27 + lo) / BIT_53;
+  }
+  /** @internal */
+  _next() {
+    // save current state (what we'll use for this number)
+    const oldHi = this._state[0] >>> 0;
+    const oldLo = this._state[1] >>> 0;
+    // churn LCG.
+    mul64(this._state, oldHi, oldLo, MUL_HI, MUL_LO);
+    add64(this._state, this._state[0], this._state[1], this._state[2], this._state[3]);
+    // get least sig. 32 bits of ((oldstate >> 18) ^ oldstate) >> 27
+    let xsHi = oldHi >>> 18;
+    let xsLo = (oldLo >>> 18 | oldHi << 14) >>> 0;
+    xsHi = (xsHi ^ oldHi) >>> 0;
+    xsLo = (xsLo ^ oldLo) >>> 0;
+    const xorshifted = (xsLo >>> 27 | xsHi << 5) >>> 0;
+    // rotate xorshifted right a random amount, based on the most sig. 5 bits
+    // bits of the old state.
+    const rot = oldHi >>> 27;
+    const rot2 = (-rot >>> 0 & 31) >>> 0;
+    return (xorshifted >>> rot | xorshifted << rot2) >>> 0;
+  }
+}
+function mul64(out, aHi, aLo, bHi, bLo) {
+  let c1 = (aLo >>> 16) * (bLo & 0xffff) >>> 0;
+  let c0 = (aLo & 0xffff) * (bLo >>> 16) >>> 0;
+  let lo = (aLo & 0xffff) * (bLo & 0xffff) >>> 0;
+  let hi = (aLo >>> 16) * (bLo >>> 16) + ((c0 >>> 16) + (c1 >>> 16)) >>> 0;
+  c0 = c0 << 16 >>> 0;
+  lo = lo + c0 >>> 0;
+  if (lo >>> 0 < c0 >>> 0) {
+    hi = hi + 1 >>> 0;
+  }
+  c1 = c1 << 16 >>> 0;
+  lo = lo + c1 >>> 0;
+  if (lo >>> 0 < c1 >>> 0) {
+    hi = hi + 1 >>> 0;
+  }
+  hi = hi + Math.imul(aLo, bHi) >>> 0;
+  hi = hi + Math.imul(aHi, bLo) >>> 0;
+  out[0] = hi;
+  out[1] = lo;
+}
+// add two 64 bit numbers (given in parts), and store the result in `out`.
+function add64(out, aHi, aLo, bHi, bLo) {
+  let hi = aHi + bHi >>> 0;
+  const lo = aLo + bLo >>> 0;
+  if (lo >>> 0 < aLo >>> 0) {
+    hi = hi + 1 | 0;
+  }
+  out[0] = hi;
+  out[1] = lo;
+}
+/**
+ * @since 3.0.6
+ */
+const YieldWrapTypeId = /*#__PURE__*/Symbol.for("effect/Utils/YieldWrap");
+/**
+ * @since 3.0.6
+ */
+class YieldWrap {
+  /**
+   * @since 3.0.6
+   */
+  #value;
+  constructor(value) {
+    this.#value = value;
+  }
+  /**
+   * @since 3.0.6
+   */
+  [YieldWrapTypeId]() {
+    return this.#value;
+  }
+}
+/**
+ * @since 3.0.6
+ */
+function yieldWrapGet(self) {
+  if (typeof self === "object" && self !== null && YieldWrapTypeId in self) {
+    return self[YieldWrapTypeId]();
+  }
+  throw new Error(getBugErrorMessage("yieldWrapGet"));
+}
+/**
+ * Note: this is an experimental feature made available to allow custom matchers in tests, not to be directly used yet in user code
+ *
+ * @since 3.1.1
+ * @status experimental
+ * @category modifiers
+ */
+const structuralRegionState = /*#__PURE__*/globalValue("effect/Utils/isStructuralRegion", () => ({
+  enabled: false,
+  tester: undefined
+}));
+const standard = {
+  effect_internal_function: body => {
+    return body();
+  }
+};
+const forced = {
+  effect_internal_function: body => {
+    try {
+      return body();
+    } finally {
+      //
+    }
+  }
+};
+const isNotOptimizedAway = /*#__PURE__*/standard.effect_internal_function(() => new Error().stack)?.includes("effect_internal_function") === true;
+/**
+ * @since 3.2.2
+ * @status experimental
+ * @category tracing
+ */
+const internalCall = isNotOptimizedAway ? standard.effect_internal_function : forced.effect_internal_function;
+
+/**
+ * @since 2.0.0
+ */
+/** @internal */
+const randomHashCache = /*#__PURE__*/globalValue(/*#__PURE__*/Symbol.for("effect/Hash/randomHashCache"), () => new WeakMap());
+/**
+ * @since 2.0.0
+ * @category symbols
+ */
+const symbol$1 = /*#__PURE__*/Symbol.for("effect/Hash");
+/**
+ * @since 2.0.0
+ * @category hashing
+ */
+const hash = self => {
+  if (structuralRegionState.enabled === true) {
+    return 0;
+  }
+  switch (typeof self) {
+    case "number":
+      return number$3(self);
+    case "bigint":
+      return string$1(self.toString(10));
+    case "boolean":
+      return string$1(String(self));
+    case "symbol":
+      return string$1(String(self));
+    case "string":
+      return string$1(self);
+    case "undefined":
+      return string$1("undefined");
+    case "function":
+    case "object":
+      {
+        if (self === null) {
+          return string$1("null");
+        } else if (self instanceof Date) {
+          return hash(self.toISOString());
+        } else if (self instanceof URL) {
+          return hash(self.href);
+        } else if (isHash(self)) {
+          return self[symbol$1]();
+        } else {
+          return random(self);
+        }
+      }
+    default:
+      throw new Error(`BUG: unhandled typeof ${typeof self} - please report an issue at https://github.com/Effect-TS/effect/issues`);
+  }
+};
+/**
+ * @since 2.0.0
+ * @category hashing
+ */
+const random = self => {
+  if (!randomHashCache.has(self)) {
+    randomHashCache.set(self, number$3(Math.floor(Math.random() * Number.MAX_SAFE_INTEGER)));
+  }
+  return randomHashCache.get(self);
+};
+/**
+ * @since 2.0.0
+ * @category hashing
+ */
+const combine$7 = b => self => self * 53 ^ b;
+/**
+ * @since 2.0.0
+ * @category hashing
+ */
+const optimize = n => n & 0xbfffffff | n >>> 1 & 0x40000000;
+/**
+ * @since 2.0.0
+ * @category guards
+ */
+const isHash = u => hasProperty(u, symbol$1);
+/**
+ * @since 2.0.0
+ * @category hashing
+ */
+const number$3 = n => {
+  if (n !== n || n === Infinity) {
+    return 0;
+  }
+  let h = n | 0;
+  if (h !== n) {
+    h ^= n * 0xffffffff;
+  }
+  while (n > 0xffffffff) {
+    h ^= n /= 0xffffffff;
+  }
+  return optimize(h);
+};
+/**
+ * @since 2.0.0
+ * @category hashing
+ */
+const string$1 = str => {
+  let h = 5381,
+    i = str.length;
+  while (i) {
+    h = h * 33 ^ str.charCodeAt(--i);
+  }
+  return optimize(h);
+};
+/**
+ * @since 2.0.0
+ * @category hashing
+ */
+const structureKeys = (o, keys) => {
+  let h = 12289;
+  for (let i = 0; i < keys.length; i++) {
+    h ^= pipe(string$1(keys[i]), combine$7(hash(o[keys[i]])));
+  }
+  return optimize(h);
+};
+/**
+ * @since 2.0.0
+ * @category hashing
+ */
+const structure = o => structureKeys(o, Object.keys(o));
+/**
+ * @since 2.0.0
+ * @category hashing
+ */
+const array = arr => {
+  let h = 6151;
+  for (let i = 0; i < arr.length; i++) {
+    h = pipe(h, combine$7(hash(arr[i])));
+  }
+  return optimize(h);
+};
+/**
+ * @since 2.0.0
+ * @category hashing
+ */
+const cached = function () {
+  if (arguments.length === 1) {
+    const self = arguments[0];
+    return function (hash) {
+      Object.defineProperty(self, symbol$1, {
+        value() {
+          return hash;
+        },
+        enumerable: false
+      });
+      return hash;
+    };
+  }
+  const self = arguments[0];
+  const hash = arguments[1];
+  Object.defineProperty(self, symbol$1, {
+    value() {
+      return hash;
+    },
+    enumerable: false
+  });
+  return hash;
+};
+
+/**
+ * @since 2.0.0
+ * @category symbols
+ */
+const symbol = /*#__PURE__*/Symbol.for("effect/Equal");
+function equals$1() {
+  if (arguments.length === 1) {
+    return self => compareBoth(self, arguments[0]);
+  }
+  return compareBoth(arguments[0], arguments[1]);
+}
+function compareBoth(self, that) {
+  if (self === that) {
+    return true;
+  }
+  const selfType = typeof self;
+  if (selfType !== typeof that) {
+    return false;
+  }
+  if (selfType === "object" || selfType === "function") {
+    if (self !== null && that !== null) {
+      if (isEqual(self) && isEqual(that)) {
+        if (hash(self) === hash(that) && self[symbol](that)) {
+          return true;
+        } else {
+          return structuralRegionState.enabled && structuralRegionState.tester ? structuralRegionState.tester(self, that) : false;
+        }
+      } else if (self instanceof Date && that instanceof Date) {
+        return self.toISOString() === that.toISOString();
+      } else if (self instanceof URL && that instanceof URL) {
+        return self.href === that.href;
+      }
+    }
+    if (structuralRegionState.enabled) {
+      if (Array.isArray(self) && Array.isArray(that)) {
+        return self.length === that.length && self.every((v, i) => compareBoth(v, that[i]));
+      }
+      if (Object.getPrototypeOf(self) === Object.prototype && Object.getPrototypeOf(self) === Object.prototype) {
+        const keysSelf = Object.keys(self);
+        const keysThat = Object.keys(that);
+        if (keysSelf.length === keysThat.length) {
+          for (const key of keysSelf) {
+            // @ts-expect-error
+            if (!(key in that && compareBoth(self[key], that[key]))) {
+              return structuralRegionState.tester ? structuralRegionState.tester(self, that) : false;
+            }
+          }
+          return true;
+        }
+      }
+      return structuralRegionState.tester ? structuralRegionState.tester(self, that) : false;
+    }
+  }
+  return structuralRegionState.enabled && structuralRegionState.tester ? structuralRegionState.tester(self, that) : false;
+}
+/**
+ * @since 2.0.0
+ * @category guards
+ */
+const isEqual = u => hasProperty(u, symbol);
+/**
+ * @since 2.0.0
+ * @category instances
+ */
+const equivalence = () => equals$1;
+
+/**
+ * @since 2.0.0
+ * @category symbols
+ */
+const NodeInspectSymbol = /*#__PURE__*/Symbol.for("nodejs.util.inspect.custom");
+/**
+ * @since 2.0.0
+ */
+const toJSON = x => {
+  try {
+    if (hasProperty(x, "toJSON") && isFunction(x["toJSON"]) && x["toJSON"].length === 0) {
+      return x.toJSON();
+    } else if (Array.isArray(x)) {
+      return x.map(toJSON);
+    }
+  } catch {
+    return {};
+  }
+  return redact(x);
+};
+/**
+ * @since 2.0.0
+ */
+const format$2 = x => JSON.stringify(x, null, 2);
+/**
+ * @since 2.0.0
+ */
+const toStringUnknown = (u, whitespace = 2) => {
+  if (typeof u === "string") {
+    return u;
+  }
+  try {
+    return typeof u === "object" ? stringifyCircular(u, whitespace) : String(u);
+  } catch {
+    return String(u);
+  }
+};
+/**
+ * @since 2.0.0
+ */
+const stringifyCircular = (obj, whitespace) => {
+  let cache = [];
+  const retVal = JSON.stringify(obj, (_key, value) => typeof value === "object" && value !== null ? cache.includes(value) ? undefined // circular reference
+  : cache.push(value) && (redactableState.fiberRefs !== undefined && isRedactable(value) ? value[symbolRedactable](redactableState.fiberRefs) : value) : value, whitespace);
+  cache = undefined;
+  return retVal;
+};
+/**
+ * @since 3.10.0
+ * @category redactable
+ */
+const symbolRedactable = /*#__PURE__*/Symbol.for("effect/Inspectable/Redactable");
+/**
+ * @since 3.10.0
+ * @category redactable
+ */
+const isRedactable = u => typeof u === "object" && u !== null && symbolRedactable in u;
+const redactableState = /*#__PURE__*/globalValue("effect/Inspectable/redactableState", () => ({
+  fiberRefs: undefined
+}));
+/**
+ * @since 3.10.0
+ * @category redactable
+ */
+const withRedactableContext = (context, f) => {
+  const prev = redactableState.fiberRefs;
+  redactableState.fiberRefs = context;
+  try {
+    return f();
+  } finally {
+    redactableState.fiberRefs = prev;
+  }
+};
+/**
+ * @since 3.10.0
+ * @category redactable
+ */
+const redact = u => {
+  if (isRedactable(u) && redactableState.fiberRefs !== undefined) {
+    return u[symbolRedactable](redactableState.fiberRefs);
+  }
+  return u;
+};
+
+/**
+ * @since 2.0.0
+ */
+/**
+ * @since 2.0.0
+ */
+const pipeArguments = (self, args) => {
+  switch (args.length) {
+    case 0:
+      return self;
+    case 1:
+      return args[0](self);
+    case 2:
+      return args[1](args[0](self));
+    case 3:
+      return args[2](args[1](args[0](self)));
+    case 4:
+      return args[3](args[2](args[1](args[0](self))));
+    case 5:
+      return args[4](args[3](args[2](args[1](args[0](self)))));
+    case 6:
+      return args[5](args[4](args[3](args[2](args[1](args[0](self))))));
+    case 7:
+      return args[6](args[5](args[4](args[3](args[2](args[1](args[0](self)))))));
+    case 8:
+      return args[7](args[6](args[5](args[4](args[3](args[2](args[1](args[0](self))))))));
+    case 9:
+      return args[8](args[7](args[6](args[5](args[4](args[3](args[2](args[1](args[0](self)))))))));
+    default:
+      {
+        let ret = self;
+        for (let i = 0, len = args.length; i < len; i++) {
+          ret = args[i](ret);
+        }
+        return ret;
+      }
+  }
+};
+
+/** @internal */
+const OP_ASYNC = "Async";
+/** @internal */
+const OP_COMMIT = "Commit";
+/** @internal */
+const OP_FAILURE = "Failure";
+/** @internal */
+const OP_ON_FAILURE = "OnFailure";
+/** @internal */
+const OP_ON_SUCCESS = "OnSuccess";
+/** @internal */
+const OP_ON_SUCCESS_AND_FAILURE = "OnSuccessAndFailure";
+/** @internal */
+const OP_SUCCESS = "Success";
+/** @internal */
+const OP_SYNC = "Sync";
+/** @internal */
+const OP_TAG = "Tag";
+/** @internal */
+const OP_UPDATE_RUNTIME_FLAGS = "UpdateRuntimeFlags";
+/** @internal */
+const OP_WHILE = "While";
+/** @internal */
+const OP_ITERATOR = "Iterator";
+/** @internal */
+const OP_WITH_RUNTIME = "WithRuntime";
+/** @internal */
+const OP_YIELD = "Yield";
+/** @internal */
+const OP_REVERT_FLAGS = "RevertFlags";
+
+let moduleVersion = "3.18.4";
+const getCurrentVersion = () => moduleVersion;
+
+/** @internal */
+const EffectTypeId$1 = /*#__PURE__*/Symbol.for("effect/Effect");
+/** @internal */
+const StreamTypeId = /*#__PURE__*/Symbol.for("effect/Stream");
+/** @internal */
+const SinkTypeId = /*#__PURE__*/Symbol.for("effect/Sink");
+/** @internal */
+const ChannelTypeId = /*#__PURE__*/Symbol.for("effect/Channel");
+/** @internal */
+const effectVariance = {
+  /* c8 ignore next */
+  _R: _ => _,
+  /* c8 ignore next */
+  _E: _ => _,
+  /* c8 ignore next */
+  _A: _ => _,
+  _V: /*#__PURE__*/getCurrentVersion()
+};
+const sinkVariance = {
+  /* c8 ignore next */
+  _A: _ => _,
+  /* c8 ignore next */
+  _In: _ => _,
+  /* c8 ignore next */
+  _L: _ => _,
+  /* c8 ignore next */
+  _E: _ => _,
+  /* c8 ignore next */
+  _R: _ => _
+};
+const channelVariance = {
+  /* c8 ignore next */
+  _Env: _ => _,
+  /* c8 ignore next */
+  _InErr: _ => _,
+  /* c8 ignore next */
+  _InElem: _ => _,
+  /* c8 ignore next */
+  _InDone: _ => _,
+  /* c8 ignore next */
+  _OutErr: _ => _,
+  /* c8 ignore next */
+  _OutElem: _ => _,
+  /* c8 ignore next */
+  _OutDone: _ => _
+};
+/** @internal */
+const EffectPrototype$1 = {
+  [EffectTypeId$1]: effectVariance,
+  [StreamTypeId]: effectVariance,
+  [SinkTypeId]: sinkVariance,
+  [ChannelTypeId]: channelVariance,
+  [symbol](that) {
+    return this === that;
+  },
+  [symbol$1]() {
+    return cached(this, random(this));
+  },
+  [Symbol.iterator]() {
+    return new SingleShotGen$1(new YieldWrap(this));
+  },
+  pipe() {
+    return pipeArguments(this, arguments);
+  }
+};
+/** @internal */
+const StructuralPrototype = {
+  [symbol$1]() {
+    return cached(this, structure(this));
+  },
+  [symbol](that) {
+    const selfKeys = Object.keys(this);
+    const thatKeys = Object.keys(that);
+    if (selfKeys.length !== thatKeys.length) {
+      return false;
+    }
+    for (const key of selfKeys) {
+      if (!(key in that && equals$1(this[key], that[key]))) {
+        return false;
+      }
+    }
+    return true;
+  }
+};
+/** @internal */
+const CommitPrototype$1 = {
+  ...EffectPrototype$1,
+  _op: OP_COMMIT
+};
+/** @internal */
+const StructuralCommitPrototype = {
+  ...CommitPrototype$1,
+  ...StructuralPrototype
+};
+/** @internal */
+const Base$1 = /*#__PURE__*/function () {
+  function Base() {}
+  Base.prototype = CommitPrototype$1;
+  return Base;
+}();
+
+/**
+ * @since 2.0.0
+ */
+const TypeId$b = /*#__PURE__*/Symbol.for("effect/Option");
+const CommonProto$1 = {
+  ...EffectPrototype$1,
+  [TypeId$b]: {
+    _A: _ => _
+  },
+  [NodeInspectSymbol]() {
+    return this.toJSON();
+  },
+  toString() {
+    return format$2(this.toJSON());
+  }
+};
+const SomeProto = /*#__PURE__*/Object.assign(/*#__PURE__*/Object.create(CommonProto$1), {
+  _tag: "Some",
+  _op: "Some",
+  [symbol](that) {
+    return isOption(that) && isSome$1(that) && equals$1(this.value, that.value);
+  },
+  [symbol$1]() {
+    return cached(this, combine$7(hash(this._tag))(hash(this.value)));
+  },
+  toJSON() {
+    return {
+      _id: "Option",
+      _tag: this._tag,
+      value: toJSON(this.value)
+    };
+  }
+});
+const NoneHash = /*#__PURE__*/hash("None");
+const NoneProto = /*#__PURE__*/Object.assign(/*#__PURE__*/Object.create(CommonProto$1), {
+  _tag: "None",
+  _op: "None",
+  [symbol](that) {
+    return isOption(that) && isNone$1(that);
+  },
+  [symbol$1]() {
+    return NoneHash;
+  },
+  toJSON() {
+    return {
+      _id: "Option",
+      _tag: this._tag
+    };
+  }
+});
+/** @internal */
+const isOption = input => hasProperty(input, TypeId$b);
+/** @internal */
+const isNone$1 = fa => fa._tag === "None";
+/** @internal */
+const isSome$1 = fa => fa._tag === "Some";
+/** @internal */
+const none$5 = /*#__PURE__*/Object.create(NoneProto);
+/** @internal */
+const some$1 = value => {
+  const a = Object.create(SomeProto);
+  a.value = value;
+  return a;
+};
+
+/**
+ * @since 2.0.0
+ */
+/**
+ * @internal
+ */
+const TypeId$a = /*#__PURE__*/Symbol.for("effect/Either");
+const CommonProto = {
+  ...EffectPrototype$1,
+  [TypeId$a]: {
+    _R: _ => _
+  },
+  [NodeInspectSymbol]() {
+    return this.toJSON();
+  },
+  toString() {
+    return format$2(this.toJSON());
+  }
+};
+const RightProto = /*#__PURE__*/Object.assign(/*#__PURE__*/Object.create(CommonProto), {
+  _tag: "Right",
+  _op: "Right",
+  [symbol](that) {
+    return isEither(that) && isRight$1(that) && equals$1(this.right, that.right);
+  },
+  [symbol$1]() {
+    return combine$7(hash(this._tag))(hash(this.right));
+  },
+  toJSON() {
+    return {
+      _id: "Either",
+      _tag: this._tag,
+      right: toJSON(this.right)
+    };
+  }
+});
+const LeftProto = /*#__PURE__*/Object.assign(/*#__PURE__*/Object.create(CommonProto), {
+  _tag: "Left",
+  _op: "Left",
+  [symbol](that) {
+    return isEither(that) && isLeft$1(that) && equals$1(this.left, that.left);
+  },
+  [symbol$1]() {
+    return combine$7(hash(this._tag))(hash(this.left));
+  },
+  toJSON() {
+    return {
+      _id: "Either",
+      _tag: this._tag,
+      left: toJSON(this.left)
+    };
+  }
+});
+/** @internal */
+const isEither = input => hasProperty(input, TypeId$a);
+/** @internal */
+const isLeft$1 = ma => ma._tag === "Left";
+/** @internal */
+const isRight$1 = ma => ma._tag === "Right";
+/** @internal */
+const left$1 = left => {
+  const a = Object.create(LeftProto);
+  a.left = left;
+  return a;
+};
+/** @internal */
+const right$1 = right => {
+  const a = Object.create(RightProto);
+  a.right = right;
+  return a;
+};
+
+/**
+ * @since 2.0.0
+ */
+/**
+ * Constructs a new `Either` holding a `Right` value. This usually represents a successful value due to the right bias
+ * of this structure.
+ *
+ * @category constructors
+ * @since 2.0.0
+ */
+const right = right$1;
+/**
+ * Constructs a new `Either` holding a `Left` value. This usually represents a failure, due to the right-bias of this
+ * structure.
+ *
+ * @category constructors
+ * @since 2.0.0
+ */
+const left = left$1;
+/**
+ * Determine if a `Either` is a `Left`.
+ *
+ * @example
+ * ```ts
+ * import * as assert from "node:assert"
+ * import { Either } from "effect"
+ *
+ * assert.deepStrictEqual(Either.isLeft(Either.right(1)), false)
+ * assert.deepStrictEqual(Either.isLeft(Either.left("a")), true)
+ * ```
+ *
+ * @category guards
+ * @since 2.0.0
+ */
+const isLeft = isLeft$1;
+/**
+ * Determine if a `Either` is a `Right`.
+ *
+ * @example
+ * ```ts
+ * import * as assert from "node:assert"
+ * import { Either } from "effect"
+ *
+ * assert.deepStrictEqual(Either.isRight(Either.right(1)), true)
+ * assert.deepStrictEqual(Either.isRight(Either.left("a")), false)
+ * ```
+ *
+ * @category guards
+ * @since 2.0.0
+ */
+const isRight = isRight$1;
+/**
+ * Takes two functions and an `Either` value, if the value is a `Left` the inner value is applied to the `onLeft function,
+ * if the value is a `Right` the inner value is applied to the `onRight` function.
+ *
+ * @example
+ * ```ts
+ * import * as assert from "node:assert"
+ * import { pipe, Either } from "effect"
+ *
+ * const onLeft  = (strings: ReadonlyArray<string>): string => `strings: ${strings.join(', ')}`
+ *
+ * const onRight = (value: number): string => `Ok: ${value}`
+ *
+ * assert.deepStrictEqual(pipe(Either.right(1), Either.match({ onLeft, onRight })), 'Ok: 1')
+ * assert.deepStrictEqual(
+ *   pipe(Either.left(['string 1', 'string 2']), Either.match({ onLeft, onRight })),
+ *   'strings: string 1, string 2'
+ * )
+ * ```
+ *
+ * @category pattern matching
+ * @since 2.0.0
+ */
+const match$4 = /*#__PURE__*/dual(2, (self, {
+  onLeft,
+  onRight
+}) => isLeft(self) ? onLeft(self.left) : onRight(self.right));
+/**
+ * Transforms a `Predicate` function into a `Right` of the input value if the predicate returns `true`
+ * or `Left` of the result of the provided function if the predicate returns false
+ *
+ * @example
+ * ```ts
+ * import * as assert from "node:assert"
+ * import { pipe, Either } from "effect"
+ *
+ * const isPositive = (n: number): boolean => n > 0
+ * const isPositiveEither = Either.liftPredicate(isPositive, n => `${n} is not positive`)
+ *
+ * assert.deepStrictEqual(
+ *   isPositiveEither(1),
+ *   Either.right(1)
+ * )
+ * assert.deepStrictEqual(
+ *   isPositiveEither(0),
+ *   Either.left("0 is not positive")
+ * )
+ * ```
+ *
+ * @category lifting
+ * @since 3.4.0
+ */
+const liftPredicate = /*#__PURE__*/dual(3, (a, predicate, orLeftWith) => predicate(a) ? right(a) : left(orLeftWith(a)));
+/**
+ * @category getters
+ * @since 2.0.0
+ */
+const merge$5 = /*#__PURE__*/match$4({
+  onLeft: identity,
+  onRight: identity
+});
+
+/**
+ * @since 2.0.0
+ */
+/** @internal */
+const isNonEmptyArray$1 = self => self.length > 0;
+
+/**
+ * This module provides an implementation of the `Order` type class which is used to define a total ordering on some type `A`.
+ * An order is defined by a relation `<=`, which obeys the following laws:
+ *
+ * - either `x <= y` or `y <= x` (totality)
+ * - if `x <= y` and `y <= x`, then `x == y` (antisymmetry)
+ * - if `x <= y` and `y <= z`, then `x <= z` (transitivity)
+ *
+ * The truth table for compare is defined as follows:
+ *
+ * | `x <= y` | `x >= y` | Ordering |                       |
+ * | -------- | -------- | -------- | --------------------- |
+ * | `true`   | `true`   | `0`      | corresponds to x == y |
+ * | `true`   | `false`  | `< 0`    | corresponds to x < y  |
+ * | `false`  | `true`   | `> 0`    | corresponds to x > y  |
+ *
+ * @since 2.0.0
+ */
+/**
+ * @category constructors
+ * @since 2.0.0
+ */
+const make$s = compare => (self, that) => self === that ? 0 : compare(self, that);
+/**
+ * @category instances
+ * @since 2.0.0
+ */
+const number$2 = /*#__PURE__*/make$s((self, that) => self < that ? -1 : 1);
+/**
+ * @category mapping
+ * @since 2.0.0
+ */
+const mapInput = /*#__PURE__*/dual(2, (self, f) => make$s((b1, b2) => self(f(b1), f(b2))));
+/**
+ * Test whether one value is _strictly greater than_ another.
+ *
+ * @since 2.0.0
+ */
+const greaterThan$1 = O => dual(2, (self, that) => O(self, that) === 1);
+
+/**
+ * Represents the absence of a value by creating an empty `Option`.
+ *
+ * `Option.none` returns an `Option<never>`, which is a subtype of `Option<A>`.
+ * This means you can use it in place of any `Option<A>` regardless of the type
+ * `A`.
+ *
+ * **Example** (Creating an Option with No Value)
+ *
+ * ```ts
+ * import { Option } from "effect"
+ *
+ * // An Option holding no value
+ * //
+ * //      ┌─── Option<never>
+ * //      ▼
+ * const noValue = Option.none()
+ *
+ * console.log(noValue)
+ * // Output: { _id: 'Option', _tag: 'None' }
+ * ```
+ *
+ * @see {@link some} for the opposite operation.
+ *
+ * @category Constructors
+ * @since 2.0.0
+ */
+const none$4 = () => none$5;
+/**
+ * Wraps the given value into an `Option` to represent its presence.
+ *
+ * **Example** (Creating an Option with a Value)
+ *
+ * ```ts
+ * import { Option } from "effect"
+ *
+ * // An Option holding the number 1
+ * //
+ * //      ┌─── Option<number>
+ * //      ▼
+ * const value = Option.some(1)
+ *
+ * console.log(value)
+ * // Output: { _id: 'Option', _tag: 'Some', value: 1 }
+ * ```
+ *
+ * @see {@link none} for the opposite operation.
+ *
+ * @category Constructors
+ * @since 2.0.0
+ */
+const some = some$1;
+/**
+ * Checks whether an `Option` represents the absence of a value (`None`).
+ *
+ * @example
+ * ```ts
+ * import { Option } from "effect"
+ *
+ * console.log(Option.isNone(Option.some(1)))
+ * // Output: false
+ *
+ * console.log(Option.isNone(Option.none()))
+ * // Output: true
+ * ```
+ *
+ * @see {@link isSome} for the opposite check.
+ *
+ * @category Guards
+ * @since 2.0.0
+ */
+const isNone = isNone$1;
+/**
+ * Checks whether an `Option` contains a value (`Some`).
+ *
+ * @example
+ * ```ts
+ * import { Option } from "effect"
+ *
+ * console.log(Option.isSome(Option.some(1)))
+ * // Output: true
+ *
+ * console.log(Option.isSome(Option.none()))
+ * // Output: false
+ * ```
+ *
+ * @see {@link isNone} for the opposite check.
+ *
+ * @category Guards
+ * @since 2.0.0
+ */
+const isSome = isSome$1;
+/**
+ * Performs pattern matching on an `Option` to handle both `Some` and `None`
+ * cases.
+ *
+ * **Details**
+ *
+ * This function allows you to match against an `Option` and handle both
+ * scenarios: when the `Option` is `None` (i.e., contains no value), and when
+ * the `Option` is `Some` (i.e., contains a value). It executes one of the
+ * provided functions based on the case:
+ *
+ * - If the `Option` is `None`, the `onNone` function is executed and its result
+ *   is returned.
+ * - If the `Option` is `Some`, the `onSome` function is executed with the
+ *   contained value, and its result is returned.
+ *
+ * This function provides a concise and functional way to handle optional values
+ * without resorting to `if` or manual checks, making your code more declarative
+ * and readable.
+ *
+ * **Example** (Pattern Matching with Option)
+ *
+ * ```ts
+ * import { Option } from "effect"
+ *
+ * const foo = Option.some(1)
+ *
+ * const message = Option.match(foo, {
+ *   onNone: () => "Option is empty",
+ *   onSome: (value) => `Option has a value: ${value}`
+ * })
+ *
+ * console.log(message)
+ * // Output: "Option has a value: 1"
+ * ```
+ *
+ * @category Pattern matching
+ * @since 2.0.0
+ */
+const match$3 = /*#__PURE__*/dual(2, (self, {
+  onNone,
+  onSome
+}) => isNone(self) ? onNone() : onSome(self.value));
+/**
+ * Returns the value contained in the `Option` if it is `Some`, otherwise
+ * evaluates and returns the result of `onNone`.
+ *
+ * **Details**
+ *
+ * This function allows you to provide a fallback value or computation for when
+ * an `Option` is `None`. If the `Option` contains a value (`Some`), that value
+ * is returned. If it is empty (`None`), the `onNone` function is executed, and
+ * its result is returned instead.
+ *
+ * This utility is helpful for safely handling `Option` values by ensuring you
+ * always receive a meaningful result, whether or not the `Option` contains a
+ * value. It is particularly useful for providing default values or alternative
+ * logic when working with optional values.
+ *
+ * @example
+ * ```ts
+ * import { Option } from "effect"
+ *
+ * console.log(Option.some(1).pipe(Option.getOrElse(() => 0)))
+ * // Output: 1
+ *
+ * console.log(Option.none().pipe(Option.getOrElse(() => 0)))
+ * // Output: 0
+ * ```
+ *
+ * @see {@link getOrNull} for a version that returns `null` instead of executing a function.
+ * @see {@link getOrUndefined} for a version that returns `undefined` instead of executing a function.
+ *
+ * @category Getters
+ * @since 2.0.0
+ */
+const getOrElse = /*#__PURE__*/dual(2, (self, onNone) => isNone(self) ? onNone() : self.value);
+/**
+ * Returns the provided default value wrapped in `Some` if the current `Option`
+ * (`self`) is `None`; otherwise, returns `self`.
+ *
+ * **Details**
+ *
+ * This function provides a way to supply a default value for cases where an
+ * `Option` is `None`. If the current `Option` is empty (`None`), the `onNone`
+ * function is executed to compute the default value, which is then wrapped in a
+ * `Some`. If the current `Option` contains a value (`Some`), it is returned as
+ * is.
+ *
+ * This is particularly useful for handling optional values where a fallback
+ * default needs to be provided explicitly in case of absence.
+ *
+ * @example
+ * ```ts
+ * import { Option } from "effect"
+ *
+ * console.log(Option.none().pipe(Option.orElseSome(() => "b")))
+ * // Output: { _id: 'Option', _tag: 'Some', value: 'b' }
+ *
+ * console.log(Option.some("a").pipe(Option.orElseSome(() => "b")))
+ * // Output: { _id: 'Option', _tag: 'Some', value: 'a' }
+ * ```
+ *
+ * @category Error handling
+ * @since 2.0.0
+ */
+const orElseSome = /*#__PURE__*/dual(2, (self, onNone) => isNone(self) ? some(onNone()) : self);
+/**
+ * Converts a nullable value into an `Option`. Returns `None` if the value is
+ * `null` or `undefined`, otherwise wraps the value in a `Some`.
+ *
+ * @example
+ * ```ts
+ * import { Option } from "effect"
+ *
+ * console.log(Option.fromNullable(undefined))
+ * // Output: { _id: 'Option', _tag: 'None' }
+ *
+ * console.log(Option.fromNullable(null))
+ * // Output: { _id: 'Option', _tag: 'None' }
+ *
+ * console.log(Option.fromNullable(1))
+ * // Output: { _id: 'Option', _tag: 'Some', value: 1 }
+ * ```
+ *
+ * @category Conversions
+ * @since 2.0.0
+ */
+const fromNullable = nullableValue => nullableValue == null ? none$4() : some(nullableValue);
+/**
+ * Returns the value contained in the `Option` if it is `Some`; otherwise,
+ * returns `undefined`.
+ *
+ * **Details**
+ *
+ * This function provides a way to extract the value of an `Option` while
+ * falling back to `undefined` if the `Option` is `None`.
+ *
+ * It is particularly useful in scenarios where `undefined` is an acceptable
+ * placeholder for the absence of a value, such as when interacting with APIs or
+ * systems that use `undefined` as a default for missing values.
+ *
+ * @example
+ * ```ts
+ * import { Option } from "effect"
+ *
+ * console.log(Option.getOrUndefined(Option.some(1)))
+ * // Output: 1
+ *
+ * console.log(Option.getOrUndefined(Option.none()))
+ * // Output: undefined
+ * ```
+ *
+ * @category Getters
+ * @since 2.0.0
+ */
+const getOrUndefined = /*#__PURE__*/getOrElse(constUndefined);
+/**
+ * Transforms the value inside a `Some` to a new value using the provided
+ * function, while leaving `None` unchanged.
+ *
+ * **Details**
+ *
+ * This function applies a mapping function `f` to the value inside an `Option`
+ * if it is a `Some`. If the `Option` is `None`, it remains unchanged. The
+ * result is a new `Option` with the transformed value (if it was a `Some`) or
+ * still `None`.
+ *
+ * This utility is particularly useful for chaining transformations in a
+ * functional way without needing to manually handle `None` cases.
+ *
+ * @example
+ * ```ts
+ * import { Option } from "effect"
+ *
+ * // Mapping over a `Some`
+ * const someValue = Option.some(2)
+ *
+ * console.log(Option.map(someValue, (n) => n * 2))
+ * // Output: { _id: 'Option', _tag: 'Some', value: 4 }
+ *
+ * // Mapping over a `None`
+ * const noneValue = Option.none<number>()
+ *
+ * console.log(Option.map(noneValue, (n) => n * 2))
+ * // Output: { _id: 'Option', _tag: 'None' }
+ * ```
+ *
+ * @category Mapping
+ * @since 2.0.0
+ */
+const map$7 = /*#__PURE__*/dual(2, (self, f) => isNone(self) ? none$4() : some(f(self.value)));
+/**
+ * Applies a function to the value of a `Some` and flattens the resulting
+ * `Option`. If the input is `None`, it remains `None`.
+ *
+ * **Details**
+ *
+ * This function allows you to chain computations that return `Option` values.
+ * If the input `Option` is `Some`, the provided function `f` is applied to the
+ * contained value, and the resulting `Option` is returned. If the input is
+ * `None`, the function is not applied, and the result remains `None`.
+ *
+ * This utility is particularly useful for sequencing operations that may fail
+ * or produce optional results, enabling clean and concise workflows for
+ * handling such cases.
+ *
+ * @example
+ * ```ts
+ * import { Option } from "effect"
+ *
+ * interface Address {
+ *   readonly city: string
+ *   readonly street: Option.Option<string>
+ * }
+ *
+ * interface User {
+ *   readonly id: number
+ *   readonly username: string
+ *   readonly email: Option.Option<string>
+ *   readonly address: Option.Option<Address>
+ * }
+ *
+ * const user: User = {
+ *   id: 1,
+ *   username: "john_doe",
+ *   email: Option.some("john.doe@example.com"),
+ *   address: Option.some({
+ *     city: "New York",
+ *     street: Option.some("123 Main St")
+ *   })
+ * }
+ *
+ * // Use flatMap to extract the street value
+ * const street = user.address.pipe(
+ *   Option.flatMap((address) => address.street)
+ * )
+ *
+ * console.log(street)
+ * // Output: { _id: 'Option', _tag: 'Some', value: '123 Main St' }
+ * ```
+ *
+ * @category Sequencing
+ * @since 2.0.0
+ */
+const flatMap$3 = /*#__PURE__*/dual(2, (self, f) => isNone(self) ? none$4() : f(self.value));
+/**
+ * Returns a function that checks if an `Option` contains a specified value,
+ * using a provided equivalence function.
+ *
+ * **Details**
+ *
+ * This function allows you to check whether an `Option` contains a specific
+ * value. It uses an equivalence function `isEquivalent` to compare the value
+ * inside the `Option` to the provided value. If the `Option` is `Some` and the
+ * equivalence function returns `true`, the result is `true`. If the `Option` is
+ * `None` or the values are not equivalent, the result is `false`.
+ *
+ * @example
+ * ```ts
+ * import { Number, Option } from "effect"
+ *
+ * const contains = Option.containsWith(Number.Equivalence)
+ *
+ * console.log(Option.some(2).pipe(contains(2)))
+ * // Output: true
+ *
+ * console.log(Option.some(1).pipe(contains(2)))
+ * // Output: false
+ *
+ * console.log(Option.none().pipe(contains(2)))
+ * // Output: false
+ * ```
+ *
+ * @see {@link contains} for a version that uses the default `Equivalence`.
+ *
+ * @category Elements
+ * @since 2.0.0
+ */
+const containsWith = isEquivalent => dual(2, (self, a) => isNone(self) ? false : isEquivalent(self.value, a));
+const _equivalence$3 = /*#__PURE__*/equivalence();
+/**
+ * Returns a function that checks if an `Option` contains a specified value
+ * using the default `Equivalence`.
+ *
+ * **Details**
+ *
+ * This function allows you to check whether an `Option` contains a specific
+ * value. It uses the default `Equivalence` for equality comparison. If the
+ * `Option` is `Some` and its value is equivalent to the provided value, the
+ * result is `true`. If the `Option` is `None` or the values are not equivalent,
+ * the result is `false`.
+ *
+ * @example
+ * ```ts
+ * import { Option } from "effect"
+ *
+ * console.log(Option.some(2).pipe(Option.contains(2)))
+ * // Output: true
+ *
+ * console.log(Option.some(1).pipe(Option.contains(2)))
+ * // Output: false
+ *
+ * console.log(Option.none().pipe(Option.contains(2)))
+ * // Output: false
+ * ```
+ *
+ * @see {@link containsWith} for a version that allows you to specify a custom equivalence function.
+ *
+ * @category Elements
+ * @since 2.0.0
+ */
+const contains = /*#__PURE__*/containsWith(_equivalence$3);
+
+/**
+ * This module provides utility functions for working with tuples in TypeScript.
+ *
+ * @since 2.0.0
+ */
+/**
+ * Constructs a new tuple from the provided values.
+ *
+ * @example
+ * ```ts
+ * import * as assert from "node:assert"
+ * import { make } from "effect/Tuple"
+ *
+ * assert.deepStrictEqual(make(1, 'hello', true), [1, 'hello', true])
+ * ```
+ *
+ * @category constructors
+ * @since 2.0.0
+ */
+const make$r = (...elements) => elements;
+
+/**
+ * This module provides utility functions for working with arrays in TypeScript.
+ *
+ * @since 2.0.0
+ */
+/**
+ * Creates a new `Array` of the specified length.
+ *
+ * **Example**
+ *
+ * ```ts
+ * import { Array } from "effect"
+ *
+ * const result = Array.allocate<number>(3)
+ * console.log(result) // [ <3 empty items> ]
+ * ```
+ *
+ * @category constructors
+ * @since 2.0.0
+ */
+const allocate = n => new Array(n);
+/**
+ * Return a `NonEmptyArray` of length `n` with element `i` initialized with `f(i)`.
+ *
+ * **Note**. `n` is normalized to an integer >= 1.
+ *
+ * **Example**
+ *
+ * ```ts
+ * import { makeBy } from "effect/Array"
+ *
+ * const result = makeBy(5, n => n * 2)
+ * console.log(result) // [0, 2, 4, 6, 8]
+ * ```
+ *
+ * @category constructors
+ * @since 2.0.0
+ */
+const makeBy = /*#__PURE__*/dual(2, (n, f) => {
+  const max = Math.max(1, Math.floor(n));
+  const out = new Array(max);
+  for (let i = 0; i < max; i++) {
+    out[i] = f(i);
+  }
+  return out;
+});
+/**
+ * Creates a new `Array` from an iterable collection of values.
+ * If the input is already an array, it returns the input as-is.
+ * Otherwise, it converts the iterable collection to an array.
+ *
+ * **Example**
+ *
+ * ```ts
+ * import { Array } from "effect"
+ *
+ * const result = Array.fromIterable(new Set([1, 2, 3]))
+ * console.log(result) // [1, 2, 3]
+ * ```
+ *
+ * @category constructors
+ * @since 2.0.0
+ */
+const fromIterable$6 = collection => Array.isArray(collection) ? collection : Array.from(collection);
+/**
+ * Creates a new `Array` from a value that might not be an iterable.
+ *
+ * **Example**
+ *
+ * ```ts
+ * import { Array } from "effect"
+ *
+ * console.log(Array.ensure("a")) // ["a"]
+ * console.log(Array.ensure(["a"])) // ["a"]
+ * console.log(Array.ensure(["a", "b", "c"])) // ["a", "b", "c"]
+ * ```
+ *
+ * @category constructors
+ * @since 3.3.0
+ */
+const ensure = self => Array.isArray(self) ? self : [self];
+/**
+ * Prepend an element to the front of an `Iterable`, creating a new `NonEmptyArray`.
+ *
+ * **Example**
+ *
+ * ```ts
+ * import { Array } from "effect"
+ *
+ * const result = Array.prepend([2, 3, 4], 1)
+ * console.log(result) // [1, 2, 3, 4]
+ * ```
+ *
+ * @category concatenating
+ * @since 2.0.0
+ */
+const prepend$2 = /*#__PURE__*/dual(2, (self, head) => [head, ...self]);
+/**
+ * Append an element to the end of an `Iterable`, creating a new `NonEmptyArray`.
+ *
+ * **Example**
+ *
+ * ```ts
+ * import { Array } from "effect"
+ *
+ * const result = Array.append([1, 2, 3], 4);
+ * console.log(result) // [1, 2, 3, 4]
+ * ```
+ *
+ * @category concatenating
+ * @since 2.0.0
+ */
+const append$1 = /*#__PURE__*/dual(2, (self, last) => [...self, last]);
+/**
+ * Concatenates two arrays (or iterables), combining their elements.
+ * If either array is non-empty, the result is also a non-empty array.
+ *
+ * @category concatenating
+ * @since 2.0.0
+ */
+const appendAll$2 = /*#__PURE__*/dual(2, (self, that) => fromIterable$6(self).concat(fromIterable$6(that)));
+/**
+ * Determine if an `Array` is empty narrowing down the type to `[]`.
+ *
+ * **Example**
+ *
+ * ```ts
+ * import { Array } from "effect"
+ *
+ * console.log(Array.isEmptyArray([])) // true
+ * console.log(Array.isEmptyArray([1, 2, 3])) // false
+ * ```
+ *
+ * @category guards
+ * @since 2.0.0
+ */
+const isEmptyArray = self => self.length === 0;
+/**
+ * Determine if a `ReadonlyArray` is empty narrowing down the type to `readonly []`.
+ *
+ * **Example**
+ *
+ * ```ts
+ * import { Array } from "effect"
+ *
+ * console.log(Array.isEmptyReadonlyArray([])) // true
+ * console.log(Array.isEmptyReadonlyArray([1, 2, 3])) // false
+ * ```
+ *
+ * @category guards
+ * @since 2.0.0
+ */
+const isEmptyReadonlyArray = isEmptyArray;
+/**
+ * Determine if an `Array` is non empty narrowing down the type to `NonEmptyArray`.
+ *
+ * An `Array` is considered to be a `NonEmptyArray` if it contains at least one element.
+ *
+ * **Example**
+ *
+ * ```ts
+ * import { Array } from "effect"
+ *
+ * console.log(Array.isNonEmptyArray([])) // false
+ * console.log(Array.isNonEmptyArray([1, 2, 3])) // true
+ * ```
+ *
+ * @category guards
+ * @since 2.0.0
+ */
+const isNonEmptyArray = isNonEmptyArray$1;
+/**
+ * Determine if a `ReadonlyArray` is non empty narrowing down the type to `NonEmptyReadonlyArray`.
+ *
+ * A `ReadonlyArray` is considered to be a `NonEmptyReadonlyArray` if it contains at least one element.
+ *
+ * **Example**
+ *
+ * ```ts
+ * import { Array } from "effect"
+ *
+ * console.log(Array.isNonEmptyReadonlyArray([])) // false
+ * console.log(Array.isNonEmptyReadonlyArray([1, 2, 3])) // true
+ * ```
+ *
+ * @category guards
+ * @since 2.0.0
+ */
+const isNonEmptyReadonlyArray = isNonEmptyArray$1;
+const isOutOfBounds = (i, as) => i < 0 || i >= as.length;
+const clamp = (i, as) => Math.floor(Math.min(Math.max(0, i), as.length));
+/**
+ * This function provides a safe way to read a value at a particular index from a `ReadonlyArray`.
+ *
+ * @category getters
+ * @since 2.0.0
+ */
+const get$9 = /*#__PURE__*/dual(2, (self, index) => {
+  const i = Math.floor(index);
+  return isOutOfBounds(i, self) ? none$4() : some(self[i]);
+});
+/**
+ * Gets an element unsafely, will throw on out of bounds.
+ *
+ * @since 2.0.0
+ * @category unsafe
+ */
+const unsafeGet$3 = /*#__PURE__*/dual(2, (self, index) => {
+  const i = Math.floor(index);
+  if (isOutOfBounds(i, self)) {
+    throw new Error(`Index ${i} out of bounds`);
+  }
+  return self[i];
+});
+/**
+ * Get the first element of a `ReadonlyArray`, or `None` if the `ReadonlyArray` is empty.
+ *
+ * @category getters
+ * @since 2.0.0
+ */
+const head$1 = /*#__PURE__*/get$9(0);
+/**
+ * Get the first element of a non empty array.
+ *
+ * **Example**
+ *
+ * ```ts
+ * import { Array } from "effect"
+ *
+ * const result = Array.headNonEmpty([1, 2, 3, 4])
+ * console.log(result) // 1
+ * ```
+ *
+ * @category getters
+ * @since 2.0.0
+ */
+const headNonEmpty$1 = /*#__PURE__*/unsafeGet$3(0);
+/**
+ * Get the last element in a `ReadonlyArray`, or `None` if the `ReadonlyArray` is empty.
+ *
+ * @category getters
+ * @since 2.0.0
+ */
+const last = self => isNonEmptyReadonlyArray(self) ? some(lastNonEmpty(self)) : none$4();
+/**
+ * Get the last element of a non empty array.
+ *
+ * **Example**
+ *
+ * ```ts
+ * import { Array } from "effect"
+ *
+ * const result = Array.lastNonEmpty([1, 2, 3, 4])
+ * console.log(result) // 4
+ * ```
+ *
+ * @category getters
+ * @since 2.0.0
+ */
+const lastNonEmpty = self => self[self.length - 1];
+/**
+ * Get all but the first element of a `NonEmptyReadonlyArray`.
+ *
+ * **Example**
+ *
+ * ```ts
+ * import { Array } from "effect"
+ *
+ * const result = Array.tailNonEmpty([1, 2, 3, 4])
+ * console.log(result) // [2, 3, 4]
+ * ```
+ *
+ * @category getters
+ * @since 2.0.0
+ */
+const tailNonEmpty$1 = self => self.slice(1);
+const spanIndex = (self, predicate) => {
+  let i = 0;
+  for (const a of self) {
+    if (!predicate(a, i)) {
+      break;
+    }
+    i++;
+  }
+  return i;
+};
+/**
+ * Split an `Iterable` into two parts:
+ *
+ * 1. the longest initial subarray for which all elements satisfy the specified predicate
+ * 2. the remaining elements
+ *
+ * @category splitting
+ * @since 2.0.0
+ */
+const span = /*#__PURE__*/dual(2, (self, predicate) => splitAt(self, spanIndex(self, predicate)));
+/**
+ * Drop a max number of elements from the start of an `Iterable`, creating a new `Array`.
+ *
+ * **Note**. `n` is normalized to a non negative integer.
+ *
+ * **Example**
+ *
+ * ```ts
+ * import { Array } from "effect"
+ *
+ * const result = Array.drop([1, 2, 3, 4, 5], 2)
+ * console.log(result) // [3, 4, 5]
+ * ```
+ *
+ * @category getters
+ * @since 2.0.0
+ */
+const drop$1 = /*#__PURE__*/dual(2, (self, n) => {
+  const input = fromIterable$6(self);
+  return input.slice(clamp(n, input), input.length);
+});
+/**
+ * Reverse an `Iterable`, creating a new `Array`.
+ *
+ * **Example**
+ *
+ * ```ts
+ * import { Array } from "effect"
+ *
+ * const result = Array.reverse([1, 2, 3, 4])
+ * console.log(result) // [4, 3, 2, 1]
+ * ```
+ *
+ * @category elements
+ * @since 2.0.0
+ */
+const reverse$2 = self => Array.from(self).reverse();
+/**
+ * Create a new array with elements sorted in increasing order based on the specified comparator.
+ * If the input is a `NonEmptyReadonlyArray`, the output will also be a `NonEmptyReadonlyArray`.
+ *
+ * @category sorting
+ * @since 2.0.0
+ */
+const sort = /*#__PURE__*/dual(2, (self, O) => {
+  const out = Array.from(self);
+  out.sort(O);
+  return out;
+});
+/**
+ * Takes two `Iterable`s and returns an `Array` of corresponding pairs.
+ * If one input `Iterable` is short, excess elements of the
+ * longer `Iterable` are discarded.
+ *
+ * **Example**
+ *
+ * ```ts
+ * import { Array } from "effect"
+ *
+ * const result = Array.zip([1, 2, 3], ['a', 'b'])
+ * console.log(result) // [[1, 'a'], [2, 'b']]
+ * ```
+ *
+ * @category zipping
+ * @since 2.0.0
+ */
+const zip$1 = /*#__PURE__*/dual(2, (self, that) => zipWith$2(self, that, make$r));
+/**
+ * Apply a function to pairs of elements at the same index in two `Iterable`s, collecting the results in a new `Array`. If one
+ * input `Iterable` is short, excess elements of the longer `Iterable` are discarded.
+ *
+ * **Example**
+ *
+ * ```ts
+ * import { Array } from "effect"
+ *
+ * const result = Array.zipWith([1, 2, 3], [4, 5, 6], (a, b) => a + b)
+ * console.log(result) // [5, 7, 9]
+ * ```
+ *
+ * @category zipping
+ * @since 2.0.0
+ */
+const zipWith$2 = /*#__PURE__*/dual(3, (self, that, f) => {
+  const as = fromIterable$6(self);
+  const bs = fromIterable$6(that);
+  if (isNonEmptyReadonlyArray(as) && isNonEmptyReadonlyArray(bs)) {
+    const out = [f(headNonEmpty$1(as), headNonEmpty$1(bs))];
+    const len = Math.min(as.length, bs.length);
+    for (let i = 1; i < len; i++) {
+      out[i] = f(as[i], bs[i]);
+    }
+    return out;
+  }
+  return [];
+});
+const _equivalence$2 = /*#__PURE__*/equivalence();
+/**
+ * Splits an `Iterable` into two segments, with the first segment containing a maximum of `n` elements.
+ * The value of `n` can be `0`.
+ *
+ * **Example**
+ *
+ * ```ts
+ * import { Array } from "effect"
+ *
+ * const result = Array.splitAt([1, 2, 3, 4, 5], 3)
+ * console.log(result) // [[1, 2, 3], [4, 5]]
+ * ```
+ *
+ * @category splitting
+ * @since 2.0.0
+ */
+const splitAt = /*#__PURE__*/dual(2, (self, n) => {
+  const input = Array.from(self);
+  const _n = Math.floor(n);
+  if (isNonEmptyReadonlyArray(input)) {
+    if (_n >= 1) {
+      return splitNonEmptyAt(input, _n);
+    }
+    return [[], input];
+  }
+  return [input, []];
+});
+/**
+ * Splits a `NonEmptyReadonlyArray` into two segments, with the first segment containing a maximum of `n` elements.
+ * The value of `n` must be `>= 1`.
+ *
+ * **Example**
+ *
+ * ```ts
+ * import { Array } from "effect"
+ *
+ * const result = Array.splitNonEmptyAt(["a", "b", "c", "d", "e"], 3)
+ * console.log(result) // [["a", "b", "c"], ["d", "e"]]
+ * ```
+ *
+ * @category splitting
+ * @since 2.0.0
+ */
+const splitNonEmptyAt = /*#__PURE__*/dual(2, (self, n) => {
+  const _n = Math.max(1, Math.floor(n));
+  return _n >= self.length ? [copy$1(self), []] : [prepend$2(self.slice(1, _n), headNonEmpty$1(self)), self.slice(_n)];
+});
+/**
+ * Copies an array.
+ *
+ * **Example**
+ *
+ * ```ts
+ * import { Array } from "effect"
+ *
+ * const result = Array.copy([1, 2, 3])
+ * console.log(result) // [1, 2, 3]
+ * ```
+ *
+ * @since 2.0.0
+ */
+const copy$1 = self => self.slice();
+/**
+ * Calculates the union of two arrays using the provided equivalence relation.
+ *
+ * **Example**
+ *
+ * ```ts
+ * import { Array } from "effect"
+ *
+ * const union = Array.unionWith([1, 2], [2, 3], (a, b) => a === b)
+ * console.log(union) // [1, 2, 3]
+ * ```
+ *
+ * @since 2.0.0
+ */
+const unionWith = /*#__PURE__*/dual(3, (self, that, isEquivalent) => {
+  const a = fromIterable$6(self);
+  const b = fromIterable$6(that);
+  if (isNonEmptyReadonlyArray(a)) {
+    if (isNonEmptyReadonlyArray(b)) {
+      const dedupe = dedupeWith(isEquivalent);
+      return dedupe(appendAll$2(a, b));
+    }
+    return a;
+  }
+  return b;
+});
+/**
+ * Creates a union of two arrays, removing duplicates.
+ *
+ * **Example**
+ *
+ * ```ts
+ * import { Array } from "effect"
+ *
+ * const result = Array.union([1, 2], [2, 3])
+ * console.log(result) // [1, 2, 3]
+ * ```
+ *
+ * @since 2.0.0
+ */
+const union$2 = /*#__PURE__*/dual(2, (self, that) => unionWith(self, that, _equivalence$2));
+/**
+ * @category constructors
+ * @since 2.0.0
+ */
+const empty$l = () => [];
+/**
+ * Constructs a new `NonEmptyArray<A>` from the specified value.
+ *
+ * @category constructors
+ * @since 2.0.0
+ */
+const of$2 = a => [a];
+/**
+ * @category mapping
+ * @since 2.0.0
+ */
+const map$6 = /*#__PURE__*/dual(2, (self, f) => self.map(f));
+/**
+ * Applies a function to each element in an array and returns a new array containing the concatenated mapped elements.
+ *
+ * @category sequencing
+ * @since 2.0.0
+ */
+const flatMap$2 = /*#__PURE__*/dual(2, (self, f) => {
+  if (isEmptyReadonlyArray(self)) {
+    return [];
+  }
+  const out = [];
+  for (let i = 0; i < self.length; i++) {
+    const inner = f(self[i], i);
+    for (let j = 0; j < inner.length; j++) {
+      out.push(inner[j]);
+    }
+  }
+  return out;
+});
+/**
+ * Combines multiple arrays into a single array by concatenating all elements
+ * from each nested array. This function ensures that the structure of nested
+ * arrays is collapsed into a single, flat array.
+ *
+ * **Example**
+ *
+ * ```ts
+ * import { Array } from "effect"
+ *
+ * const result = Array.flatten([[1, 2], [], [3, 4], [], [5, 6]])
+ * console.log(result) // [1, 2, 3, 4, 5, 6]
+ * ```
+ *
+ * @category sequencing
+ * @since 2.0.0
+ */
+const flatten$2 = /*#__PURE__*/flatMap$2(identity);
+/**
+ * Reduces an array from the left.
+ *
+ * **Example**
+ *
+ * ```ts
+ * import { Array } from "effect"
+ *
+ * const result = Array.reduce([1, 2, 3], 0, (acc, n) => acc + n)
+ * console.log(result) // 6
+ * ```
+ *
+ * @category folding
+ * @since 2.0.0
+ */
+const reduce$6 = /*#__PURE__*/dual(3, (self, b, f) => fromIterable$6(self).reduce((b, a, i) => f(b, a, i), b));
+/**
+ * @category constructors
+ * @since 2.0.0
+ */
+const unfold$1 = (b, f) => {
+  const out = [];
+  let next = b;
+  let o;
+  while (isSome(o = f(next))) {
+    const [a, b] = o.value;
+    out.push(a);
+    next = b;
+  }
+  return out;
+};
+/**
+ * Creates an equivalence relation for arrays.
+ *
+ * **Example**
+ *
+ * ```ts
+ * import { Array } from "effect"
+ *
+ * const eq = Array.getEquivalence<number>((a, b) => a === b)
+ * console.log(eq([1, 2, 3], [1, 2, 3])) // true
+ * ```
+ *
+ * @category instances
+ * @since 2.0.0
+ */
+const getEquivalence$2 = array$1;
+/**
+ * Remove duplicates from an `Iterable` using the provided `isEquivalent` function,
+ * preserving the order of the first occurrence of each element.
+ *
+ * **Example**
+ *
+ * ```ts
+ * import { Array } from "effect"
+ *
+ * const result = Array.dedupeWith([1, 2, 2, 3, 3, 3], (a, b) => a === b)
+ * console.log(result) // [1, 2, 3]
+ * ```
+ *
+ * @since 2.0.0
+ */
+const dedupeWith = /*#__PURE__*/dual(2, (self, isEquivalent) => {
+  const input = fromIterable$6(self);
+  if (isNonEmptyReadonlyArray(input)) {
+    const out = [headNonEmpty$1(input)];
+    const rest = tailNonEmpty$1(input);
+    for (const r of rest) {
+      if (out.every(a => !isEquivalent(r, a))) {
+        out.push(r);
+      }
+    }
+    return out;
+  }
+  return [];
+});
+/**
+ * Remove duplicates from an `Iterable`, preserving the order of the first occurrence of each element.
+ * The equivalence used to compare elements is provided by `Equal.equivalence()` from the `Equal` module.
+ *
+ * @since 2.0.0
+ */
+const dedupe = self => dedupeWith(self, equivalence());
+/**
+ * Joins the elements together with "sep" in the middle.
+ *
+ * **Example**
+ *
+ * ```ts
+ * import { Array } from "effect"
+ *
+ * const strings = ["a", "b", "c"]
+ * const joined = Array.join(strings, "-")
+ * console.log(joined) // "a-b-c"
+ * ```
+ *
+ * @since 2.0.0
+ * @category folding
+ */
+const join$1 = /*#__PURE__*/dual(2, (self, sep) => fromIterable$6(self).join(sep));
+
+/**
+ * @since 2.0.0
+ */
+const TypeId$9 = /*#__PURE__*/Symbol.for("effect/Chunk");
+function copy(src, srcPos, dest, destPos, len) {
+  for (let i = srcPos; i < Math.min(src.length, srcPos + len); i++) {
+    dest[destPos + i - srcPos] = src[i];
+  }
+  return dest;
+}
+const emptyArray = [];
+/**
+ * Compares the two chunks of equal length using the specified function
+ *
+ * @category equivalence
+ * @since 2.0.0
+ */
+const getEquivalence$1 = isEquivalent => make$t((self, that) => self.length === that.length && toReadonlyArray(self).every((value, i) => isEquivalent(value, unsafeGet$2(that, i))));
+const _equivalence$1 = /*#__PURE__*/getEquivalence$1(equals$1);
+const ChunkProto = {
+  [TypeId$9]: {
+    _A: _ => _
+  },
+  toString() {
+    return format$2(this.toJSON());
+  },
+  toJSON() {
+    return {
+      _id: "Chunk",
+      values: toReadonlyArray(this).map(toJSON)
+    };
+  },
+  [NodeInspectSymbol]() {
+    return this.toJSON();
+  },
+  [symbol](that) {
+    return isChunk(that) && _equivalence$1(this, that);
+  },
+  [symbol$1]() {
+    return cached(this, array(toReadonlyArray(this)));
+  },
+  [Symbol.iterator]() {
+    switch (this.backing._tag) {
+      case "IArray":
+        {
+          return this.backing.array[Symbol.iterator]();
+        }
+      case "IEmpty":
+        {
+          return emptyArray[Symbol.iterator]();
+        }
+      default:
+        {
+          return toReadonlyArray(this)[Symbol.iterator]();
+        }
+    }
+  },
+  pipe() {
+    return pipeArguments(this, arguments);
+  }
+};
+const makeChunk = backing => {
+  const chunk = Object.create(ChunkProto);
+  chunk.backing = backing;
+  switch (backing._tag) {
+    case "IEmpty":
+      {
+        chunk.length = 0;
+        chunk.depth = 0;
+        chunk.left = chunk;
+        chunk.right = chunk;
+        break;
+      }
+    case "IConcat":
+      {
+        chunk.length = backing.left.length + backing.right.length;
+        chunk.depth = 1 + Math.max(backing.left.depth, backing.right.depth);
+        chunk.left = backing.left;
+        chunk.right = backing.right;
+        break;
+      }
+    case "IArray":
+      {
+        chunk.length = backing.array.length;
+        chunk.depth = 0;
+        chunk.left = _empty$6;
+        chunk.right = _empty$6;
+        break;
+      }
+    case "ISingleton":
+      {
+        chunk.length = 1;
+        chunk.depth = 0;
+        chunk.left = _empty$6;
+        chunk.right = _empty$6;
+        break;
+      }
+    case "ISlice":
+      {
+        chunk.length = backing.length;
+        chunk.depth = backing.chunk.depth + 1;
+        chunk.left = _empty$6;
+        chunk.right = _empty$6;
+        break;
+      }
+  }
+  return chunk;
+};
+/**
+ * Checks if `u` is a `Chunk<unknown>`
+ *
+ * @category constructors
+ * @since 2.0.0
+ */
+const isChunk = u => hasProperty(u, TypeId$9);
+const _empty$6 = /*#__PURE__*/makeChunk({
+  _tag: "IEmpty"
+});
+/**
+ * @category constructors
+ * @since 2.0.0
+ */
+const empty$k = () => _empty$6;
+/**
+ * Builds a `NonEmptyChunk` from an non-empty collection of elements.
+ *
+ * @category constructors
+ * @since 2.0.0
+ */
+const make$q = (...as) => unsafeFromNonEmptyArray(as);
+/**
+ * Builds a `NonEmptyChunk` from a single element.
+ *
+ * @category constructors
+ * @since 2.0.0
+ */
+const of$1 = a => makeChunk({
+  _tag: "ISingleton",
+  a
+});
+/**
+ * Creates a new `Chunk` from an iterable collection of values.
+ *
+ * @category constructors
+ * @since 2.0.0
+ */
+const fromIterable$5 = self => isChunk(self) ? self : unsafeFromArray(fromIterable$6(self));
+const copyToArray = (self, array, initial) => {
+  switch (self.backing._tag) {
+    case "IArray":
+      {
+        copy(self.backing.array, 0, array, initial, self.length);
+        break;
+      }
+    case "IConcat":
+      {
+        copyToArray(self.left, array, initial);
+        copyToArray(self.right, array, initial + self.left.length);
+        break;
+      }
+    case "ISingleton":
+      {
+        array[initial] = self.backing.a;
+        break;
+      }
+    case "ISlice":
+      {
+        let i = 0;
+        let j = initial;
+        while (i < self.length) {
+          array[j] = unsafeGet$2(self, i);
+          i += 1;
+          j += 1;
+        }
+        break;
+      }
+  }
+};
+const toReadonlyArray_ = self => {
+  switch (self.backing._tag) {
+    case "IEmpty":
+      {
+        return emptyArray;
+      }
+    case "IArray":
+      {
+        return self.backing.array;
+      }
+    default:
+      {
+        const arr = new Array(self.length);
+        copyToArray(self, arr, 0);
+        self.backing = {
+          _tag: "IArray",
+          array: arr
+        };
+        self.left = _empty$6;
+        self.right = _empty$6;
+        self.depth = 0;
+        return arr;
+      }
+  }
+};
+/**
+ * Converts a `Chunk` into a `ReadonlyArray`. If the provided `Chunk` is
+ * non-empty (`NonEmptyChunk`), the function will return a
+ * `NonEmptyReadonlyArray`, ensuring the non-empty property is preserved.
+ *
+ * @category conversions
+ * @since 2.0.0
+ */
+const toReadonlyArray = toReadonlyArray_;
+const reverseChunk = self => {
+  switch (self.backing._tag) {
+    case "IEmpty":
+    case "ISingleton":
+      return self;
+    case "IArray":
+      {
+        return makeChunk({
+          _tag: "IArray",
+          array: reverse$2(self.backing.array)
+        });
+      }
+    case "IConcat":
+      {
+        return makeChunk({
+          _tag: "IConcat",
+          left: reverse$1(self.backing.right),
+          right: reverse$1(self.backing.left)
+        });
+      }
+    case "ISlice":
+      return unsafeFromArray(reverse$2(toReadonlyArray(self)));
+  }
+};
+/**
+ * Reverses the order of elements in a `Chunk`.
+ * Importantly, if the input chunk is a `NonEmptyChunk`, the reversed chunk will also be a `NonEmptyChunk`.
+ *
+ * **Example**
+ *
+ * ```ts
+ * import { Chunk } from "effect"
+ *
+ * const chunk = Chunk.make(1, 2, 3)
+ * const result = Chunk.reverse(chunk)
+ *
+ * console.log(result)
+ * // { _id: 'Chunk', values: [ 3, 2, 1 ] }
+ * ```
+ *
+ * @since 2.0.0
+ * @category elements
+ */
+const reverse$1 = reverseChunk;
+/**
+ * This function provides a safe way to read a value at a particular index from a `Chunk`.
+ *
+ * @category elements
+ * @since 2.0.0
+ */
+const get$8 = /*#__PURE__*/dual(2, (self, index) => index < 0 || index >= self.length ? none$4() : some(unsafeGet$2(self, index)));
+/**
+ * Wraps an array into a chunk without copying, unsafe on mutable arrays
+ *
+ * @since 2.0.0
+ * @category unsafe
+ */
+const unsafeFromArray = self => self.length === 0 ? empty$k() : self.length === 1 ? of$1(self[0]) : makeChunk({
+  _tag: "IArray",
+  array: self
+});
+/**
+ * Wraps an array into a chunk without copying, unsafe on mutable arrays
+ *
+ * @since 2.0.0
+ * @category unsafe
+ */
+const unsafeFromNonEmptyArray = self => unsafeFromArray(self);
+/**
+ * Gets an element unsafely, will throw on out of bounds
+ *
+ * @since 2.0.0
+ * @category unsafe
+ */
+const unsafeGet$2 = /*#__PURE__*/dual(2, (self, index) => {
+  switch (self.backing._tag) {
+    case "IEmpty":
+      {
+        throw new Error(`Index out of bounds`);
+      }
+    case "ISingleton":
+      {
+        if (index !== 0) {
+          throw new Error(`Index out of bounds`);
+        }
+        return self.backing.a;
+      }
+    case "IArray":
+      {
+        if (index >= self.length || index < 0) {
+          throw new Error(`Index out of bounds`);
+        }
+        return self.backing.array[index];
+      }
+    case "IConcat":
+      {
+        return index < self.left.length ? unsafeGet$2(self.left, index) : unsafeGet$2(self.right, index - self.left.length);
+      }
+    case "ISlice":
+      {
+        return unsafeGet$2(self.backing.chunk, index + self.backing.offset);
+      }
+  }
+});
+/**
+ * Appends the specified element to the end of the `Chunk`.
+ *
+ * @category concatenating
+ * @since 2.0.0
+ */
+const append = /*#__PURE__*/dual(2, (self, a) => appendAll$1(self, of$1(a)));
+/**
+ * Prepend an element to the front of a `Chunk`, creating a new `NonEmptyChunk`.
+ *
+ * @category concatenating
+ * @since 2.0.0
+ */
+const prepend$1 = /*#__PURE__*/dual(2, (self, elem) => appendAll$1(of$1(elem), self));
+/**
+ * Drops the first up to `n` elements from the chunk
+ *
+ * @since 2.0.0
+ */
+const drop = /*#__PURE__*/dual(2, (self, n) => {
+  if (n <= 0) {
+    return self;
+  } else if (n >= self.length) {
+    return _empty$6;
+  } else {
+    switch (self.backing._tag) {
+      case "ISlice":
+        {
+          return makeChunk({
+            _tag: "ISlice",
+            chunk: self.backing.chunk,
+            offset: self.backing.offset + n,
+            length: self.backing.length - n
+          });
+        }
+      case "IConcat":
+        {
+          if (n > self.left.length) {
+            return drop(self.right, n - self.left.length);
+          }
+          return makeChunk({
+            _tag: "IConcat",
+            left: drop(self.left, n),
+            right: self.right
+          });
+        }
+      default:
+        {
+          return makeChunk({
+            _tag: "ISlice",
+            chunk: self,
+            offset: n,
+            length: self.length - n
+          });
+        }
+    }
+  }
+});
+/**
+ * Concatenates two chunks, combining their elements.
+ * If either chunk is non-empty, the result is also a non-empty chunk.
+ *
+ * **Example**
+ *
+ * ```ts
+ * import { Chunk } from "effect"
+ *
+ * const result = Chunk.make(1, 2).pipe(Chunk.appendAll(Chunk.make("a", "b")), Chunk.toArray)
+ *
+ * console.log(result)
+ * // [ 1, 2, "a", "b" ]
+ * ```
+ *
+ * @category concatenating
+ * @since 2.0.0
+ */
+const appendAll$1 = /*#__PURE__*/dual(2, (self, that) => {
+  if (self.backing._tag === "IEmpty") {
+    return that;
+  }
+  if (that.backing._tag === "IEmpty") {
+    return self;
+  }
+  const diff = that.depth - self.depth;
+  if (Math.abs(diff) <= 1) {
+    return makeChunk({
+      _tag: "IConcat",
+      left: self,
+      right: that
+    });
+  } else if (diff < -1) {
+    if (self.left.depth >= self.right.depth) {
+      const nr = appendAll$1(self.right, that);
+      return makeChunk({
+        _tag: "IConcat",
+        left: self.left,
+        right: nr
+      });
+    } else {
+      const nrr = appendAll$1(self.right.right, that);
+      if (nrr.depth === self.depth - 3) {
+        const nr = makeChunk({
+          _tag: "IConcat",
+          left: self.right.left,
+          right: nrr
+        });
+        return makeChunk({
+          _tag: "IConcat",
+          left: self.left,
+          right: nr
+        });
+      } else {
+        const nl = makeChunk({
+          _tag: "IConcat",
+          left: self.left,
+          right: self.right.left
+        });
+        return makeChunk({
+          _tag: "IConcat",
+          left: nl,
+          right: nrr
+        });
+      }
+    }
+  } else {
+    if (that.right.depth >= that.left.depth) {
+      const nl = appendAll$1(self, that.left);
+      return makeChunk({
+        _tag: "IConcat",
+        left: nl,
+        right: that.right
+      });
+    } else {
+      const nll = appendAll$1(self, that.left.left);
+      if (nll.depth === that.depth - 3) {
+        const nl = makeChunk({
+          _tag: "IConcat",
+          left: nll,
+          right: that.left.right
+        });
+        return makeChunk({
+          _tag: "IConcat",
+          left: nl,
+          right: that.right
+        });
+      } else {
+        const nr = makeChunk({
+          _tag: "IConcat",
+          left: that.left.right,
+          right: that.right
+        });
+        return makeChunk({
+          _tag: "IConcat",
+          left: nll,
+          right: nr
+        });
+      }
+    }
+  }
+});
+/**
+ * Determines if the chunk is empty.
+ *
+ * @since 2.0.0
+ * @category elements
+ */
+const isEmpty$5 = self => self.length === 0;
+/**
+ * Determines if the chunk is not empty.
+ *
+ * @since 2.0.0
+ * @category elements
+ */
+const isNonEmpty$2 = self => self.length > 0;
+/**
+ * Returns the first element of this chunk if it exists.
+ *
+ * @since 2.0.0
+ * @category elements
+ */
+const head = /*#__PURE__*/get$8(0);
+/**
+ * Returns the first element of this chunk.
+ *
+ * It will throw an error if the chunk is empty.
+ *
+ * @since 2.0.0
+ * @category unsafe
+ */
+const unsafeHead = self => unsafeGet$2(self, 0);
+/**
+ * Returns the first element of this non empty chunk.
+ *
+ * @since 2.0.0
+ * @category elements
+ */
+const headNonEmpty = unsafeHead;
+/**
+ * Returns every elements after the first.
+ *
+ * @since 2.0.0
+ * @category elements
+ */
+const tailNonEmpty = self => drop(self, 1);
+
+/** @internal */
+const SIZE = 5;
+/** @internal */
+const BUCKET_SIZE = /*#__PURE__*/Math.pow(2, SIZE);
+/** @internal */
+const MASK = BUCKET_SIZE - 1;
+/** @internal */
+const MAX_INDEX_NODE = BUCKET_SIZE / 2;
+/** @internal */
+const MIN_ARRAY_NODE = BUCKET_SIZE / 4;
+
+/**
+ * Hamming weight.
+ *
+ * Taken from: http://jsperf.com/hamming-weight
+ *
+ * @internal
+ */
+function popcount(x) {
+  x -= x >> 1 & 0x55555555;
+  x = (x & 0x33333333) + (x >> 2 & 0x33333333);
+  x = x + (x >> 4) & 0x0f0f0f0f;
+  x += x >> 8;
+  x += x >> 16;
+  return x & 0x7f;
+}
+/** @internal */
+function hashFragment(shift, h) {
+  return h >>> shift & MASK;
+}
+/** @internal */
+function toBitmap(x) {
+  return 1 << x;
+}
+/** @internal */
+function fromBitmap(bitmap, bit) {
+  return popcount(bitmap & bit - 1);
+}
+
+const make$p = (value, previous) => ({
+  value,
+  previous
+});
+
+/** @internal */
+function arrayUpdate(mutate, at, v, arr) {
+  let out = arr;
+  if (!mutate) {
+    const len = arr.length;
+    out = new Array(len);
+    for (let i = 0; i < len; ++i) out[i] = arr[i];
+  }
+  out[at] = v;
+  return out;
+}
+/** @internal */
+function arraySpliceOut(mutate, at, arr) {
+  const newLen = arr.length - 1;
+  let i = 0;
+  let g = 0;
+  let out = arr;
+  if (mutate) {
+    i = g = at;
+  } else {
+    out = new Array(newLen);
+    while (i < at) out[g++] = arr[i++];
+  }
+  ++i;
+  while (i <= newLen) out[g++] = arr[i++];
+  if (mutate) {
+    out.length = newLen;
+  }
+  return out;
+}
+/** @internal */
+function arraySpliceIn(mutate, at, v, arr) {
+  const len = arr.length;
+  if (mutate) {
+    let i = len;
+    while (i >= at) arr[i--] = arr[i];
+    arr[at] = v;
+    return arr;
+  }
+  let i = 0,
+    g = 0;
+  const out = new Array(len + 1);
+  while (i < at) out[g++] = arr[i++];
+  out[at] = v;
+  while (i < len) out[++g] = arr[i++];
+  return out;
+}
+
+/** @internal */
+class EmptyNode {
+  _tag = "EmptyNode";
+  modify(edit, _shift, f, hash, key, size) {
+    const v = f(none$4());
+    if (isNone(v)) return new EmptyNode();
+    ++size.value;
+    return new LeafNode(edit, hash, key, v);
+  }
+}
+/** @internal */
+function isEmptyNode(a) {
+  return isTagged(a, "EmptyNode");
+}
+/** @internal */
+function isLeafNode(node) {
+  return isEmptyNode(node) || node._tag === "LeafNode" || node._tag === "CollisionNode";
+}
+/** @internal */
+function canEditNode(node, edit) {
+  return isEmptyNode(node) ? false : edit === node.edit;
+}
+/** @internal */
+class LeafNode {
+  edit;
+  hash;
+  key;
+  value;
+  _tag = "LeafNode";
+  constructor(edit, hash, key, value) {
+    this.edit = edit;
+    this.hash = hash;
+    this.key = key;
+    this.value = value;
+  }
+  modify(edit, shift, f, hash, key, size) {
+    if (equals$1(key, this.key)) {
+      const v = f(this.value);
+      if (v === this.value) return this;else if (isNone(v)) {
+        --size.value;
+        return new EmptyNode();
+      }
+      if (canEditNode(this, edit)) {
+        this.value = v;
+        return this;
+      }
+      return new LeafNode(edit, hash, key, v);
+    }
+    const v = f(none$4());
+    if (isNone(v)) return this;
+    ++size.value;
+    return mergeLeaves(edit, shift, this.hash, this, hash, new LeafNode(edit, hash, key, v));
+  }
+}
+/** @internal */
+class CollisionNode {
+  edit;
+  hash;
+  children;
+  _tag = "CollisionNode";
+  constructor(edit, hash, children) {
+    this.edit = edit;
+    this.hash = hash;
+    this.children = children;
+  }
+  modify(edit, shift, f, hash, key, size) {
+    if (hash === this.hash) {
+      const canEdit = canEditNode(this, edit);
+      const list = this.updateCollisionList(canEdit, edit, this.hash, this.children, f, key, size);
+      if (list === this.children) return this;
+      return list.length > 1 ? new CollisionNode(edit, this.hash, list) : list[0]; // collapse single element collision list
+    }
+    const v = f(none$4());
+    if (isNone(v)) return this;
+    ++size.value;
+    return mergeLeaves(edit, shift, this.hash, this, hash, new LeafNode(edit, hash, key, v));
+  }
+  updateCollisionList(mutate, edit, hash, list, f, key, size) {
+    const len = list.length;
+    for (let i = 0; i < len; ++i) {
+      const child = list[i];
+      if ("key" in child && equals$1(key, child.key)) {
+        const value = child.value;
+        const newValue = f(value);
+        if (newValue === value) return list;
+        if (isNone(newValue)) {
+          --size.value;
+          return arraySpliceOut(mutate, i, list);
+        }
+        return arrayUpdate(mutate, i, new LeafNode(edit, hash, key, newValue), list);
+      }
+    }
+    const newValue = f(none$4());
+    if (isNone(newValue)) return list;
+    ++size.value;
+    return arrayUpdate(mutate, len, new LeafNode(edit, hash, key, newValue), list);
+  }
+}
+/** @internal */
+class IndexedNode {
+  edit;
+  mask;
+  children;
+  _tag = "IndexedNode";
+  constructor(edit, mask, children) {
+    this.edit = edit;
+    this.mask = mask;
+    this.children = children;
+  }
+  modify(edit, shift, f, hash, key, size) {
+    const mask = this.mask;
+    const children = this.children;
+    const frag = hashFragment(shift, hash);
+    const bit = toBitmap(frag);
+    const indx = fromBitmap(mask, bit);
+    const exists = mask & bit;
+    const canEdit = canEditNode(this, edit);
+    if (!exists) {
+      const _newChild = new EmptyNode().modify(edit, shift + SIZE, f, hash, key, size);
+      if (!_newChild) return this;
+      return children.length >= MAX_INDEX_NODE ? expand$1(edit, frag, _newChild, mask, children) : new IndexedNode(edit, mask | bit, arraySpliceIn(canEdit, indx, _newChild, children));
+    }
+    const current = children[indx];
+    const child = current.modify(edit, shift + SIZE, f, hash, key, size);
+    if (current === child) return this;
+    let bitmap = mask;
+    let newChildren;
+    if (isEmptyNode(child)) {
+      // remove
+      bitmap &= ~bit;
+      if (!bitmap) return new EmptyNode();
+      if (children.length <= 2 && isLeafNode(children[indx ^ 1])) {
+        return children[indx ^ 1]; // collapse
+      }
+      newChildren = arraySpliceOut(canEdit, indx, children);
+    } else {
+      // modify
+      newChildren = arrayUpdate(canEdit, indx, child, children);
+    }
+    if (canEdit) {
+      this.mask = bitmap;
+      this.children = newChildren;
+      return this;
+    }
+    return new IndexedNode(edit, bitmap, newChildren);
+  }
+}
+/** @internal */
+class ArrayNode {
+  edit;
+  size;
+  children;
+  _tag = "ArrayNode";
+  constructor(edit, size, children) {
+    this.edit = edit;
+    this.size = size;
+    this.children = children;
+  }
+  modify(edit, shift, f, hash, key, size) {
+    let count = this.size;
+    const children = this.children;
+    const frag = hashFragment(shift, hash);
+    const child = children[frag];
+    const newChild = (child || new EmptyNode()).modify(edit, shift + SIZE, f, hash, key, size);
+    if (child === newChild) return this;
+    const canEdit = canEditNode(this, edit);
+    let newChildren;
+    if (isEmptyNode(child) && !isEmptyNode(newChild)) {
+      // add
+      ++count;
+      newChildren = arrayUpdate(canEdit, frag, newChild, children);
+    } else if (!isEmptyNode(child) && isEmptyNode(newChild)) {
+      // remove
+      --count;
+      if (count <= MIN_ARRAY_NODE) {
+        return pack(edit, count, frag, children);
+      }
+      newChildren = arrayUpdate(canEdit, frag, new EmptyNode(), children);
+    } else {
+      // modify
+      newChildren = arrayUpdate(canEdit, frag, newChild, children);
+    }
+    if (canEdit) {
+      this.size = count;
+      this.children = newChildren;
+      return this;
+    }
+    return new ArrayNode(edit, count, newChildren);
+  }
+}
+function pack(edit, count, removed, elements) {
+  const children = new Array(count - 1);
+  let g = 0;
+  let bitmap = 0;
+  for (let i = 0, len = elements.length; i < len; ++i) {
+    if (i !== removed) {
+      const elem = elements[i];
+      if (elem && !isEmptyNode(elem)) {
+        children[g++] = elem;
+        bitmap |= 1 << i;
+      }
+    }
+  }
+  return new IndexedNode(edit, bitmap, children);
+}
+function expand$1(edit, frag, child, bitmap, subNodes) {
+  const arr = [];
+  let bit = bitmap;
+  let count = 0;
+  for (let i = 0; bit; ++i) {
+    if (bit & 1) arr[i] = subNodes[count++];
+    bit >>>= 1;
+  }
+  arr[frag] = child;
+  return new ArrayNode(edit, count + 1, arr);
+}
+function mergeLeavesInner(edit, shift, h1, n1, h2, n2) {
+  if (h1 === h2) return new CollisionNode(edit, h1, [n2, n1]);
+  const subH1 = hashFragment(shift, h1);
+  const subH2 = hashFragment(shift, h2);
+  if (subH1 === subH2) {
+    return child => new IndexedNode(edit, toBitmap(subH1) | toBitmap(subH2), [child]);
+  } else {
+    const children = subH1 < subH2 ? [n1, n2] : [n2, n1];
+    return new IndexedNode(edit, toBitmap(subH1) | toBitmap(subH2), children);
+  }
+}
+function mergeLeaves(edit, shift, h1, n1, h2, n2) {
+  let stack = undefined;
+  let currentShift = shift;
+  while (true) {
+    const res = mergeLeavesInner(edit, currentShift, h1, n1, h2, n2);
+    if (typeof res === "function") {
+      stack = make$p(res, stack);
+      currentShift = currentShift + SIZE;
+    } else {
+      let final = res;
+      while (stack != null) {
+        final = stack.value(final);
+        stack = stack.previous;
+      }
+      return final;
+    }
+  }
+}
+
+const HashMapSymbolKey = "effect/HashMap";
+/** @internal */
+const HashMapTypeId = /*#__PURE__*/Symbol.for(HashMapSymbolKey);
+const HashMapProto = {
+  [HashMapTypeId]: HashMapTypeId,
+  [Symbol.iterator]() {
+    return new HashMapIterator(this, (k, v) => [k, v]);
+  },
+  [symbol$1]() {
+    let hash$1 = hash(HashMapSymbolKey);
+    for (const item of this) {
+      hash$1 ^= pipe(hash(item[0]), combine$7(hash(item[1])));
+    }
+    return cached(this, hash$1);
+  },
+  [symbol](that) {
+    if (isHashMap(that)) {
+      if (that._size !== this._size) {
+        return false;
+      }
+      for (const item of this) {
+        const elem = pipe(that, getHash(item[0], hash(item[0])));
+        if (isNone(elem)) {
+          return false;
+        } else {
+          if (!equals$1(item[1], elem.value)) {
+            return false;
+          }
+        }
+      }
+      return true;
+    }
+    return false;
+  },
+  toString() {
+    return format$2(this.toJSON());
+  },
+  toJSON() {
+    return {
+      _id: "HashMap",
+      values: Array.from(this).map(toJSON)
+    };
+  },
+  [NodeInspectSymbol]() {
+    return this.toJSON();
+  },
+  pipe() {
+    return pipeArguments(this, arguments);
+  }
+};
+const makeImpl$1 = (editable, edit, root, size) => {
+  const map = Object.create(HashMapProto);
+  map._editable = editable;
+  map._edit = edit;
+  map._root = root;
+  map._size = size;
+  return map;
+};
+class HashMapIterator {
+  map;
+  f;
+  v;
+  constructor(map, f) {
+    this.map = map;
+    this.f = f;
+    this.v = visitLazy(this.map._root, this.f, undefined);
+  }
+  next() {
+    if (isNone(this.v)) {
+      return {
+        done: true,
+        value: undefined
+      };
+    }
+    const v0 = this.v.value;
+    this.v = applyCont(v0.cont);
+    return {
+      done: false,
+      value: v0.value
+    };
+  }
+  [Symbol.iterator]() {
+    return new HashMapIterator(this.map, this.f);
+  }
+}
+const applyCont = cont => cont ? visitLazyChildren(cont[0], cont[1], cont[2], cont[3], cont[4]) : none$4();
+const visitLazy = (node, f, cont = undefined) => {
+  switch (node._tag) {
+    case "LeafNode":
+      {
+        if (isSome(node.value)) {
+          return some({
+            value: f(node.key, node.value.value),
+            cont
+          });
+        }
+        return applyCont(cont);
+      }
+    case "CollisionNode":
+    case "ArrayNode":
+    case "IndexedNode":
+      {
+        const children = node.children;
+        return visitLazyChildren(children.length, children, 0, f, cont);
+      }
+    default:
+      {
+        return applyCont(cont);
+      }
+  }
+};
+const visitLazyChildren = (len, children, i, f, cont) => {
+  while (i < len) {
+    const child = children[i++];
+    if (child && !isEmptyNode(child)) {
+      return visitLazy(child, f, [len, children, i, f, cont]);
+    }
+  }
+  return applyCont(cont);
+};
+const _empty$5 = /*#__PURE__*/makeImpl$1(false, 0, /*#__PURE__*/new EmptyNode(), 0);
+/** @internal */
+const empty$j = () => _empty$5;
+/** @internal */
+const fromIterable$4 = entries => {
+  const map = beginMutation$1(empty$j());
+  for (const entry of entries) {
+    set$4(map, entry[0], entry[1]);
+  }
+  return endMutation$1(map);
+};
+/** @internal */
+const isHashMap = u => hasProperty(u, HashMapTypeId);
+/** @internal */
+const isEmpty$4 = self => self && isEmptyNode(self._root);
+/** @internal */
+const get$7 = /*#__PURE__*/dual(2, (self, key) => getHash(self, key, hash(key)));
+/** @internal */
+const getHash = /*#__PURE__*/dual(3, (self, key, hash) => {
+  let node = self._root;
+  let shift = 0;
+  while (true) {
+    switch (node._tag) {
+      case "LeafNode":
+        {
+          return equals$1(key, node.key) ? node.value : none$4();
+        }
+      case "CollisionNode":
+        {
+          if (hash === node.hash) {
+            const children = node.children;
+            for (let i = 0, len = children.length; i < len; ++i) {
+              const child = children[i];
+              if ("key" in child && equals$1(key, child.key)) {
+                return child.value;
+              }
+            }
+          }
+          return none$4();
+        }
+      case "IndexedNode":
+        {
+          const frag = hashFragment(shift, hash);
+          const bit = toBitmap(frag);
+          if (node.mask & bit) {
+            node = node.children[fromBitmap(node.mask, bit)];
+            shift += SIZE;
+            break;
+          }
+          return none$4();
+        }
+      case "ArrayNode":
+        {
+          node = node.children[hashFragment(shift, hash)];
+          if (node) {
+            shift += SIZE;
+            break;
+          }
+          return none$4();
+        }
+      default:
+        return none$4();
+    }
+  }
+});
+/** @internal */
+const has$3 = /*#__PURE__*/dual(2, (self, key) => isSome(getHash(self, key, hash(key))));
+/** @internal */
+const set$4 = /*#__PURE__*/dual(3, (self, key, value) => modifyAt$1(self, key, () => some(value)));
+/** @internal */
+const setTree = /*#__PURE__*/dual(3, (self, newRoot, newSize) => {
+  if (self._editable) {
+    self._root = newRoot;
+    self._size = newSize;
+    return self;
+  }
+  return newRoot === self._root ? self : makeImpl$1(self._editable, self._edit, newRoot, newSize);
+});
+/** @internal */
+const keys$1 = self => new HashMapIterator(self, key => key);
+/** @internal */
+const size$2 = self => self._size;
+/** @internal */
+const beginMutation$1 = self => makeImpl$1(true, self._edit + 1, self._root, self._size);
+/** @internal */
+const endMutation$1 = self => {
+  self._editable = false;
+  return self;
+};
+/** @internal */
+const modifyAt$1 = /*#__PURE__*/dual(3, (self, key, f) => modifyHash(self, key, hash(key), f));
+/** @internal */
+const modifyHash = /*#__PURE__*/dual(4, (self, key, hash, f) => {
+  const size = {
+    value: self._size
+  };
+  const newRoot = self._root.modify(self._editable ? self._edit : NaN, 0, f, hash, key, size);
+  return pipe(self, setTree(newRoot, size.value));
+});
+/** @internal */
+const remove$3 = /*#__PURE__*/dual(2, (self, key) => modifyAt$1(self, key, none$4));
+/**
+ * Maps over the entries of the `HashMap` using the specified function.
+ *
+ * @since 2.0.0
+ * @category mapping
+ */
+const map$5 = /*#__PURE__*/dual(2, (self, f) => reduce$5(self, empty$j(), (map, value, key) => set$4(map, key, f(value, key))));
+/** @internal */
+const forEach$2 = /*#__PURE__*/dual(2, (self, f) => reduce$5(self, void 0, (_, value, key) => f(value, key)));
+/** @internal */
+const reduce$5 = /*#__PURE__*/dual(3, (self, zero, f) => {
+  const root = self._root;
+  if (root._tag === "LeafNode") {
+    return isSome(root.value) ? f(zero, root.value.value, root.key) : zero;
+  }
+  if (root._tag === "EmptyNode") {
+    return zero;
+  }
+  const toVisit = [root.children];
+  let children;
+  while (children = toVisit.pop()) {
+    for (let i = 0, len = children.length; i < len;) {
+      const child = children[i++];
+      if (child && !isEmptyNode(child)) {
+        if (child._tag === "LeafNode") {
+          if (isSome(child.value)) {
+            zero = f(zero, child.value.value, child.key);
+          }
+        } else {
+          toVisit.push(child.children);
+        }
+      }
+    }
+  }
+  return zero;
+});
+
+const HashSetSymbolKey = "effect/HashSet";
+/** @internal */
+const HashSetTypeId = /*#__PURE__*/Symbol.for(HashSetSymbolKey);
+const HashSetProto = {
+  [HashSetTypeId]: HashSetTypeId,
+  [Symbol.iterator]() {
+    return keys$1(this._keyMap);
+  },
+  [symbol$1]() {
+    return cached(this, combine$7(hash(this._keyMap))(hash(HashSetSymbolKey)));
+  },
+  [symbol](that) {
+    if (isHashSet(that)) {
+      return size$2(this._keyMap) === size$2(that._keyMap) && equals$1(this._keyMap, that._keyMap);
+    }
+    return false;
+  },
+  toString() {
+    return format$2(this.toJSON());
+  },
+  toJSON() {
+    return {
+      _id: "HashSet",
+      values: Array.from(this).map(toJSON)
+    };
+  },
+  [NodeInspectSymbol]() {
+    return this.toJSON();
+  },
+  pipe() {
+    return pipeArguments(this, arguments);
+  }
+};
+/** @internal */
+const makeImpl = keyMap => {
+  const set = Object.create(HashSetProto);
+  set._keyMap = keyMap;
+  return set;
+};
+/** @internal */
+const isHashSet = u => hasProperty(u, HashSetTypeId);
+const _empty$4 = /*#__PURE__*/makeImpl(/*#__PURE__*/empty$j());
+/** @internal */
+const empty$i = () => _empty$4;
+/** @internal */
+const fromIterable$3 = elements => {
+  const set = beginMutation(empty$i());
+  for (const value of elements) {
+    add$4(set, value);
+  }
+  return endMutation(set);
+};
+/** @internal */
+const make$o = (...elements) => {
+  const set = beginMutation(empty$i());
+  for (const value of elements) {
+    add$4(set, value);
+  }
+  return endMutation(set);
+};
+/** @internal */
+const has$2 = /*#__PURE__*/dual(2, (self, value) => has$3(self._keyMap, value));
+/** @internal */
+const size$1 = self => size$2(self._keyMap);
+/** @internal */
+const beginMutation = self => makeImpl(beginMutation$1(self._keyMap));
+/** @internal */
+const endMutation = self => {
+  self._keyMap._editable = false;
+  return self;
+};
+/** @internal */
+const mutate = /*#__PURE__*/dual(2, (self, f) => {
+  const transient = beginMutation(self);
+  f(transient);
+  return endMutation(transient);
+});
+/** @internal */
+const add$4 = /*#__PURE__*/dual(2, (self, value) => self._keyMap._editable ? (set$4(value, true)(self._keyMap), self) : makeImpl(set$4(value, true)(self._keyMap)));
+/** @internal */
+const remove$2 = /*#__PURE__*/dual(2, (self, value) => self._keyMap._editable ? (remove$3(value)(self._keyMap), self) : makeImpl(remove$3(value)(self._keyMap)));
+/** @internal */
+const difference$1 = /*#__PURE__*/dual(2, (self, that) => mutate(self, set => {
+  for (const value of that) {
+    remove$2(set, value);
+  }
+}));
+/** @internal */
+const union$1 = /*#__PURE__*/dual(2, (self, that) => mutate(empty$i(), set => {
+  forEach$1(self, value => add$4(set, value));
+  for (const value of that) {
+    add$4(set, value);
+  }
+}));
+/** @internal */
+const forEach$1 = /*#__PURE__*/dual(2, (self, f) => forEach$2(self._keyMap, (_, k) => f(k)));
+/** @internal */
+const reduce$4 = /*#__PURE__*/dual(3, (self, zero, f) => reduce$5(self._keyMap, zero, (z, _, a) => f(z, a)));
+
+/**
+ * # HashSet
+ *
+ * An immutable `HashSet` provides a collection of unique values with efficient
+ * lookup, insertion and removal. Once created, a `HashSet` cannot be modified;
+ * any operation that would alter the set instead returns a new `HashSet` with
+ * the changes. This immutability offers benefits like predictable state
+ * management and easier reasoning about your code.
+ *
+ * ## What Problem Does It Solve?
+ *
+ * `HashSet` solves the problem of maintaining an unsorted collection where each
+ * value appears exactly once, with fast operations for checking membership and
+ * adding/removing values.
+ *
+ * ## When to Use
+ *
+ * Use `HashSet` when you need:
+ *
+ * - A collection with no duplicate values
+ * - Efficient membership testing (**`O(1)`** average complexity)
+ * - Set operations like union, intersection, and difference
+ * - An immutable data structure that preserves functional programming patterns
+ *
+ * ## Advanced Features
+ *
+ * HashSet provides operations for:
+ *
+ * - Transforming sets with map and flatMap
+ * - Filtering elements with filter
+ * - Combining sets with union, intersection and difference
+ * - Performance optimizations via mutable operations in controlled contexts
+ *
+ * ## Performance Characteristics
+ *
+ * - **Lookup** operations ({@link module:HashSet.has}): **`O(1)`** average time
+ *   complexity
+ * - **Insertion** operations ({@link module:HashSet.add}): **`O(1)`** average time
+ *   complexity
+ * - **Removal** operations ({@link module:HashSet.remove}): **`O(1)`** average
+ *   time complexity
+ * - **Set** operations ({@link module:HashSet.union},
+ *   {@link module:HashSet.intersection}): **`O(n)`** where n is the size of the
+ *   smaller set
+ * - **Iteration**: **`O(n)`** where n is the size of the set
+ *
+ * The HashSet data structure implements the following traits:
+ *
+ * - {@link Iterable}: allows iterating over the values in the set
+ * - {@link Equal}: allows comparing two sets for value-based equality
+ * - {@link Pipeable}: allows chaining operations with the pipe operator
+ * - {@link Inspectable}: allows inspecting the contents of the set
+ *
+ * ## Operations Reference
+ *
+ * | Category     | Operation                           | Description                                 | Complexity |
+ * | ------------ | ----------------------------------- | ------------------------------------------- | ---------- |
+ * | constructors | {@link module:HashSet.empty}        | Creates an empty HashSet                    | O(1)       |
+ * | constructors | {@link module:HashSet.fromIterable} | Creates a HashSet from an iterable          | O(n)       |
+ * | constructors | {@link module:HashSet.make}         | Creates a HashSet from multiple values      | O(n)       |
+ * |              |                                     |                                             |            |
+ * | elements     | {@link module:HashSet.has}          | Checks if a value exists in the set         | O(1) avg   |
+ * | elements     | {@link module:HashSet.some}         | Checks if any element satisfies a predicate | O(n)       |
+ * | elements     | {@link module:HashSet.every}        | Checks if all elements satisfy a predicate  | O(n)       |
+ * | elements     | {@link module:HashSet.isSubset}     | Checks if a set is a subset of another      | O(n)       |
+ * |              |                                     |                                             |            |
+ * | getters      | {@link module:HashSet.values}       | Gets an iterator of all values              | O(1)       |
+ * | getters      | {@link module:HashSet.toValues}     | Gets an array of all values                 | O(n)       |
+ * | getters      | {@link module:HashSet.size}         | Gets the number of elements                 | O(1)       |
+ * |              |                                     |                                             |            |
+ * | mutations    | {@link module:HashSet.add}          | Adds a value to the set                     | O(1) avg   |
+ * | mutations    | {@link module:HashSet.remove}       | Removes a value from the set                | O(1) avg   |
+ * | mutations    | {@link module:HashSet.toggle}       | Toggles a value's presence                  | O(1) avg   |
+ * |              |                                     |                                             |            |
+ * | operations   | {@link module:HashSet.difference}   | Computes set difference (A - B)             | O(n)       |
+ * | operations   | {@link module:HashSet.intersection} | Computes set intersection (A ∩ B)           | O(n)       |
+ * | operations   | {@link module:HashSet.union}        | Computes set union (A ∪ B)                  | O(n)       |
+ * |              |                                     |                                             |            |
+ * | mapping      | {@link module:HashSet.map}          | Transforms each element                     | O(n)       |
+ * |              |                                     |                                             |            |
+ * | sequencing   | {@link module:HashSet.flatMap}      | Transforms and flattens elements            | O(n)       |
+ * |              |                                     |                                             |            |
+ * | traversing   | {@link module:HashSet.forEach}      | Applies a function to each element          | O(n)       |
+ * |              |                                     |                                             |            |
+ * | folding      | {@link module:HashSet.reduce}       | Reduces the set to a single value           | O(n)       |
+ * |              |                                     |                                             |            |
+ * | filtering    | {@link module:HashSet.filter}       | Keeps elements that satisfy a predicate     | O(n)       |
+ * |              |                                     |                                             |            |
+ * | partitioning | {@link module:HashSet.partition}    | Splits into two sets by a predicate         | O(n)       |
+ *
+ * ## Notes
+ *
+ * ### Composability with the Effect Ecosystem:
+ *
+ * This `HashSet` is designed to work seamlessly within the Effect ecosystem. It
+ * implements the {@link Iterable}, {@link Equal}, {@link Pipeable}, and
+ * {@link Inspectable} traits from Effect. This ensures compatibility with other
+ * Effect data structures and functionalities. For example, you can easily use
+ * Effect's `pipe` method to chain operations on the `HashSet`.
+ *
+ * **Equality of Elements with Effect's {@link Equal `Equal`} Trait:**
+ *
+ * This `HashSet` relies on Effect's {@link Equal} trait to determine the
+ * uniqueness of elements within the set. The way equality is checked depends on
+ * the type of the elements:
+ *
+ * - **Primitive Values:** For primitive JavaScript values like strings, numbers,
+ *   booleans, `null`, and `undefined`, equality is determined by their value
+ *   (similar to the `===` operator).
+ * - **Objects and Custom Types:** For objects and other custom types, equality is
+ *   determined by whether those types implement the {@link Equal} interface
+ *   themselves. If an element type implements `Equal`, the `HashSet` will
+ *   delegate to that implementation to perform the equality check. This allows
+ *   you to define custom logic for determining when two instances of your
+ *   objects should be considered equal based on their properties, rather than
+ *   just their object identity.
+ *
+ * ```ts
+ * import { Equal, Hash, HashSet } from "effect"
+ *
+ * class Person implements Equal.Equal {
+ *   constructor(
+ *     readonly id: number, // Unique identifier
+ *     readonly name: string,
+ *     readonly age: number
+ *   ) {}
+ *
+ *   // Define equality based on id, name, and age
+ *   [Equal.symbol](that: Equal.Equal): boolean {
+ *     if (that instanceof Person) {
+ *       return (
+ *         Equal.equals(this.id, that.id) &&
+ *         Equal.equals(this.name, that.name) &&
+ *         Equal.equals(this.age, that.age)
+ *       )
+ *     }
+ *     return false
+ *   }
+ *
+ *   // Generate a hash code based on the unique id
+ *   [Hash.symbol](): number {
+ *     return Hash.hash(this.id)
+ *   }
+ * }
+ *
+ * // Creating a HashSet with objects that implement the Equal interface
+ * const set = HashSet.empty().pipe(
+ *   HashSet.add(new Person(1, "Alice", 30)),
+ *   HashSet.add(new Person(1, "Alice", 30))
+ * )
+ *
+ * // HashSet recognizes them as equal, so only one element is stored
+ * console.log(HashSet.size(set))
+ * // Output: 1
+ * ```
+ *
+ * **Simplifying Equality and Hashing with `Data` and `Schema`:**
+ *
+ * Effect's {@link Data} and {@link Schema `Schema.Data`} modules offer powerful
+ * ways to automatically handle the implementation of both the {@link Equal} and
+ * {@link Hash} traits for your custom data structures.
+ *
+ * - **`Data` Module:** By using constructors like `Data.struct`, `Data.tuple`,
+ *   `Data.array`, or `Data.case` to define your data types, Effect
+ *   automatically generates the necessary implementations for value-based
+ *   equality and consistent hashing. This significantly reduces boilerplate and
+ *   ensures correctness.
+ *
+ * ```ts
+ * import { HashSet, Data, Equal } from "effect"
+ * import assert from "node:assert/strict"
+ *
+ * // Data.* implements the `Equal` traits for us
+ * const person1 = Data.struct({ id: 1, name: "Alice", age: 30 })
+ * const person2 = Data.struct({ id: 1, name: "Alice", age: 30 })
+ *
+ * assert(Equal.equals(person1, person2))
+ *
+ * const set = HashSet.empty().pipe(
+ *   HashSet.add(person1),
+ *   HashSet.add(person2)
+ * )
+ *
+ * // HashSet recognizes them as equal, so only one element is stored
+ * console.log(HashSet.size(set)) // Output: 1
+ * ```
+ *
+ * - **`Schema` Module:** When defining data schemas using the {@link Schema}
+ *   module, you can use `Schema.Data` to automatically include the `Equal` and
+ *   `Hash` traits in the decoded objects. This is particularly important when
+ *   working with `HashSet`. **For decoded objects to be correctly recognized as
+ *   equal within a `HashSet`, ensure that the schema for those objects is
+ *   defined using `Schema.Data`.**
+ *
+ * ```ts
+ * import { Equal, HashSet, Schema } from "effect"
+ * import assert from "node:assert/strict"
+ *
+ * // Schema.Data implements the `Equal` traits for us
+ * const PersonSchema = Schema.Data(
+ *   Schema.Struct({
+ *     id: Schema.Number,
+ *     name: Schema.String,
+ *     age: Schema.Number
+ *   })
+ * )
+ *
+ * const Person = Schema.decode(PersonSchema)
+ *
+ * const person1 = Person({ id: 1, name: "Alice", age: 30 })
+ * const person2 = Person({ id: 1, name: "Alice", age: 30 })
+ *
+ * assert(Equal.equals(person1, person2)) // Output: true
+ *
+ * const set = HashSet.empty().pipe(
+ *   HashSet.add(person1),
+ *   HashSet.add(person2)
+ * )
+ *
+ * // HashSet thanks to Schema.Data implementation of the `Equal` trait, recognizes the two Person as equal, so only one element is stored
+ * console.log(HashSet.size(set)) // Output: 1
+ * ```
+ *
+ * ### Interoperability with the JavaScript Runtime:
+ *
+ * To interoperate with the regular JavaScript runtime, Effect's `HashSet`
+ * provides methods to access its elements in formats readily usable by
+ * JavaScript APIs: {@link values `HashSet.values`},
+ * {@link toValues `HashSet.toValues`}
+ *
+ * ```ts
+ * import { HashSet } from "effect"
+ *
+ * const hashSet: HashSet.HashSet<number> = HashSet.make(1, 2, 3)
+ *
+ * // Using HashSet.values to convert HashSet.HashSet<A> to IterableIterator<A>
+ * const iterable: IterableIterator<number> = HashSet.values(hashSet)
+ *
+ * console.log(...iterable) // Logs:  1 2 3
+ *
+ * // Using HashSet.toValues to convert HashSet.HashSet<A> to Array<A>
+ * const array: Array<number> = HashSet.toValues(hashSet)
+ *
+ * console.log(array) // Logs: [ 1, 2, 3 ]
+ * ```
+ *
+ * Be mindful of performance implications (both time and space complexity) when
+ * frequently converting between Effect's immutable HashSet and mutable
+ * JavaScript data structures, especially for large collections.
+ *
+ * @module HashSet
+ * @since 2.0.0
+ */
+/**
+ * Creates an empty `HashSet`.
+ *
+ * Time complexity: **`O(1)`**
+ *
+ * @memberof HashSet
+ * @since 2.0.0
+ * @category constructors
+ * @example
+ *
+ * ```ts
+ * import { HashSet, pipe } from "effect"
+ *
+ * console.log(
+ *   pipe(
+ *     // Provide a type argument to create a HashSet of a specific type
+ *     HashSet.empty<number>(),
+ *     HashSet.add(1),
+ *     HashSet.add(1), // Notice the duplicate
+ *     HashSet.add(2),
+ *     HashSet.toValues
+ *   )
+ * ) // Output: [1, 2]
+ * ```
+ *
+ * @see Other `HashSet` constructors are {@link module:HashSet.make} {@link module:HashSet.fromIterable}
+ */
+const empty$h = empty$i;
+/**
+ * Creates a new `HashSet` from an iterable collection of values.
+ *
+ * Time complexity: **`O(n)`** where n is the number of elements in the iterable
+ *
+ * @memberof HashSet
+ * @since 2.0.0
+ * @category constructors
+ * @example
+ *
+ * ```ts
+ * // Creating a HashSet from an Array
+ * import { HashSet, pipe } from "effect"
+ *
+ * console.log(
+ *   pipe(
+ *     [1, 2, 3, 4, 5, 1, 2, 3], // Array<number> is an Iterable<number>;  Note the duplicates.
+ *     HashSet.fromIterable,
+ *     HashSet.toValues
+ *   )
+ * ) // Output: [1, 2, 3, 4, 5]
+ * ```
+ *
+ * @example
+ *
+ * ```ts
+ * // Creating a HashSet from a Set
+ * import { HashSet, pipe } from "effect"
+ *
+ * console.log(
+ *   pipe(
+ *     new Set(["apple", "banana", "orange", "apple"]), // Set<string> is an Iterable<string>
+ *     HashSet.fromIterable,
+ *     HashSet.toValues
+ *   )
+ * ) // Output: ["apple", "banana", "orange"]
+ * ```
+ *
+ * @example
+ *
+ * ```ts
+ * // Creating a HashSet from a Generator
+ * import { HashSet } from "effect"
+ *
+ * // Generator functions return iterables
+ * function* fibonacci(n: number): Generator<number, void, unknown> {
+ *   let [a, b] = [0, 1]
+ *   for (let i = 0; i < n; i++) {
+ *     yield a
+ *     ;[a, b] = [b, a + b]
+ *   }
+ * }
+ *
+ * // Create a HashSet from the first 10 Fibonacci numbers
+ * const fibonacciSet = HashSet.fromIterable(fibonacci(10))
+ *
+ * console.log(HashSet.toValues(fibonacciSet))
+ * // Outputs: [0, 1, 2, 3, 5, 8, 13, 21, 34] but in unsorted order
+ * ```
+ *
+ * @example
+ *
+ * ```ts
+ * //  Creating a HashSet from another HashSet
+ * import { HashSet, pipe } from "effect"
+ *
+ * console.log(
+ *   pipe(
+ *     // since HashSet implements the Iterable interface, we can use it to create a new HashSet
+ *     HashSet.make(1, 2, 3, 4),
+ *     HashSet.fromIterable,
+ *     HashSet.toValues // turns the HashSet back into an array
+ *   )
+ * ) // Output: [1, 2, 3, 4]
+ * ```
+ *
+ * @example
+ *
+ * ```ts
+ * // Creating a HashSet from other Effect's data structures like Chunk
+ * import { Chunk, HashSet, pipe } from "effect"
+ *
+ * console.log(
+ *   pipe(
+ *     Chunk.make(1, 2, 3, 4), // Iterable<number>
+ *     HashSet.fromIterable,
+ *     HashSet.toValues // turns the HashSet back into an array
+ *   )
+ * ) // Outputs: [1, 2, 3, 4]
+ * ```
+ *
+ * @see Other `HashSet` constructors are {@link module:HashSet.empty} {@link module:HashSet.make}
+ */
+const fromIterable$2 = fromIterable$3;
+/**
+ * Construct a new `HashSet` from a variable number of values.
+ *
+ * Time complexity: **`O(n)`** where n is the number of elements
+ *
+ * @memberof HashSet
+ * @since 2.0.0
+ * @category constructors
+ * @example
+ *
+ * ```ts
+ * import { Equal, Hash, HashSet, pipe } from "effect"
+ * import assert from "node:assert/strict"
+ *
+ * class Character implements Equal.Equal {
+ *   readonly name: string
+ *   readonly trait: string
+ *
+ *   constructor(name: string, trait: string) {
+ *     this.name = name
+ *     this.trait = trait
+ *   }
+ *
+ *   // Define equality based on name, and trait
+ *   [Equal.symbol](that: Equal.Equal): boolean {
+ *     if (that instanceof Character) {
+ *       return (
+ *         Equal.equals(this.name, that.name) &&
+ *         Equal.equals(this.trait, that.trait)
+ *       )
+ *     }
+ *     return false
+ *   }
+ *
+ *   // Generate a hash code based on the sum of the character's name and trait
+ *   [Hash.symbol](): number {
+ *     return Hash.hash(this.name + this.trait)
+ *   }
+ *
+ *   static readonly of = (name: string, trait: string): Character => {
+ *     return new Character(name, trait)
+ *   }
+ * }
+ *
+ * assert.strictEqual(
+ *   Equal.equals(
+ *     HashSet.make(
+ *       Character.of("Alice", "Curious"),
+ *       Character.of("Alice", "Curious"),
+ *       Character.of("White Rabbit", "Always late"),
+ *       Character.of("Mad Hatter", "Tea enthusiast")
+ *     ),
+ *     // Is the same as adding each character to an empty set
+ *     pipe(
+ *       HashSet.empty(),
+ *       HashSet.add(Character.of("Alice", "Curious")),
+ *       HashSet.add(Character.of("Alice", "Curious")), // Alice tried to attend twice!
+ *       HashSet.add(Character.of("White Rabbit", "Always late")),
+ *       HashSet.add(Character.of("Mad Hatter", "Tea enthusiast"))
+ *     )
+ *   ),
+ *   true,
+ *   "`HashSet.make` and `HashSet.empty() + HashSet.add()` should be equal"
+ * )
+ *
+ * assert.strictEqual(
+ *   Equal.equals(
+ *     HashSet.make(
+ *       Character.of("Alice", "Curious"),
+ *       Character.of("Alice", "Curious"),
+ *       Character.of("White Rabbit", "Always late"),
+ *       Character.of("Mad Hatter", "Tea enthusiast")
+ *     ),
+ *     HashSet.fromIterable([
+ *       Character.of("Alice", "Curious"),
+ *       Character.of("Alice", "Curious"),
+ *       Character.of("White Rabbit", "Always late"),
+ *       Character.of("Mad Hatter", "Tea enthusiast")
+ *     ])
+ *   ),
+ *   true,
+ *   "`HashSet.make` and `HashSet.fromIterable` should be equal"
+ * )
+ * ```
+ *
+ * @see Other `HashSet` constructors are {@link module:HashSet.fromIterable} {@link module:HashSet.empty}
+ */
+const make$n = make$o;
+/**
+ * Checks if the specified value exists in the `HashSet`.
+ *
+ * Time complexity: **`O(1)`** average
+ *
+ * @memberof HashSet
+ * @since 2.0.0
+ * @category elements
+ * @example
+ *
+ * ```ts
+ * // Syntax
+ * import { HashSet, pipe } from "effect"
+ *
+ * // with `data-last`, a.k.a. `pipeable` API
+ * pipe(HashSet.make(0, 1, 2), HashSet.has(3)) // false
+ *
+ * // or piped with the pipe function
+ * HashSet.make(0, 1, 2).pipe(HashSet.has(3)) // false
+ *
+ * // or with `data-first` API
+ * HashSet.has(HashSet.make(0, 1, 2), 3) // false
+ * ```
+ *
+ * @returns A `boolean` signaling the presence of the value in the HashSet
+ * @see Other `HashSet` elements are {@link module:HashSet.some} {@link module:HashSet.every} {@link module:HashSet.isSubset}
+ */
+const has$1 = has$2;
+/**
+ * Calculates the number of values in the `HashSet`.
+ *
+ * Time complexity: **`O(1)`**
+ *
+ * @memberof HashSet
+ * @since 2.0.0
+ * @category getters
+ * @example
+ *
+ * ```ts
+ * import { HashSet, pipe } from "effect"
+ * import assert from "node:assert/strict"
+ *
+ * assert.deepStrictEqual(pipe(HashSet.empty(), HashSet.size), 0)
+ *
+ * assert.deepStrictEqual(
+ *   pipe(HashSet.make(1, 2, 2, 3, 4, 3), HashSet.size),
+ *   4
+ * )
+ * ```
+ *
+ * @see Other `HashSet` getters are {@link module:HashSet.values} {@link module:HashSet.toValues}
+ */
+const size = size$1;
+/**
+ * Adds a value to the `HashSet`.
+ *
+ * Time complexity: **`O(1)`** average
+ *
+ * @remarks
+ * Remember that a `HashSet` is a collection of unique values, so adding a value
+ * that already exists in the `HashSet` will not add a duplicate.
+ *
+ * Remember that HashSet is an immutable data structure, so the `add` function,
+ * like all other functions that modify the HashSet, will return a new HashSet
+ * with the added value.
+ * @memberof HashSet
+ * @since 2.0.0
+ * @example
+ *
+ * ```ts
+ * // Syntax
+ * import { HashSet, pipe } from "effect"
+ *
+ * // with data-last, a.k.a. pipeable API
+ * pipe(HashSet.empty(), HashSet.add(0), HashSet.add(0))
+ *
+ * // or piped with the pipe function
+ * HashSet.empty().pipe(HashSet.add(0))
+ *
+ * // or with data-first API
+ * HashSet.add(HashSet.empty(), 0)
+ * ```
+ *
+ * @see Other `HashSet` mutations are {@link module:HashSet.remove} {@link module:HashSet.toggle} {@link module:HashSet.beginMutation} {@link module:HashSet.endMutation} {@link module:HashSet.mutate}
+ */
+const add$3 = add$4;
+/**
+ * Removes a value from the `HashSet`.
+ *
+ * Time complexity: **`O(1)`** average
+ *
+ * @memberof HashSet
+ * @since 2.0.0
+ * @example
+ *
+ * ```ts
+ * // Syntax
+ * import { HashSet, pipe } from "effect"
+ *
+ * // with `data-last`, a.k.a. `pipeable` API
+ * pipe(HashSet.make(0, 1, 2), HashSet.remove(0))
+ *
+ * // or piped with the pipe function
+ * HashSet.make(0, 1, 2).pipe(HashSet.remove(0))
+ *
+ * // or with `data-first` API
+ * HashSet.remove(HashSet.make(0, 1, 2), 0)
+ * ```
+ *
+ * @see Other `HashSet` mutations are {@link module:HashSet.add} {@link module:HashSet.toggle} {@link module:HashSet.beginMutation} {@link module:HashSet.endMutation} {@link module:HashSet.mutate}
+ */
+const remove$1 = remove$2;
+/**
+ * Computes the set difference `(A - B)` between this `HashSet` and the
+ * specified `Iterable<A>`.
+ *
+ * Time complexity: **`O(n)`** where n is the number of elements in the set
+ *
+ * **NOTE**: the hash and equal of the values in both the set and the iterable
+ * must be the same; meaning we cannot compute a difference between a `HashSet
+ * of bananas` and a `HashSet of elephants` as they are not the same type and
+ * won't implement the Equal trait in the same way.
+ *
+ * @memberof HashSet
+ * @since 2.0.0
+ * @example
+ *
+ * ```ts
+ * // Syntax
+ * import { HashSet, pipe } from "effect"
+ *
+ * // with data-last, a.k.a. pipeable API
+ * pipe(HashSet.make(1, 2, 3), HashSet.difference(HashSet.make(3, 4, 5)))
+ *
+ * // or piped with the pipe function
+ * HashSet.make(1, 2, 3).pipe(HashSet.difference(HashSet.make(3, 4, 5)))
+ *
+ * // or with data-first API
+ * HashSet.difference(HashSet.make(1, 2, 3), HashSet.make(3, 4, 5))
+ * ```
+ *
+ * @see Other `HashSet` operations are {@link module:HashSet.intersection} {@link module:HashSet.union}
+ */
+const difference = difference$1;
+/**
+ * Computes the set union `( self ∪ that )` between this `HashSet` and the
+ * specified `Iterable<A>`.
+ *
+ * Time complexity: **`O(n)`** where n is the number of elements in the set
+ *
+ * **NOTE**: the hash and equal of the values in both the set and the iterable
+ * must be the same.
+ *
+ * @memberof HashSet
+ * @since 2.0.0
+ * @example
+ *
+ * ```ts
+ * // Syntax
+ * import { HashSet, pipe } from "effect"
+ *
+ * // with data-last, a.k.a. pipeable API
+ * pipe(HashSet.make(1, 2, 3), HashSet.union(HashSet.make(3, 4, 5)))
+ *
+ * // or piped with the pipe function
+ * HashSet.make(1, 2, 3).pipe(HashSet.union(HashSet.make(3, 4, 5)))
+ *
+ * // or with data-first API
+ * HashSet.union(HashSet.make(1, 2, 3), HashSet.make(3, 4, 5))
+ * ```
+ *
+ * @see Other `HashSet` operations are {@link module:HashSet.difference} {@link module:HashSet.intersection}
+ */
+const union = union$1;
+/**
+ * Reduces the specified state over the values of the `HashSet`.
+ *
+ * The time complexity is of **`O(n)`**.
+ *
+ * @memberof HashSet
+ * @since 2.0.0
+ * @category folding
+ * @example
+ *
+ * ```ts
+ * // Syntax
+ * import { HashSet, pipe } from "effect"
+ *
+ * const sum = (a: number, b: number): number => a + b
+ *
+ * // with `data-last`, a.k.a. `pipeable` API
+ * pipe(HashSet.make(0, 1, 2), HashSet.reduce(0, sum))
+ *
+ * // or with the pipe method
+ * HashSet.make(0, 1, 2).pipe(HashSet.reduce(0, sum))
+ *
+ * // or with `data-first` API
+ * HashSet.reduce(HashSet.make(0, 1, 2), 0, sum)
+ * ```
+ */
+const reduce$3 = reduce$4;
+
+/** @internal */
+const OP_DIE = "Die";
+/** @internal */
+const OP_EMPTY$2 = "Empty";
+/** @internal */
+const OP_FAIL$1 = "Fail";
+/** @internal */
+const OP_INTERRUPT = "Interrupt";
+/** @internal */
+const OP_PARALLEL$1 = "Parallel";
+/** @internal */
+const OP_SEQUENTIAL$1 = "Sequential";
+
+// -----------------------------------------------------------------------------
+// Models
+// -----------------------------------------------------------------------------
+/** @internal */
+const CauseSymbolKey = "effect/Cause";
+/** @internal */
+const CauseTypeId = /*#__PURE__*/Symbol.for(CauseSymbolKey);
+const variance$3 = {
+  /* c8 ignore next */
+  _E: _ => _
+};
+/** @internal */
+const proto$4 = {
+  [CauseTypeId]: variance$3,
+  [symbol$1]() {
+    return pipe(hash(CauseSymbolKey), combine$7(hash(flattenCause(this))), cached(this));
+  },
+  [symbol](that) {
+    return isCause(that) && causeEquals(this, that);
+  },
+  pipe() {
+    return pipeArguments(this, arguments);
+  },
+  toJSON() {
+    switch (this._tag) {
+      case "Empty":
+        return {
+          _id: "Cause",
+          _tag: this._tag
+        };
+      case "Die":
+        return {
+          _id: "Cause",
+          _tag: this._tag,
+          defect: toJSON(this.defect)
+        };
+      case "Interrupt":
+        return {
+          _id: "Cause",
+          _tag: this._tag,
+          fiberId: this.fiberId.toJSON()
+        };
+      case "Fail":
+        return {
+          _id: "Cause",
+          _tag: this._tag,
+          failure: toJSON(this.error)
+        };
+      case "Sequential":
+      case "Parallel":
+        return {
+          _id: "Cause",
+          _tag: this._tag,
+          left: toJSON(this.left),
+          right: toJSON(this.right)
+        };
+    }
+  },
+  toString() {
+    return pretty(this);
+  },
+  [NodeInspectSymbol]() {
+    return this.toJSON();
+  }
+};
+// -----------------------------------------------------------------------------
+// Constructors
+// -----------------------------------------------------------------------------
+/** @internal */
+const empty$g = /*#__PURE__*/(() => {
+  const o = /*#__PURE__*/Object.create(proto$4);
+  o._tag = OP_EMPTY$2;
+  return o;
+})();
+/** @internal */
+const fail$1 = error => {
+  const o = Object.create(proto$4);
+  o._tag = OP_FAIL$1;
+  o.error = error;
+  return o;
+};
+/** @internal */
+const die$1 = defect => {
+  const o = Object.create(proto$4);
+  o._tag = OP_DIE;
+  o.defect = defect;
+  return o;
+};
+/** @internal */
+const interrupt = fiberId => {
+  const o = Object.create(proto$4);
+  o._tag = OP_INTERRUPT;
+  o.fiberId = fiberId;
+  return o;
+};
+/** @internal */
+const parallel$2 = (left, right) => {
+  const o = Object.create(proto$4);
+  o._tag = OP_PARALLEL$1;
+  o.left = left;
+  o.right = right;
+  return o;
+};
+/** @internal */
+const sequential$2 = (left, right) => {
+  const o = Object.create(proto$4);
+  o._tag = OP_SEQUENTIAL$1;
+  o.left = left;
+  o.right = right;
+  return o;
+};
+// -----------------------------------------------------------------------------
+// Refinements
+// -----------------------------------------------------------------------------
+/** @internal */
+const isCause = u => hasProperty(u, CauseTypeId);
+/** @internal */
+const isEmptyType = self => self._tag === OP_EMPTY$2;
+/** @internal */
+const isDieType = self => self._tag === OP_DIE;
+/** @internal */
+const isEmpty$3 = self => {
+  if (self._tag === OP_EMPTY$2) {
+    return true;
+  }
+  return reduce$2(self, true, (acc, cause) => {
+    switch (cause._tag) {
+      case OP_EMPTY$2:
+        {
+          return some(acc);
+        }
+      case OP_DIE:
+      case OP_FAIL$1:
+      case OP_INTERRUPT:
+        {
+          return some(false);
+        }
+      default:
+        {
+          return none$4();
+        }
+    }
+  });
+};
+/** @internal */
+const isInterrupted = self => isSome(interruptOption(self));
+/** @internal */
+const isInterruptedOnly = self => reduceWithContext$1(undefined, IsInterruptedOnlyCauseReducer)(self);
+/** @internal */
+const failures = self => reverse$1(reduce$2(self, empty$k(), (list, cause) => cause._tag === OP_FAIL$1 ? some(pipe(list, prepend$1(cause.error))) : none$4()));
+/** @internal */
+const defects = self => reverse$1(reduce$2(self, empty$k(), (list, cause) => cause._tag === OP_DIE ? some(pipe(list, prepend$1(cause.defect))) : none$4()));
+/** @internal */
+const interruptors = self => reduce$2(self, empty$h(), (set, cause) => cause._tag === OP_INTERRUPT ? some(pipe(set, add$3(cause.fiberId))) : none$4());
+/** @internal */
+const failureOption = self => find(self, cause => cause._tag === OP_FAIL$1 ? some(cause.error) : none$4());
+/** @internal */
+const failureOrCause = self => {
+  const option = failureOption(self);
+  switch (option._tag) {
+    case "None":
+      {
+        // no `E` inside this `Cause`, so it can be safely cast to `never`
+        return right(self);
+      }
+    case "Some":
+      {
+        return left(option.value);
+      }
+  }
+};
+/** @internal */
+const interruptOption = self => find(self, cause => cause._tag === OP_INTERRUPT ? some(cause.fiberId) : none$4());
+/** @internal */
+const stripFailures = self => match$2(self, {
+  onEmpty: empty$g,
+  onFail: () => empty$g,
+  onDie: die$1,
+  onInterrupt: interrupt,
+  onSequential: sequential$2,
+  onParallel: parallel$2
+});
+/** @internal */
+const electFailures = self => match$2(self, {
+  onEmpty: empty$g,
+  onFail: die$1,
+  onDie: die$1,
+  onInterrupt: interrupt,
+  onSequential: sequential$2,
+  onParallel: parallel$2
+});
+/** @internal */
+const causeEquals = (left, right) => {
+  let leftStack = of$1(left);
+  let rightStack = of$1(right);
+  while (isNonEmpty$2(leftStack) && isNonEmpty$2(rightStack)) {
+    const [leftParallel, leftSequential] = pipe(headNonEmpty(leftStack), reduce$2([empty$h(), empty$k()], ([parallel, sequential], cause) => {
+      const [par, seq] = evaluateCause(cause);
+      return some([pipe(parallel, union(par)), pipe(sequential, appendAll$1(seq))]);
+    }));
+    const [rightParallel, rightSequential] = pipe(headNonEmpty(rightStack), reduce$2([empty$h(), empty$k()], ([parallel, sequential], cause) => {
+      const [par, seq] = evaluateCause(cause);
+      return some([pipe(parallel, union(par)), pipe(sequential, appendAll$1(seq))]);
+    }));
+    if (!equals$1(leftParallel, rightParallel)) {
+      return false;
+    }
+    leftStack = leftSequential;
+    rightStack = rightSequential;
+  }
+  return true;
+};
+// -----------------------------------------------------------------------------
+// Flattening
+// -----------------------------------------------------------------------------
+/**
+ * Flattens a cause to a sequence of sets of causes, where each set represents
+ * causes that fail in parallel and sequential sets represent causes that fail
+ * after each other.
+ *
+ * @internal
+ */
+const flattenCause = cause => {
+  return flattenCauseLoop(of$1(cause), empty$k());
+};
+/** @internal */
+const flattenCauseLoop = (causes, flattened) => {
+  // eslint-disable-next-line no-constant-condition
+  while (1) {
+    const [parallel, sequential] = pipe(causes, reduce$6([empty$h(), empty$k()], ([parallel, sequential], cause) => {
+      const [par, seq] = evaluateCause(cause);
+      return [pipe(parallel, union(par)), pipe(sequential, appendAll$1(seq))];
+    }));
+    const updated = size(parallel) > 0 ? pipe(flattened, prepend$1(parallel)) : flattened;
+    if (isEmpty$5(sequential)) {
+      return reverse$1(updated);
+    }
+    causes = sequential;
+    flattened = updated;
+  }
+  throw new Error(getBugErrorMessage("Cause.flattenCauseLoop"));
+};
+// -----------------------------------------------------------------------------
+// Finding
+// -----------------------------------------------------------------------------
+/** @internal */
+const find = /*#__PURE__*/dual(2, (self, pf) => {
+  const stack = [self];
+  while (stack.length > 0) {
+    const item = stack.pop();
+    const option = pf(item);
+    switch (option._tag) {
+      case "None":
+        {
+          switch (item._tag) {
+            case OP_SEQUENTIAL$1:
+            case OP_PARALLEL$1:
+              {
+                stack.push(item.right);
+                stack.push(item.left);
+                break;
+              }
+          }
+          break;
+        }
+      case "Some":
+        {
+          return option;
+        }
+    }
+  }
+  return none$4();
+});
+// -----------------------------------------------------------------------------
+// Evaluation
+// -----------------------------------------------------------------------------
+/**
+ * Takes one step in evaluating a cause, returning a set of causes that fail
+ * in parallel and a list of causes that fail sequentially after those causes.
+ *
+ * @internal
+ */
+const evaluateCause = self => {
+  let cause = self;
+  const stack = [];
+  let _parallel = empty$h();
+  let _sequential = empty$k();
+  while (cause !== undefined) {
+    switch (cause._tag) {
+      case OP_EMPTY$2:
+        {
+          if (stack.length === 0) {
+            return [_parallel, _sequential];
+          }
+          cause = stack.pop();
+          break;
+        }
+      case OP_FAIL$1:
+        {
+          _parallel = add$3(_parallel, make$q(cause._tag, cause.error));
+          if (stack.length === 0) {
+            return [_parallel, _sequential];
+          }
+          cause = stack.pop();
+          break;
+        }
+      case OP_DIE:
+        {
+          _parallel = add$3(_parallel, make$q(cause._tag, cause.defect));
+          if (stack.length === 0) {
+            return [_parallel, _sequential];
+          }
+          cause = stack.pop();
+          break;
+        }
+      case OP_INTERRUPT:
+        {
+          _parallel = add$3(_parallel, make$q(cause._tag, cause.fiberId));
+          if (stack.length === 0) {
+            return [_parallel, _sequential];
+          }
+          cause = stack.pop();
+          break;
+        }
+      case OP_SEQUENTIAL$1:
+        {
+          switch (cause.left._tag) {
+            case OP_EMPTY$2:
+              {
+                cause = cause.right;
+                break;
+              }
+            case OP_SEQUENTIAL$1:
+              {
+                cause = sequential$2(cause.left.left, sequential$2(cause.left.right, cause.right));
+                break;
+              }
+            case OP_PARALLEL$1:
+              {
+                cause = parallel$2(sequential$2(cause.left.left, cause.right), sequential$2(cause.left.right, cause.right));
+                break;
+              }
+            default:
+              {
+                _sequential = prepend$1(_sequential, cause.right);
+                cause = cause.left;
+                break;
+              }
+          }
+          break;
+        }
+      case OP_PARALLEL$1:
+        {
+          stack.push(cause.right);
+          cause = cause.left;
+          break;
+        }
+    }
+  }
+  throw new Error(getBugErrorMessage("Cause.evaluateCauseLoop"));
+};
+/** @internal */
+const IsInterruptedOnlyCauseReducer = {
+  emptyCase: constTrue,
+  failCase: constFalse,
+  dieCase: constFalse,
+  interruptCase: constTrue,
+  sequentialCase: (_, left, right) => left && right,
+  parallelCase: (_, left, right) => left && right
+};
+const OP_SEQUENTIAL_CASE = "SequentialCase";
+const OP_PARALLEL_CASE = "ParallelCase";
+/** @internal */
+const match$2 = /*#__PURE__*/dual(2, (self, {
+  onDie,
+  onEmpty,
+  onFail,
+  onInterrupt,
+  onParallel,
+  onSequential
+}) => {
+  return reduceWithContext$1(self, void 0, {
+    emptyCase: () => onEmpty,
+    failCase: (_, error) => onFail(error),
+    dieCase: (_, defect) => onDie(defect),
+    interruptCase: (_, fiberId) => onInterrupt(fiberId),
+    sequentialCase: (_, left, right) => onSequential(left, right),
+    parallelCase: (_, left, right) => onParallel(left, right)
+  });
+});
+/** @internal */
+const reduce$2 = /*#__PURE__*/dual(3, (self, zero, pf) => {
+  let accumulator = zero;
+  let cause = self;
+  const causes = [];
+  while (cause !== undefined) {
+    const option = pf(accumulator, cause);
+    accumulator = isSome(option) ? option.value : accumulator;
+    switch (cause._tag) {
+      case OP_SEQUENTIAL$1:
+        {
+          causes.push(cause.right);
+          cause = cause.left;
+          break;
+        }
+      case OP_PARALLEL$1:
+        {
+          causes.push(cause.right);
+          cause = cause.left;
+          break;
+        }
+      default:
+        {
+          cause = undefined;
+          break;
+        }
+    }
+    if (cause === undefined && causes.length > 0) {
+      cause = causes.pop();
+    }
+  }
+  return accumulator;
+});
+/** @internal */
+const reduceWithContext$1 = /*#__PURE__*/dual(3, (self, context, reducer) => {
+  const input = [self];
+  const output = [];
+  while (input.length > 0) {
+    const cause = input.pop();
+    switch (cause._tag) {
+      case OP_EMPTY$2:
+        {
+          output.push(right(reducer.emptyCase(context)));
+          break;
+        }
+      case OP_FAIL$1:
+        {
+          output.push(right(reducer.failCase(context, cause.error)));
+          break;
+        }
+      case OP_DIE:
+        {
+          output.push(right(reducer.dieCase(context, cause.defect)));
+          break;
+        }
+      case OP_INTERRUPT:
+        {
+          output.push(right(reducer.interruptCase(context, cause.fiberId)));
+          break;
+        }
+      case OP_SEQUENTIAL$1:
+        {
+          input.push(cause.right);
+          input.push(cause.left);
+          output.push(left({
+            _tag: OP_SEQUENTIAL_CASE
+          }));
+          break;
+        }
+      case OP_PARALLEL$1:
+        {
+          input.push(cause.right);
+          input.push(cause.left);
+          output.push(left({
+            _tag: OP_PARALLEL_CASE
+          }));
+          break;
+        }
+    }
+  }
+  const accumulator = [];
+  while (output.length > 0) {
+    const either = output.pop();
+    switch (either._tag) {
+      case "Left":
+        {
+          switch (either.left._tag) {
+            case OP_SEQUENTIAL_CASE:
+              {
+                const left = accumulator.pop();
+                const right = accumulator.pop();
+                const value = reducer.sequentialCase(context, left, right);
+                accumulator.push(value);
+                break;
+              }
+            case OP_PARALLEL_CASE:
+              {
+                const left = accumulator.pop();
+                const right = accumulator.pop();
+                const value = reducer.parallelCase(context, left, right);
+                accumulator.push(value);
+                break;
+              }
+          }
+          break;
+        }
+      case "Right":
+        {
+          accumulator.push(either.right);
+          break;
+        }
+    }
+  }
+  if (accumulator.length === 0) {
+    throw new Error("BUG: Cause.reduceWithContext - please report an issue at https://github.com/Effect-TS/effect/issues");
+  }
+  return accumulator.pop();
+});
+// -----------------------------------------------------------------------------
+// Pretty Printing
+// -----------------------------------------------------------------------------
+/** @internal */
+const pretty = (cause, options) => {
+  if (isInterruptedOnly(cause)) {
+    return "All fibers interrupted without errors.";
+  }
+  return prettyErrors(cause).map(function (e) {
+    if (options?.renderErrorCause !== true || e.cause === undefined) {
+      return e.stack;
+    }
+    return `${e.stack} {\n${renderErrorCause(e.cause, "  ")}\n}`;
+  }).join("\n");
+};
+const renderErrorCause = (cause, prefix) => {
+  const lines = cause.stack.split("\n");
+  let stack = `${prefix}[cause]: ${lines[0]}`;
+  for (let i = 1, len = lines.length; i < len; i++) {
+    stack += `\n${prefix}${lines[i]}`;
+  }
+  if (cause.cause) {
+    stack += ` {\n${renderErrorCause(cause.cause, `${prefix}  `)}\n${prefix}}`;
+  }
+  return stack;
+};
+/** @internal */
+class PrettyError extends globalThis.Error {
+  span = undefined;
+  constructor(originalError) {
+    const originalErrorIsObject = typeof originalError === "object" && originalError !== null;
+    const prevLimit = Error.stackTraceLimit;
+    Error.stackTraceLimit = 1;
+    super(prettyErrorMessage(originalError), originalErrorIsObject && "cause" in originalError && typeof originalError.cause !== "undefined" ? {
+      cause: new PrettyError(originalError.cause)
+    } : undefined);
+    if (this.message === "") {
+      this.message = "An error has occurred";
+    }
+    Error.stackTraceLimit = prevLimit;
+    this.name = originalError instanceof Error ? originalError.name : "Error";
+    if (originalErrorIsObject) {
+      if (spanSymbol in originalError) {
+        this.span = originalError[spanSymbol];
+      }
+      Object.keys(originalError).forEach(key => {
+        if (!(key in this)) {
+          // @ts-expect-error
+          this[key] = originalError[key];
+        }
+      });
+    }
+    this.stack = prettyErrorStack(`${this.name}: ${this.message}`, originalError instanceof Error && originalError.stack ? originalError.stack : "", this.span);
+  }
+}
+/**
+ * A utility function for generating human-readable error messages from a generic error of type `unknown`.
+ *
+ * Rules:
+ *
+ * 1) If the input `u` is already a string, it's considered a message.
+ * 2) If `u` is an Error instance with a message defined, it uses the message.
+ * 3) If `u` has a user-defined `toString()` method, it uses that method.
+ * 4) Otherwise, it uses `Inspectable.stringifyCircular` to produce a string representation and uses it as the error message,
+ *   with "Error" added as a prefix.
+ *
+ * @internal
+ */
+const prettyErrorMessage = u => {
+  // 1)
+  if (typeof u === "string") {
+    return u;
+  }
+  // 2)
+  if (typeof u === "object" && u !== null && u instanceof Error) {
+    return u.message;
+  }
+  // 3)
+  try {
+    if (hasProperty(u, "toString") && isFunction(u["toString"]) && u["toString"] !== Object.prototype.toString && u["toString"] !== globalThis.Array.prototype.toString) {
+      return u["toString"]();
+    }
+  } catch {
+    // something's off, rollback to json
+  }
+  // 4)
+  return stringifyCircular(u);
+};
+const locationRegex = /\((.*)\)/g;
+/** @internal */
+const spanToTrace = /*#__PURE__*/globalValue("effect/Tracer/spanToTrace", () => new WeakMap());
+const prettyErrorStack = (message, stack, span) => {
+  const out = [message];
+  const lines = stack.startsWith(message) ? stack.slice(message.length).split("\n") : stack.split("\n");
+  for (let i = 1; i < lines.length; i++) {
+    if (lines[i].includes(" at new BaseEffectError") || lines[i].includes(" at new YieldableError")) {
+      i++;
+      continue;
+    }
+    if (lines[i].includes("Generator.next")) {
+      break;
+    }
+    if (lines[i].includes("effect_internal_function")) {
+      break;
+    }
+    out.push(lines[i].replace(/at .*effect_instruction_i.*\((.*)\)/, "at $1").replace(/EffectPrimitive\.\w+/, "<anonymous>"));
+  }
+  if (span) {
+    let current = span;
+    let i = 0;
+    while (current && current._tag === "Span" && i < 10) {
+      const stackFn = spanToTrace.get(current);
+      if (typeof stackFn === "function") {
+        const stack = stackFn();
+        if (typeof stack === "string") {
+          const locationMatchAll = stack.matchAll(locationRegex);
+          let match = false;
+          for (const [, location] of locationMatchAll) {
+            match = true;
+            out.push(`    at ${current.name} (${location})`);
+          }
+          if (!match) {
+            out.push(`    at ${current.name} (${stack.replace(/^at /, "")})`);
+          }
+        } else {
+          out.push(`    at ${current.name}`);
+        }
+      } else {
+        out.push(`    at ${current.name}`);
+      }
+      current = getOrUndefined(current.parent);
+      i++;
+    }
+  }
+  return out.join("\n");
+};
+/** @internal */
+const spanSymbol = /*#__PURE__*/Symbol.for("effect/SpanAnnotation");
+/** @internal */
+const prettyErrors = cause => reduceWithContext$1(cause, void 0, {
+  emptyCase: () => [],
+  dieCase: (_, unknownError) => {
+    return [new PrettyError(unknownError)];
+  },
+  failCase: (_, error) => {
+    return [new PrettyError(error)];
+  },
+  interruptCase: () => [],
+  parallelCase: (_, l, r) => [...l, ...r],
+  sequentialCase: (_, l, r) => [...l, ...r]
+});
+
+/** @internal */
+const TagTypeId = /*#__PURE__*/Symbol.for("effect/Context/Tag");
+/** @internal */
+const ReferenceTypeId = /*#__PURE__*/Symbol.for("effect/Context/Reference");
+/** @internal */
+const STMSymbolKey = "effect/STM";
+/** @internal */
+const STMTypeId = /*#__PURE__*/Symbol.for(STMSymbolKey);
+/** @internal */
+const TagProto = {
+  ...EffectPrototype$1,
+  _op: "Tag",
+  [STMTypeId]: effectVariance,
+  [TagTypeId]: {
+    _Service: _ => _,
+    _Identifier: _ => _
+  },
+  toString() {
+    return format$2(this.toJSON());
+  },
+  toJSON() {
+    return {
+      _id: "Tag",
+      key: this.key,
+      stack: this.stack
+    };
+  },
+  [NodeInspectSymbol]() {
+    return this.toJSON();
+  },
+  of(self) {
+    return self;
+  },
+  context(self) {
+    return make$m(this, self);
+  }
+};
+const ReferenceProto = {
+  ...TagProto,
+  [ReferenceTypeId]: ReferenceTypeId
+};
+/** @internal */
+const makeGenericTag = key => {
+  const limit = Error.stackTraceLimit;
+  Error.stackTraceLimit = 2;
+  const creationError = new Error();
+  Error.stackTraceLimit = limit;
+  const tag = Object.create(TagProto);
+  Object.defineProperty(tag, "stack", {
+    get() {
+      return creationError.stack;
+    }
+  });
+  tag.key = key;
+  return tag;
+};
+/** @internal */
+const Reference$1 = () => (id, options) => {
+  const limit = Error.stackTraceLimit;
+  Error.stackTraceLimit = 2;
+  const creationError = new Error();
+  Error.stackTraceLimit = limit;
+  function ReferenceClass() {}
+  Object.setPrototypeOf(ReferenceClass, ReferenceProto);
+  ReferenceClass.key = id;
+  ReferenceClass.defaultValue = options.defaultValue;
+  Object.defineProperty(ReferenceClass, "stack", {
+    get() {
+      return creationError.stack;
+    }
+  });
+  return ReferenceClass;
+};
+/** @internal */
+const TypeId$8 = /*#__PURE__*/Symbol.for("effect/Context");
+/** @internal */
+const ContextProto = {
+  [TypeId$8]: {
+    _Services: _ => _
+  },
+  [symbol](that) {
+    if (isContext$1(that)) {
+      if (this.unsafeMap.size === that.unsafeMap.size) {
+        for (const k of this.unsafeMap.keys()) {
+          if (!that.unsafeMap.has(k) || !equals$1(this.unsafeMap.get(k), that.unsafeMap.get(k))) {
+            return false;
+          }
+        }
+        return true;
+      }
+    }
+    return false;
+  },
+  [symbol$1]() {
+    return cached(this, number$3(this.unsafeMap.size));
+  },
+  pipe() {
+    return pipeArguments(this, arguments);
+  },
+  toString() {
+    return format$2(this.toJSON());
+  },
+  toJSON() {
+    return {
+      _id: "Context",
+      services: Array.from(this.unsafeMap).map(toJSON)
+    };
+  },
+  [NodeInspectSymbol]() {
+    return this.toJSON();
+  }
+};
+/** @internal */
+const makeContext = unsafeMap => {
+  const context = Object.create(ContextProto);
+  context.unsafeMap = unsafeMap;
+  return context;
+};
+const serviceNotFoundError = tag => {
+  const error = new Error(`Service not found${tag.key ? `: ${String(tag.key)}` : ""}`);
+  if (tag.stack) {
+    const lines = tag.stack.split("\n");
+    if (lines.length > 2) {
+      const afterAt = lines[2].match(/at (.*)/);
+      if (afterAt) {
+        error.message = error.message + ` (defined at ${afterAt[1]})`;
+      }
+    }
+  }
+  if (error.stack) {
+    const lines = error.stack.split("\n");
+    lines.splice(1, 3);
+    error.stack = lines.join("\n");
+  }
+  return error;
+};
+/** @internal */
+const isContext$1 = u => hasProperty(u, TypeId$8);
+/** @internal */
+const isTag$1 = u => hasProperty(u, TagTypeId);
+/** @internal */
+const isReference = u => hasProperty(u, ReferenceTypeId);
+const _empty$3 = /*#__PURE__*/makeContext(/*#__PURE__*/new Map());
+/** @internal */
+const empty$f = () => _empty$3;
+/** @internal */
+const make$m = (tag, service) => makeContext(new Map([[tag.key, service]]));
+/** @internal */
+const add$2 = /*#__PURE__*/dual(3, (self, tag, service) => {
+  const map = new Map(self.unsafeMap);
+  map.set(tag.key, service);
+  return makeContext(map);
+});
+const defaultValueCache = /*#__PURE__*/globalValue("effect/Context/defaultValueCache", () => new Map());
+const getDefaultValue = tag => {
+  if (defaultValueCache.has(tag.key)) {
+    return defaultValueCache.get(tag.key);
+  }
+  const value = tag.defaultValue();
+  defaultValueCache.set(tag.key, value);
+  return value;
+};
+/** @internal */
+const unsafeGetReference = (self, tag) => {
+  return self.unsafeMap.has(tag.key) ? self.unsafeMap.get(tag.key) : getDefaultValue(tag);
+};
+/** @internal */
+const unsafeGet$1 = /*#__PURE__*/dual(2, (self, tag) => {
+  if (!self.unsafeMap.has(tag.key)) {
+    if (ReferenceTypeId in tag) return getDefaultValue(tag);
+    throw serviceNotFoundError(tag);
+  }
+  return self.unsafeMap.get(tag.key);
+});
+/** @internal */
+const get$6 = unsafeGet$1;
+/** @internal */
+const getOption$1 = /*#__PURE__*/dual(2, (self, tag) => {
+  if (!self.unsafeMap.has(tag.key)) {
+    return isReference(tag) ? some$1(getDefaultValue(tag)) : none$5;
+  }
+  return some$1(self.unsafeMap.get(tag.key));
+});
+/** @internal */
+const merge$4 = /*#__PURE__*/dual(2, (self, that) => {
+  const map = new Map(self.unsafeMap);
+  for (const [tag, s] of that.unsafeMap) {
+    map.set(tag, s);
+  }
+  return makeContext(map);
+});
+
+/**
+ * Creates a new `Tag` instance with an optional key parameter.
+ *
+ * @example
+ * ```ts
+ * import * as assert from "node:assert"
+ * import { Context } from "effect"
+ *
+ * assert.strictEqual(Context.GenericTag("PORT").key === Context.GenericTag("PORT").key, true)
+ * ```
+ *
+ * @since 2.0.0
+ * @category constructors
+ */
+const GenericTag = makeGenericTag;
+/**
+ * Checks if the provided argument is a `Context`.
+ *
+ * @example
+ * ```ts
+ * import * as assert from "node:assert"
+ * import { Context } from "effect"
+ *
+ * assert.strictEqual(Context.isContext(Context.empty()), true)
+ * ```
+ *
+ * @since 2.0.0
+ * @category guards
+ */
+const isContext = isContext$1;
+/**
+ * Checks if the provided argument is a `Tag`.
+ *
+ * @example
+ * ```ts
+ * import * as assert from "node:assert"
+ * import { Context } from "effect"
+ *
+ * assert.strictEqual(Context.isTag(Context.GenericTag("Tag")), true)
+ * ```
+ *
+ * @since 2.0.0
+ * @category guards
+ */
+const isTag = isTag$1;
+/**
+ * Returns an empty `Context`.
+ *
+ * @example
+ * ```ts
+ * import * as assert from "node:assert"
+ * import { Context } from "effect"
+ *
+ * assert.strictEqual(Context.isContext(Context.empty()), true)
+ * ```
+ *
+ * @since 2.0.0
+ * @category constructors
+ */
+const empty$e = empty$f;
+/**
+ * Creates a new `Context` with a single service associated to the tag.
+ *
+ * @example
+ * ```ts
+ * import * as assert from "node:assert"
+ * import { Context } from "effect"
+ *
+ * const Port = Context.GenericTag<{ PORT: number }>("Port")
+ *
+ * const Services = Context.make(Port, { PORT: 8080 })
+ *
+ * assert.deepStrictEqual(Context.get(Services, Port), { PORT: 8080 })
+ * ```
+ *
+ * @since 2.0.0
+ * @category constructors
+ */
+const make$l = make$m;
+/**
+ * Adds a service to a given `Context`.
+ *
+ * @example
+ * ```ts
+ * import * as assert from "node:assert"
+ * import { Context, pipe } from "effect"
+ *
+ * const Port = Context.GenericTag<{ PORT: number }>("Port")
+ * const Timeout = Context.GenericTag<{ TIMEOUT: number }>("Timeout")
+ *
+ * const someContext = Context.make(Port, { PORT: 8080 })
+ *
+ * const Services = pipe(
+ *   someContext,
+ *   Context.add(Timeout, { TIMEOUT: 5000 })
+ * )
+ *
+ * assert.deepStrictEqual(Context.get(Services, Port), { PORT: 8080 })
+ * assert.deepStrictEqual(Context.get(Services, Timeout), { TIMEOUT: 5000 })
+ * ```
+ *
+ * @since 2.0.0
+ */
+const add$1 = add$2;
+/**
+ * Get a service from the context that corresponds to the given tag.
+ *
+ * @example
+ * ```ts
+ * import * as assert from "node:assert"
+ * import { pipe, Context } from "effect"
+ *
+ * const Port = Context.GenericTag<{ PORT: number }>("Port")
+ * const Timeout = Context.GenericTag<{ TIMEOUT: number }>("Timeout")
+ *
+ * const Services = pipe(
+ *   Context.make(Port, { PORT: 8080 }),
+ *   Context.add(Timeout, { TIMEOUT: 5000 })
+ * )
+ *
+ * assert.deepStrictEqual(Context.get(Services, Timeout), { TIMEOUT: 5000 })
+ * ```
+ *
+ * @since 2.0.0
+ * @category getters
+ */
+const get$5 = get$6;
+/**
+ * Get a service from the context that corresponds to the given tag.
+ * This function is unsafe because if the tag is not present in the context, a runtime error will be thrown.
+ *
+ * For a safer version see {@link getOption}.
+ *
+ * @example
+ * ```ts
+ * import * as assert from "node:assert"
+ * import { Context } from "effect"
+ *
+ * const Port = Context.GenericTag<{ PORT: number }>("Port")
+ * const Timeout = Context.GenericTag<{ TIMEOUT: number }>("Timeout")
+ *
+ * const Services = Context.make(Port, { PORT: 8080 })
+ *
+ * assert.deepStrictEqual(Context.unsafeGet(Services, Port), { PORT: 8080 })
+ * assert.throws(() => Context.unsafeGet(Services, Timeout))
+ * ```
+ *
+ * @since 2.0.0
+ * @category unsafe
+ */
+const unsafeGet = unsafeGet$1;
+/**
+ * Get the value associated with the specified tag from the context wrapped in an `Option` object. If the tag is not
+ * found, the `Option` object will be `None`.
+ *
+ * @example
+ * ```ts
+ * import * as assert from "node:assert"
+ * import { Context, Option } from "effect"
+ *
+ * const Port = Context.GenericTag<{ PORT: number }>("Port")
+ * const Timeout = Context.GenericTag<{ TIMEOUT: number }>("Timeout")
+ *
+ * const Services = Context.make(Port, { PORT: 8080 })
+ *
+ * assert.deepStrictEqual(Context.getOption(Services, Port), Option.some({ PORT: 8080 }))
+ * assert.deepStrictEqual(Context.getOption(Services, Timeout), Option.none())
+ * ```
+ *
+ * @since 2.0.0
+ * @category getters
+ */
+const getOption = getOption$1;
+/**
+ * Merges two `Context`s, returning a new `Context` containing the services of both.
+ *
+ * @example
+ * ```ts
+ * import * as assert from "node:assert"
+ * import { Context } from "effect"
+ *
+ * const Port = Context.GenericTag<{ PORT: number }>("Port")
+ * const Timeout = Context.GenericTag<{ TIMEOUT: number }>("Timeout")
+ *
+ * const firstContext = Context.make(Port, { PORT: 8080 })
+ * const secondContext = Context.make(Timeout, { TIMEOUT: 5000 })
+ *
+ * const Services = Context.merge(firstContext, secondContext)
+ *
+ * assert.deepStrictEqual(Context.get(Services, Port), { PORT: 8080 })
+ * assert.deepStrictEqual(Context.get(Services, Timeout), { TIMEOUT: 5000 })
+ * ```
+ *
+ * @since 2.0.0
+ */
+const merge$3 = merge$4;
+/**
+ * Creates a context tag with a default value.
+ *
+ * **Details**
+ *
+ * `Context.Reference` allows you to create a tag that can hold a value. You can
+ * provide a default value for the service, which will automatically be used
+ * when the context is accessed, or override it with a custom implementation
+ * when needed.
+ *
+ * **Example** (Declaring a Tag with a default value)
+ *
+ * ```ts
+ * import * as assert from "node:assert"
+ * import { Context, Effect } from "effect"
+ *
+ * class SpecialNumber extends Context.Reference<SpecialNumber>()(
+ *   "SpecialNumber",
+ *   { defaultValue: () => 2048 }
+ * ) {}
+ *
+ * //      ┌─── Effect<void, never, never>
+ * //      ▼
+ * const program = Effect.gen(function* () {
+ *   const specialNumber = yield* SpecialNumber
+ *   console.log(`The special number is ${specialNumber}`)
+ * })
+ *
+ * // No need to provide the SpecialNumber implementation
+ * Effect.runPromise(program)
+ * // Output: The special number is 2048
+ * ```
+ *
+ * **Example** (Overriding the default value)
+ *
+ * ```ts
+ * import { Context, Effect } from "effect"
+ *
+ * class SpecialNumber extends Context.Reference<SpecialNumber>()(
+ *   "SpecialNumber",
+ *   { defaultValue: () => 2048 }
+ * ) {}
+ *
+ * const program = Effect.gen(function* () {
+ *   const specialNumber = yield* SpecialNumber
+ *   console.log(`The special number is ${specialNumber}`)
+ * })
+ *
+ * Effect.runPromise(program.pipe(Effect.provideService(SpecialNumber, -1)))
+ * // Output: The special number is -1
+ * ```
+ *
+ * @since 3.11.0
+ * @category constructors
+ * @experimental
+ */
+const Reference = Reference$1;
+
+/**
+ * @since 2.0.0
+ */
+const TypeId$7 = /*#__PURE__*/Symbol.for("effect/Duration");
+const bigint0$1 = /*#__PURE__*/BigInt(0);
+const bigint24 = /*#__PURE__*/BigInt(24);
+const bigint60 = /*#__PURE__*/BigInt(60);
+const bigint1e3 = /*#__PURE__*/BigInt(1_000);
+const bigint1e6 = /*#__PURE__*/BigInt(1_000_000);
+const bigint1e9 = /*#__PURE__*/BigInt(1_000_000_000);
+const DURATION_REGEX = /^(-?\d+(?:\.\d+)?)\s+(nanos?|micros?|millis?|seconds?|minutes?|hours?|days?|weeks?)$/;
+/**
+ * @since 2.0.0
+ */
+const decode = input => {
+  if (isDuration(input)) {
+    return input;
+  } else if (isNumber(input)) {
+    return millis(input);
+  } else if (isBigInt(input)) {
+    return nanos(input);
+  } else if (Array.isArray(input) && input.length === 2 && input.every(isNumber)) {
+    if (input[0] === -Infinity || input[1] === -Infinity || Number.isNaN(input[0]) || Number.isNaN(input[1])) {
+      return zero;
+    }
+    if (input[0] === Infinity || input[1] === Infinity) {
+      return infinity;
+    }
+    return nanos(BigInt(Math.round(input[0] * 1_000_000_000)) + BigInt(Math.round(input[1])));
+  } else if (isString(input)) {
+    const match = DURATION_REGEX.exec(input);
+    if (match) {
+      const [_, valueStr, unit] = match;
+      const value = Number(valueStr);
+      switch (unit) {
+        case "nano":
+        case "nanos":
+          return nanos(BigInt(valueStr));
+        case "micro":
+        case "micros":
+          return micros(BigInt(valueStr));
+        case "milli":
+        case "millis":
+          return millis(value);
+        case "second":
+        case "seconds":
+          return seconds(value);
+        case "minute":
+        case "minutes":
+          return minutes(value);
+        case "hour":
+        case "hours":
+          return hours(value);
+        case "day":
+        case "days":
+          return days(value);
+        case "week":
+        case "weeks":
+          return weeks(value);
+      }
+    }
+  }
+  throw new Error("Invalid DurationInput");
+};
+const zeroValue = {
+  _tag: "Millis",
+  millis: 0
+};
+const infinityValue = {
+  _tag: "Infinity"
+};
+const DurationProto = {
+  [TypeId$7]: TypeId$7,
+  [symbol$1]() {
+    return cached(this, structure(this.value));
+  },
+  [symbol](that) {
+    return isDuration(that) && equals(this, that);
+  },
+  toString() {
+    return `Duration(${format$1(this)})`;
+  },
+  toJSON() {
+    switch (this.value._tag) {
+      case "Millis":
+        return {
+          _id: "Duration",
+          _tag: "Millis",
+          millis: this.value.millis
+        };
+      case "Nanos":
+        return {
+          _id: "Duration",
+          _tag: "Nanos",
+          hrtime: toHrTime(this)
+        };
+      case "Infinity":
+        return {
+          _id: "Duration",
+          _tag: "Infinity"
+        };
+    }
+  },
+  [NodeInspectSymbol]() {
+    return this.toJSON();
+  },
+  pipe() {
+    return pipeArguments(this, arguments);
+  }
+};
+const make$k = input => {
+  const duration = Object.create(DurationProto);
+  if (isNumber(input)) {
+    if (isNaN(input) || input <= 0) {
+      duration.value = zeroValue;
+    } else if (!Number.isFinite(input)) {
+      duration.value = infinityValue;
+    } else if (!Number.isInteger(input)) {
+      duration.value = {
+        _tag: "Nanos",
+        nanos: BigInt(Math.round(input * 1_000_000))
+      };
+    } else {
+      duration.value = {
+        _tag: "Millis",
+        millis: input
+      };
+    }
+  } else if (input <= bigint0$1) {
+    duration.value = zeroValue;
+  } else {
+    duration.value = {
+      _tag: "Nanos",
+      nanos: input
+    };
+  }
+  return duration;
+};
+/**
+ * @since 2.0.0
+ * @category guards
+ */
+const isDuration = u => hasProperty(u, TypeId$7);
+/**
+ * @since 3.5.0
+ * @category guards
+ */
+const isZero = self => {
+  switch (self.value._tag) {
+    case "Millis":
+      {
+        return self.value.millis === 0;
+      }
+    case "Nanos":
+      {
+        return self.value.nanos === bigint0$1;
+      }
+    case "Infinity":
+      {
+        return false;
+      }
+  }
+};
+/**
+ * @since 2.0.0
+ * @category constructors
+ */
+const zero = /*#__PURE__*/make$k(0);
+/**
+ * @since 2.0.0
+ * @category constructors
+ */
+const infinity = /*#__PURE__*/make$k(Infinity);
+/**
+ * @since 2.0.0
+ * @category constructors
+ */
+const nanos = nanos => make$k(nanos);
+/**
+ * @since 2.0.0
+ * @category constructors
+ */
+const micros = micros => make$k(micros * bigint1e3);
+/**
+ * @since 2.0.0
+ * @category constructors
+ */
+const millis = millis => make$k(millis);
+/**
+ * @since 2.0.0
+ * @category constructors
+ */
+const seconds = seconds => make$k(seconds * 1000);
+/**
+ * @since 2.0.0
+ * @category constructors
+ */
+const minutes = minutes => make$k(minutes * 60_000);
+/**
+ * @since 2.0.0
+ * @category constructors
+ */
+const hours = hours => make$k(hours * 3_600_000);
+/**
+ * @since 2.0.0
+ * @category constructors
+ */
+const days = days => make$k(days * 86_400_000);
+/**
+ * @since 2.0.0
+ * @category constructors
+ */
+const weeks = weeks => make$k(weeks * 604_800_000);
+/**
+ * @since 2.0.0
+ * @category getters
+ */
+const toMillis = self => match$1(self, {
+  onMillis: millis => millis,
+  onNanos: nanos => Number(nanos) / 1_000_000
+});
+/**
+ * Get the duration in nanoseconds as a bigint.
+ *
+ * If the duration is infinite, it throws an error.
+ *
+ * @since 2.0.0
+ * @category getters
+ */
+const unsafeToNanos = self => {
+  const _self = decode(self);
+  switch (_self.value._tag) {
+    case "Infinity":
+      throw new Error("Cannot convert infinite duration to nanos");
+    case "Nanos":
+      return _self.value.nanos;
+    case "Millis":
+      return BigInt(Math.round(_self.value.millis * 1_000_000));
+  }
+};
+/**
+ * @since 2.0.0
+ * @category getters
+ */
+const toHrTime = self => {
+  const _self = decode(self);
+  switch (_self.value._tag) {
+    case "Infinity":
+      return [Infinity, 0];
+    case "Nanos":
+      return [Number(_self.value.nanos / bigint1e9), Number(_self.value.nanos % bigint1e9)];
+    case "Millis":
+      return [Math.floor(_self.value.millis / 1000), Math.round(_self.value.millis % 1000 * 1_000_000)];
+  }
+};
+/**
+ * @since 2.0.0
+ * @category pattern matching
+ */
+const match$1 = /*#__PURE__*/dual(2, (self, options) => {
+  const _self = decode(self);
+  switch (_self.value._tag) {
+    case "Nanos":
+      return options.onNanos(_self.value.nanos);
+    case "Infinity":
+      return options.onMillis(Infinity);
+    case "Millis":
+      return options.onMillis(_self.value.millis);
+  }
+});
+/**
+ * @since 2.0.0
+ * @category pattern matching
+ */
+const matchWith = /*#__PURE__*/dual(3, (self, that, options) => {
+  const _self = decode(self);
+  const _that = decode(that);
+  if (_self.value._tag === "Infinity" || _that.value._tag === "Infinity") {
+    return options.onMillis(toMillis(_self), toMillis(_that));
+  } else if (_self.value._tag === "Nanos" || _that.value._tag === "Nanos") {
+    const selfNanos = _self.value._tag === "Nanos" ? _self.value.nanos : BigInt(Math.round(_self.value.millis * 1_000_000));
+    const thatNanos = _that.value._tag === "Nanos" ? _that.value.nanos : BigInt(Math.round(_that.value.millis * 1_000_000));
+    return options.onNanos(selfNanos, thatNanos);
+  }
+  return options.onMillis(_self.value.millis, _that.value.millis);
+});
+/**
+ * @category instances
+ * @since 2.0.0
+ */
+const Equivalence = (self, that) => matchWith(self, that, {
+  onMillis: (self, that) => self === that,
+  onNanos: (self, that) => self === that
+});
+/**
+ * @since 2.0.0
+ * @category predicates
+ */
+const lessThanOrEqualTo = /*#__PURE__*/dual(2, (self, that) => matchWith(self, that, {
+  onMillis: (self, that) => self <= that,
+  onNanos: (self, that) => self <= that
+}));
+/**
+ * @since 2.0.0
+ * @category predicates
+ */
+const greaterThanOrEqualTo = /*#__PURE__*/dual(2, (self, that) => matchWith(self, that, {
+  onMillis: (self, that) => self >= that,
+  onNanos: (self, that) => self >= that
+}));
+/**
+ * @since 2.0.0
+ * @category predicates
+ */
+const equals = /*#__PURE__*/dual(2, (self, that) => Equivalence(decode(self), decode(that)));
+/**
+ * Converts a `Duration` to its parts.
+ *
+ * @since 3.8.0
+ * @category conversions
+ */
+const parts = self => {
+  const duration = decode(self);
+  if (duration.value._tag === "Infinity") {
+    return {
+      days: Infinity,
+      hours: Infinity,
+      minutes: Infinity,
+      seconds: Infinity,
+      millis: Infinity,
+      nanos: Infinity
+    };
+  }
+  const nanos = unsafeToNanos(duration);
+  const ms = nanos / bigint1e6;
+  const sec = ms / bigint1e3;
+  const min = sec / bigint60;
+  const hr = min / bigint60;
+  const days = hr / bigint24;
+  return {
+    days: Number(days),
+    hours: Number(hr % bigint24),
+    minutes: Number(min % bigint60),
+    seconds: Number(sec % bigint60),
+    millis: Number(ms % bigint1e3),
+    nanos: Number(nanos % bigint1e6)
+  };
+};
+/**
+ * Converts a `Duration` to a human readable string.
+ *
+ * @since 2.0.0
+ * @category conversions
+ * @example
+ * ```ts
+ * import { Duration } from "effect"
+ *
+ * Duration.format(Duration.millis(1000)) // "1s"
+ * Duration.format(Duration.millis(1001)) // "1s 1ms"
+ * ```
+ */
+const format$1 = self => {
+  const duration = decode(self);
+  if (duration.value._tag === "Infinity") {
+    return "Infinity";
+  }
+  if (isZero(duration)) {
+    return "0";
+  }
+  const fragments = parts(duration);
+  const pieces = [];
+  if (fragments.days !== 0) {
+    pieces.push(`${fragments.days}d`);
+  }
+  if (fragments.hours !== 0) {
+    pieces.push(`${fragments.hours}h`);
+  }
+  if (fragments.minutes !== 0) {
+    pieces.push(`${fragments.minutes}m`);
+  }
+  if (fragments.seconds !== 0) {
+    pieces.push(`${fragments.seconds}s`);
+  }
+  if (fragments.millis !== 0) {
+    pieces.push(`${fragments.millis}ms`);
+  }
+  if (fragments.nanos !== 0) {
+    pieces.push(`${fragments.nanos}ns`);
+  }
+  return pieces.join(" ");
+};
+
+/**
+ * @since 2.0.0
+ */
+const TypeId$6 = /*#__PURE__*/Symbol.for("effect/MutableRef");
+const MutableRefProto = {
+  [TypeId$6]: TypeId$6,
+  toString() {
+    return format$2(this.toJSON());
+  },
+  toJSON() {
+    return {
+      _id: "MutableRef",
+      current: toJSON(this.current)
+    };
+  },
+  [NodeInspectSymbol]() {
+    return this.toJSON();
+  },
+  pipe() {
+    return pipeArguments(this, arguments);
+  }
+};
+/**
+ * @since 2.0.0
+ * @category constructors
+ */
+const make$j = value => {
+  const ref = Object.create(MutableRefProto);
+  ref.current = value;
+  return ref;
+};
+/**
+ * @since 2.0.0
+ * @category general
+ */
+const compareAndSet = /*#__PURE__*/dual(3, (self, oldValue, newValue) => {
+  if (equals$1(oldValue, self.current)) {
+    self.current = newValue;
+    return true;
+  }
+  return false;
+});
+/**
+ * @since 2.0.0
+ * @category general
+ */
+const get$4 = self => self.current;
+/**
+ * @since 2.0.0
+ * @category general
+ */
+const set$3 = /*#__PURE__*/dual(2, (self, value) => {
+  self.current = value;
+  return self;
+});
+
+/** @internal */
+const FiberIdSymbolKey = "effect/FiberId";
+/** @internal */
+const FiberIdTypeId = /*#__PURE__*/Symbol.for(FiberIdSymbolKey);
+/** @internal */
+const OP_NONE = "None";
+/** @internal */
+const OP_RUNTIME = "Runtime";
+/** @internal */
+const OP_COMPOSITE = "Composite";
+const emptyHash = /*#__PURE__*/string$1(`${FiberIdSymbolKey}-${OP_NONE}`);
+/** @internal */
+let None$2 = class None {
+  [FiberIdTypeId] = FiberIdTypeId;
+  _tag = OP_NONE;
+  id = -1;
+  startTimeMillis = -1;
+  [symbol$1]() {
+    return emptyHash;
+  }
+  [symbol](that) {
+    return isFiberId(that) && that._tag === OP_NONE;
+  }
+  toString() {
+    return format$2(this.toJSON());
+  }
+  toJSON() {
+    return {
+      _id: "FiberId",
+      _tag: this._tag
+    };
+  }
+  [NodeInspectSymbol]() {
+    return this.toJSON();
+  }
+};
+/** @internal */
+class Runtime {
+  id;
+  startTimeMillis;
+  [FiberIdTypeId] = FiberIdTypeId;
+  _tag = OP_RUNTIME;
+  constructor(id, startTimeMillis) {
+    this.id = id;
+    this.startTimeMillis = startTimeMillis;
+  }
+  [symbol$1]() {
+    return cached(this, string$1(`${FiberIdSymbolKey}-${this._tag}-${this.id}-${this.startTimeMillis}`));
+  }
+  [symbol](that) {
+    return isFiberId(that) && that._tag === OP_RUNTIME && this.id === that.id && this.startTimeMillis === that.startTimeMillis;
+  }
+  toString() {
+    return format$2(this.toJSON());
+  }
+  toJSON() {
+    return {
+      _id: "FiberId",
+      _tag: this._tag,
+      id: this.id,
+      startTimeMillis: this.startTimeMillis
+    };
+  }
+  [NodeInspectSymbol]() {
+    return this.toJSON();
+  }
+}
+/** @internal */
+class Composite {
+  left;
+  right;
+  [FiberIdTypeId] = FiberIdTypeId;
+  _tag = OP_COMPOSITE;
+  constructor(left, right) {
+    this.left = left;
+    this.right = right;
+  }
+  _hash;
+  [symbol$1]() {
+    return pipe(string$1(`${FiberIdSymbolKey}-${this._tag}`), combine$7(hash(this.left)), combine$7(hash(this.right)), cached(this));
+  }
+  [symbol](that) {
+    return isFiberId(that) && that._tag === OP_COMPOSITE && equals$1(this.left, that.left) && equals$1(this.right, that.right);
+  }
+  toString() {
+    return format$2(this.toJSON());
+  }
+  toJSON() {
+    return {
+      _id: "FiberId",
+      _tag: this._tag,
+      left: toJSON(this.left),
+      right: toJSON(this.right)
+    };
+  }
+  [NodeInspectSymbol]() {
+    return this.toJSON();
+  }
+}
+/** @internal */
+const none$3 = /*#__PURE__*/new None$2();
+/** @internal */
+const isFiberId = self => hasProperty(self, FiberIdTypeId);
+/** @internal */
+const combine$6 = /*#__PURE__*/dual(2, (self, that) => {
+  if (self._tag === OP_NONE) {
+    return that;
+  }
+  if (that._tag === OP_NONE) {
+    return self;
+  }
+  return new Composite(self, that);
+});
+/** @internal */
+const ids = self => {
+  switch (self._tag) {
+    case OP_NONE:
+      {
+        return empty$h();
+      }
+    case OP_RUNTIME:
+      {
+        return make$n(self.id);
+      }
+    case OP_COMPOSITE:
+      {
+        return pipe(ids(self.left), union(ids(self.right)));
+      }
+  }
+};
+const _fiberCounter = /*#__PURE__*/globalValue(/*#__PURE__*/Symbol.for("effect/Fiber/Id/_fiberCounter"), () => make$j(0));
+/** @internal */
+const threadName$1 = self => {
+  const identifiers = Array.from(ids(self)).map(n => `#${n}`).join(",");
+  return identifiers;
+};
+/** @internal */
+const unsafeMake$5 = () => {
+  const id = get$4(_fiberCounter);
+  pipe(_fiberCounter, set$3(id + 1));
+  return new Runtime(id, Date.now());
+};
+
+/**
+ * @since 2.0.0
+ * @category constructors
+ */
+const none$2 = none$3;
+/**
+ * Combine two `FiberId`s.
+ *
+ * @since 2.0.0
+ * @category constructors
+ */
+const combine$5 = combine$6;
+/**
+ * Creates a string representing the name of the current thread of execution
+ * represented by the specified `FiberId`.
+ *
+ * @since 2.0.0
+ * @category destructors
+ */
+const threadName = threadName$1;
+/**
+ * Unsafely creates a new `FiberId`.
+ *
+ * @since 2.0.0
+ * @category unsafe
+ */
+const unsafeMake$4 = unsafeMake$5;
+
+/**
+ * @since 2.0.0
+ */
+/**
+ * Creates a new `HashMap`.
+ *
+ * @since 2.0.0
+ * @category constructors
+ */
+const empty$d = empty$j;
+/**
+ * Creates a new `HashMap` from an iterable collection of key/value pairs.
+ *
+ * @since 2.0.0
+ * @category constructors
+ */
+const fromIterable$1 = fromIterable$4;
+/**
+ * Checks if the `HashMap` contains any entries.
+ *
+ * @since 2.0.0
+ * @category elements
+ */
+const isEmpty$2 = isEmpty$4;
+/**
+ * Safely lookup the value for the specified key in the `HashMap` using the
+ * internal hashing function.
+ *
+ * @since 2.0.0
+ * @category elements
+ */
+const get$3 = get$7;
+/**
+ * Sets the specified key to the specified value using the internal hashing
+ * function.
+ *
+ * @since 2.0.0
+ */
+const set$2 = set$4;
+/**
+ * Returns an `IterableIterator` of the keys within the `HashMap`.
+ *
+ * @since 2.0.0
+ * @category getters
+ */
+const keys = keys$1;
+/**
+ * Set or remove the specified key in the `HashMap` using the specified
+ * update function. The value of the specified key will be computed using the
+ * provided hash.
+ *
+ * The update function will be invoked with the current value of the key if it
+ * exists, or `None` if no such value exists.
+ *
+ * @since 2.0.0
+ */
+const modifyAt = modifyAt$1;
+/**
+ * Maps over the entries of the `HashMap` using the specified function.
+ *
+ * @since 2.0.0
+ * @category mapping
+ */
+const map$4 = map$5;
+/**
+ * Reduces the specified state over the entries of the `HashMap`.
+ *
+ * @since 2.0.0
+ * @category folding
+ */
+const reduce$1 = reduce$5;
+
+/**
+ * A data type for immutable linked lists representing ordered collections of elements of type `A`.
+ *
+ * This data type is optimal for last-in-first-out (LIFO), stack-like access patterns. If you need another access pattern, for example, random access or FIFO, consider using a collection more suited to this than `List`.
+ *
+ * **Performance**
+ *
+ * - Time: `List` has `O(1)` prepend and head/tail access. Most other operations are `O(n)` on the number of elements in the list. This includes the index-based lookup of elements, `length`, `append` and `reverse`.
+ * - Space: `List` implements structural sharing of the tail list. This means that many operations are either zero- or constant-memory cost.
+ *
+ * @since 2.0.0
+ */
+/**
+ * This file is ported from
+ *
+ * Scala (https://www.scala-lang.org)
+ *
+ * Copyright EPFL and Lightbend, Inc.
+ *
+ * Licensed under Apache License 2.0
+ * (http://www.apache.org/licenses/LICENSE-2.0).
+ */
+/**
+ * @since 2.0.0
+ * @category symbol
+ */
+const TypeId$5 = /*#__PURE__*/Symbol.for("effect/List");
+/**
+ * Converts the specified `List` to an `Array`.
+ *
+ * @category conversions
+ * @since 2.0.0
+ */
+const toArray = self => fromIterable$6(self);
+/**
+ * @category equivalence
+ * @since 2.0.0
+ */
+const getEquivalence = isEquivalent => mapInput$1(getEquivalence$2(isEquivalent), toArray);
+const _equivalence = /*#__PURE__*/getEquivalence(equals$1);
+const ConsProto = {
+  [TypeId$5]: TypeId$5,
+  _tag: "Cons",
+  toString() {
+    return format$2(this.toJSON());
+  },
+  toJSON() {
+    return {
+      _id: "List",
+      _tag: "Cons",
+      values: toArray(this).map(toJSON)
+    };
+  },
+  [NodeInspectSymbol]() {
+    return this.toJSON();
+  },
+  [symbol](that) {
+    return isList(that) && this._tag === that._tag && _equivalence(this, that);
+  },
+  [symbol$1]() {
+    return cached(this, array(toArray(this)));
+  },
+  [Symbol.iterator]() {
+    let done = false;
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    let self = this;
+    return {
+      next() {
+        if (done) {
+          return this.return();
+        }
+        if (self._tag === "Nil") {
+          done = true;
+          return this.return();
+        }
+        const value = self.head;
+        self = self.tail;
+        return {
+          done,
+          value
+        };
+      },
+      return(value) {
+        if (!done) {
+          done = true;
+        }
+        return {
+          done: true,
+          value
+        };
+      }
+    };
+  },
+  pipe() {
+    return pipeArguments(this, arguments);
+  }
+};
+const makeCons = (head, tail) => {
+  const cons = Object.create(ConsProto);
+  cons.head = head;
+  cons.tail = tail;
+  return cons;
+};
+const NilHash = /*#__PURE__*/string$1("Nil");
+const NilProto = {
+  [TypeId$5]: TypeId$5,
+  _tag: "Nil",
+  toString() {
+    return format$2(this.toJSON());
+  },
+  toJSON() {
+    return {
+      _id: "List",
+      _tag: "Nil"
+    };
+  },
+  [NodeInspectSymbol]() {
+    return this.toJSON();
+  },
+  [symbol$1]() {
+    return NilHash;
+  },
+  [symbol](that) {
+    return isList(that) && this._tag === that._tag;
+  },
+  [Symbol.iterator]() {
+    return {
+      next() {
+        return {
+          done: true,
+          value: undefined
+        };
+      }
+    };
+  },
+  pipe() {
+    return pipeArguments(this, arguments);
+  }
+};
+const _Nil = /*#__PURE__*/Object.create(NilProto);
+/**
+ * Returns `true` if the specified value is a `List`, `false` otherwise.
+ *
+ * @since 2.0.0
+ * @category refinements
+ */
+const isList = u => hasProperty(u, TypeId$5);
+/**
+ * Returns `true` if the specified value is a `List.Nil<A>`, `false` otherwise.
+ *
+ * @since 2.0.0
+ * @category refinements
+ */
+const isNil = self => self._tag === "Nil";
+/**
+ * Returns `true` if the specified value is a `List.Cons<A>`, `false` otherwise.
+ *
+ * @since 2.0.0
+ * @category refinements
+ */
+const isCons = self => self._tag === "Cons";
+/**
+ * Constructs a new empty `List<A>`.
+ *
+ * @since 2.0.0
+ * @category constructors
+ */
+const nil = () => _Nil;
+/**
+ * Constructs a new `List.Cons<A>` from the specified `head` and `tail` values.
+ *
+ * @since 2.0.0
+ * @category constructors
+ */
+const cons = (head, tail) => makeCons(head, tail);
+/**
+ * Constructs a new empty `List<A>`.
+ *
+ * Alias of {@link nil}.
+ *
+ * @since 2.0.0
+ * @category constructors
+ */
+const empty$c = nil;
+/**
+ * Constructs a new `List<A>` from the specified value.
+ *
+ * @since 2.0.0
+ * @category constructors
+ */
+const of = value => makeCons(value, _Nil);
+/**
+ * Concatenates two lists, combining their elements.
+ * If either list is non-empty, the result is also a non-empty list.
+ *
+ * @example
+ * ```ts
+ * import * as assert from "node:assert"
+ * import { List } from "effect"
+ *
+ * assert.deepStrictEqual(
+ *   List.make(1, 2).pipe(List.appendAll(List.make("a", "b")), List.toArray),
+ *   [1, 2, "a", "b"]
+ * )
+ * ```
+ *
+ * @category concatenating
+ * @since 2.0.0
+ */
+const appendAll = /*#__PURE__*/dual(2, (self, that) => prependAll(that, self));
+/**
+ * Prepends the specified element to the beginning of the list.
+ *
+ * @category concatenating
+ * @since 2.0.0
+ */
+const prepend = /*#__PURE__*/dual(2, (self, element) => cons(element, self));
+/**
+ * Prepends the specified prefix list to the beginning of the specified list.
+ * If either list is non-empty, the result is also a non-empty list.
+ *
+ * @example
+ * ```ts
+ * import * as assert from "node:assert"
+ * import { List } from "effect"
+ *
+ * assert.deepStrictEqual(
+ *   List.make(1, 2).pipe(List.prependAll(List.make("a", "b")), List.toArray),
+ *   ["a", "b", 1, 2]
+ * )
+ * ```
+ *
+ * @category concatenating
+ * @since 2.0.0
+ */
+const prependAll = /*#__PURE__*/dual(2, (self, prefix) => {
+  if (isNil(self)) {
+    return prefix;
+  } else if (isNil(prefix)) {
+    return self;
+  } else {
+    const result = makeCons(prefix.head, self);
+    let curr = result;
+    let that = prefix.tail;
+    while (!isNil(that)) {
+      const temp = makeCons(that.head, self);
+      curr.tail = temp;
+      curr = temp;
+      that = that.tail;
+    }
+    return result;
+  }
+});
+/**
+ * Folds over the elements of the list using the specified function, using the
+ * specified initial value.
+ *
+ * @since 2.0.0
+ * @category folding
+ */
+const reduce = /*#__PURE__*/dual(3, (self, zero, f) => {
+  let acc = zero;
+  let these = self;
+  while (!isNil(these)) {
+    acc = f(acc, these.head);
+    these = these.tail;
+  }
+  return acc;
+});
+/**
+ * Returns a new list with the elements of the specified list in reverse order.
+ *
+ * @since 2.0.0
+ * @category elements
+ */
+const reverse = self => {
+  let result = empty$c();
+  let these = self;
+  while (!isNil(these)) {
+    result = prepend(result, these.head);
+    these = these.tail;
+  }
+  return result;
+};
+
+/** @internal */
+const Structural = /*#__PURE__*/function () {
+  function Structural(args) {
+    if (args) {
+      Object.assign(this, args);
+    }
+  }
+  Structural.prototype = StructuralPrototype;
+  return Structural;
+}();
+
+({
+  ...Structural.prototype});
+
+/** @internal */
+const ContextPatchTypeId = /*#__PURE__*/Symbol.for("effect/DifferContextPatch");
+function variance$2(a) {
+  return a;
+}
+/** @internal */
+const PatchProto$2 = {
+  ...Structural.prototype,
+  [ContextPatchTypeId]: {
+    _Value: variance$2,
+    _Patch: variance$2
+  }
+};
+const EmptyProto$2 = /*#__PURE__*/Object.assign(/*#__PURE__*/Object.create(PatchProto$2), {
+  _tag: "Empty"
+});
+const _empty$2 = /*#__PURE__*/Object.create(EmptyProto$2);
+/**
+ * @internal
+ */
+const empty$b = () => _empty$2;
+const AndThenProto$2 = /*#__PURE__*/Object.assign(/*#__PURE__*/Object.create(PatchProto$2), {
+  _tag: "AndThen"
+});
+const makeAndThen$2 = (first, second) => {
+  const o = Object.create(AndThenProto$2);
+  o.first = first;
+  o.second = second;
+  return o;
+};
+const AddServiceProto = /*#__PURE__*/Object.assign(/*#__PURE__*/Object.create(PatchProto$2), {
+  _tag: "AddService"
+});
+const makeAddService = (key, service) => {
+  const o = Object.create(AddServiceProto);
+  o.key = key;
+  o.service = service;
+  return o;
+};
+const RemoveServiceProto = /*#__PURE__*/Object.assign(/*#__PURE__*/Object.create(PatchProto$2), {
+  _tag: "RemoveService"
+});
+const makeRemoveService = key => {
+  const o = Object.create(RemoveServiceProto);
+  o.key = key;
+  return o;
+};
+const UpdateServiceProto = /*#__PURE__*/Object.assign(/*#__PURE__*/Object.create(PatchProto$2), {
+  _tag: "UpdateService"
+});
+const makeUpdateService = (key, update) => {
+  const o = Object.create(UpdateServiceProto);
+  o.key = key;
+  o.update = update;
+  return o;
+};
+/** @internal */
+const diff$6 = (oldValue, newValue) => {
+  const missingServices = new Map(oldValue.unsafeMap);
+  let patch = empty$b();
+  for (const [tag, newService] of newValue.unsafeMap.entries()) {
+    if (missingServices.has(tag)) {
+      const old = missingServices.get(tag);
+      missingServices.delete(tag);
+      if (!equals$1(old, newService)) {
+        patch = combine$4(makeUpdateService(tag, () => newService))(patch);
+      }
+    } else {
+      missingServices.delete(tag);
+      patch = combine$4(makeAddService(tag, newService))(patch);
+    }
+  }
+  for (const [tag] of missingServices.entries()) {
+    patch = combine$4(makeRemoveService(tag))(patch);
+  }
+  return patch;
+};
+/** @internal */
+const combine$4 = /*#__PURE__*/dual(2, (self, that) => makeAndThen$2(self, that));
+/** @internal */
+const patch$7 = /*#__PURE__*/dual(2, (self, context) => {
+  if (self._tag === "Empty") {
+    return context;
+  }
+  let wasServiceUpdated = false;
+  let patches = of$1(self);
+  const updatedContext = new Map(context.unsafeMap);
+  while (isNonEmpty$2(patches)) {
+    const head = headNonEmpty(patches);
+    const tail = tailNonEmpty(patches);
+    switch (head._tag) {
+      case "Empty":
+        {
+          patches = tail;
+          break;
+        }
+      case "AddService":
+        {
+          updatedContext.set(head.key, head.service);
+          patches = tail;
+          break;
+        }
+      case "AndThen":
+        {
+          patches = prepend$1(prepend$1(tail, head.second), head.first);
+          break;
+        }
+      case "RemoveService":
+        {
+          updatedContext.delete(head.key);
+          patches = tail;
+          break;
+        }
+      case "UpdateService":
+        {
+          updatedContext.set(head.key, head.update(updatedContext.get(head.key)));
+          wasServiceUpdated = true;
+          patches = tail;
+          break;
+        }
+    }
+  }
+  if (!wasServiceUpdated) {
+    return makeContext(updatedContext);
+  }
+  const map = new Map();
+  for (const [tag] of context.unsafeMap) {
+    if (updatedContext.has(tag)) {
+      map.set(tag, updatedContext.get(tag));
+      updatedContext.delete(tag);
+    }
+  }
+  for (const [tag, s] of updatedContext) {
+    map.set(tag, s);
+  }
+  return makeContext(map);
+});
+
+/** @internal */
+({
+  ...Structural.prototype});
+
+/** @internal */
+const HashSetPatchTypeId = /*#__PURE__*/Symbol.for("effect/DifferHashSetPatch");
+function variance$1(a) {
+  return a;
+}
+/** @internal */
+const PatchProto$1 = {
+  ...Structural.prototype,
+  [HashSetPatchTypeId]: {
+    _Value: variance$1,
+    _Key: variance$1,
+    _Patch: variance$1
+  }
+};
+const EmptyProto$1 = /*#__PURE__*/Object.assign(/*#__PURE__*/Object.create(PatchProto$1), {
+  _tag: "Empty"
+});
+const _empty$1 = /*#__PURE__*/Object.create(EmptyProto$1);
+/** @internal */
+const empty$a = () => _empty$1;
+const AndThenProto$1 = /*#__PURE__*/Object.assign(/*#__PURE__*/Object.create(PatchProto$1), {
+  _tag: "AndThen"
+});
+/** @internal */
+const makeAndThen$1 = (first, second) => {
+  const o = Object.create(AndThenProto$1);
+  o.first = first;
+  o.second = second;
+  return o;
+};
+const AddProto = /*#__PURE__*/Object.assign(/*#__PURE__*/Object.create(PatchProto$1), {
+  _tag: "Add"
+});
+/** @internal */
+const makeAdd = value => {
+  const o = Object.create(AddProto);
+  o.value = value;
+  return o;
+};
+const RemoveProto = /*#__PURE__*/Object.assign(/*#__PURE__*/Object.create(PatchProto$1), {
+  _tag: "Remove"
+});
+/** @internal */
+const makeRemove = value => {
+  const o = Object.create(RemoveProto);
+  o.value = value;
+  return o;
+};
+/** @internal */
+const diff$5 = (oldValue, newValue) => {
+  const [removed, patch] = reduce$3([oldValue, empty$a()], ([set, patch], value) => {
+    if (has$1(value)(set)) {
+      return [remove$1(value)(set), patch];
+    }
+    return [set, combine$3(makeAdd(value))(patch)];
+  })(newValue);
+  return reduce$3(patch, (patch, value) => combine$3(makeRemove(value))(patch))(removed);
+};
+/** @internal */
+const combine$3 = /*#__PURE__*/dual(2, (self, that) => makeAndThen$1(self, that));
+/** @internal */
+const patch$6 = /*#__PURE__*/dual(2, (self, oldValue) => {
+  if (self._tag === "Empty") {
+    return oldValue;
+  }
+  let set = oldValue;
+  let patches = of$1(self);
+  while (isNonEmpty$2(patches)) {
+    const head = headNonEmpty(patches);
+    const tail = tailNonEmpty(patches);
+    switch (head._tag) {
+      case "Empty":
+        {
+          patches = tail;
+          break;
+        }
+      case "AndThen":
+        {
+          patches = prepend$1(head.first)(prepend$1(head.second)(tail));
+          break;
+        }
+      case "Add":
+        {
+          set = add$3(head.value)(set);
+          patches = tail;
+          break;
+        }
+      case "Remove":
+        {
+          set = remove$1(head.value)(set);
+          patches = tail;
+        }
+    }
+  }
+  return set;
+});
+
+/** @internal */
+({
+  ...Structural.prototype});
+
+/** @internal */
+const ReadonlyArrayPatchTypeId = /*#__PURE__*/Symbol.for("effect/DifferReadonlyArrayPatch");
+function variance(a) {
+  return a;
+}
+const PatchProto = {
+  ...Structural.prototype,
+  [ReadonlyArrayPatchTypeId]: {
+    _Value: variance,
+    _Patch: variance
+  }
+};
+const EmptyProto = /*#__PURE__*/Object.assign(/*#__PURE__*/Object.create(PatchProto), {
+  _tag: "Empty"
+});
+const _empty = /*#__PURE__*/Object.create(EmptyProto);
+/**
+ * @internal
+ */
+const empty$9 = () => _empty;
+const AndThenProto = /*#__PURE__*/Object.assign(/*#__PURE__*/Object.create(PatchProto), {
+  _tag: "AndThen"
+});
+const makeAndThen = (first, second) => {
+  const o = Object.create(AndThenProto);
+  o.first = first;
+  o.second = second;
+  return o;
+};
+const AppendProto = /*#__PURE__*/Object.assign(/*#__PURE__*/Object.create(PatchProto), {
+  _tag: "Append"
+});
+const makeAppend = values => {
+  const o = Object.create(AppendProto);
+  o.values = values;
+  return o;
+};
+const SliceProto = /*#__PURE__*/Object.assign(/*#__PURE__*/Object.create(PatchProto), {
+  _tag: "Slice"
+});
+const makeSlice = (from, until) => {
+  const o = Object.create(SliceProto);
+  o.from = from;
+  o.until = until;
+  return o;
+};
+const UpdateProto = /*#__PURE__*/Object.assign(/*#__PURE__*/Object.create(PatchProto), {
+  _tag: "Update"
+});
+const makeUpdate = (index, patch) => {
+  const o = Object.create(UpdateProto);
+  o.index = index;
+  o.patch = patch;
+  return o;
+};
+/** @internal */
+const diff$4 = options => {
+  let i = 0;
+  let patch = empty$9();
+  while (i < options.oldValue.length && i < options.newValue.length) {
+    const oldElement = options.oldValue[i];
+    const newElement = options.newValue[i];
+    const valuePatch = options.differ.diff(oldElement, newElement);
+    if (!equals$1(valuePatch, options.differ.empty)) {
+      patch = combine$2(patch, makeUpdate(i, valuePatch));
+    }
+    i = i + 1;
+  }
+  if (i < options.oldValue.length) {
+    patch = combine$2(patch, makeSlice(0, i));
+  }
+  if (i < options.newValue.length) {
+    patch = combine$2(patch, makeAppend(drop$1(i)(options.newValue)));
+  }
+  return patch;
+};
+/** @internal */
+const combine$2 = /*#__PURE__*/dual(2, (self, that) => makeAndThen(self, that));
+/** @internal */
+const patch$5 = /*#__PURE__*/dual(3, (self, oldValue, differ) => {
+  if (self._tag === "Empty") {
+    return oldValue;
+  }
+  let readonlyArray = oldValue.slice();
+  let patches = of$2(self);
+  while (isNonEmptyArray(patches)) {
+    const head = headNonEmpty$1(patches);
+    const tail = tailNonEmpty$1(patches);
+    switch (head._tag) {
+      case "Empty":
+        {
+          patches = tail;
+          break;
+        }
+      case "AndThen":
+        {
+          tail.unshift(head.first, head.second);
+          patches = tail;
+          break;
+        }
+      case "Append":
+        {
+          for (const value of head.values) {
+            readonlyArray.push(value);
+          }
+          patches = tail;
+          break;
+        }
+      case "Slice":
+        {
+          readonlyArray = readonlyArray.slice(head.from, head.until);
+          patches = tail;
+          break;
+        }
+      case "Update":
+        {
+          readonlyArray[head.index] = differ.patch(head.patch, readonlyArray[head.index]);
+          patches = tail;
+          break;
+        }
+    }
+  }
+  return readonlyArray;
+});
+
+/** @internal */
+const DifferTypeId = /*#__PURE__*/Symbol.for("effect/Differ");
+/** @internal */
+const DifferProto = {
+  [DifferTypeId]: {
+    _P: identity,
+    _V: identity
+  },
+  pipe() {
+    return pipeArguments(this, arguments);
+  }
+};
+/** @internal */
+const make$i = params => {
+  const differ = Object.create(DifferProto);
+  differ.empty = params.empty;
+  differ.diff = params.diff;
+  differ.combine = params.combine;
+  differ.patch = params.patch;
+  return differ;
+};
+/** @internal */
+const environment = () => make$i({
+  empty: empty$b(),
+  combine: (first, second) => combine$4(second)(first),
+  diff: (oldValue, newValue) => diff$6(oldValue, newValue),
+  patch: (patch, oldValue) => patch$7(oldValue)(patch)
+});
+/** @internal */
+const hashSet = () => make$i({
+  empty: empty$a(),
+  combine: (first, second) => combine$3(second)(first),
+  diff: (oldValue, newValue) => diff$5(oldValue, newValue),
+  patch: (patch, oldValue) => patch$6(oldValue)(patch)
+});
+/** @internal */
+const readonlyArray = differ => make$i({
+  empty: empty$9(),
+  combine: (first, second) => combine$2(first, second),
+  diff: (oldValue, newValue) => diff$4({
+    oldValue,
+    newValue,
+    differ
+  }),
+  patch: (patch, oldValue) => patch$5(patch, oldValue, differ)
+});
+/** @internal */
+const update$2 = () => updateWith((_, a) => a);
+/** @internal */
+const updateWith = f => make$i({
+  empty: identity,
+  combine: (first, second) => {
+    if (first === identity) {
+      return second;
+    }
+    if (second === identity) {
+      return first;
+    }
+    return a => second(first(a));
+  },
+  diff: (oldValue, newValue) => {
+    if (equals$1(oldValue, newValue)) {
+      return identity;
+    }
+    return constant(newValue);
+  },
+  patch: (patch, oldValue) => f(oldValue, patch(oldValue))
+});
+
+/** @internal */
+const BIT_MASK = 0xff;
+/** @internal */
+const BIT_SHIFT = 0x08;
+/** @internal */
+const active = patch => patch & BIT_MASK;
+/** @internal */
+const enabled = patch => patch >> BIT_SHIFT & BIT_MASK;
+/** @internal */
+const make$h = (active, enabled) => (active & BIT_MASK) + ((enabled & active & BIT_MASK) << BIT_SHIFT);
+/** @internal */
+const empty$8 = /*#__PURE__*/make$h(0, 0);
+/** @internal */
+const enable$2 = flag => make$h(flag, flag);
+/** @internal */
+const disable$1 = flag => make$h(flag, 0);
+/** @internal */
+const exclude$1 = /*#__PURE__*/dual(2, (self, flag) => make$h(active(self) & ~flag, enabled(self)));
+/** @internal */
+const andThen$1 = /*#__PURE__*/dual(2, (self, that) => self | that);
+/** @internal */
+const invert = n => ~n >>> 0 & BIT_MASK;
+
+/** @internal */
+const None$1 = 0;
+/** @internal */
+const Interruption = 1 << 0;
+/** @internal */
+const OpSupervision = 1 << 1;
+/** @internal */
+const RuntimeMetrics = 1 << 2;
+/** @internal */
+const WindDown = 1 << 4;
+/** @internal */
+const CooperativeYielding = 1 << 5;
+/** @internal */
+const cooperativeYielding = self => isEnabled(self, CooperativeYielding);
+/** @internal */
+const enable$1 = /*#__PURE__*/dual(2, (self, flag) => self | flag);
+/** @internal */
+const interruptible$2 = self => interruption(self) && !windDown(self);
+/** @internal */
+const interruption = self => isEnabled(self, Interruption);
+/** @internal */
+const isEnabled = /*#__PURE__*/dual(2, (self, flag) => (self & flag) !== 0);
+/** @internal */
+const make$g = (...flags) => flags.reduce((a, b) => a | b, 0);
+/** @internal */
+const none$1 = /*#__PURE__*/make$g(None$1);
+/** @internal */
+const runtimeMetrics = self => isEnabled(self, RuntimeMetrics);
+const windDown = self => isEnabled(self, WindDown);
+/** @internal */
+const diff$3 = /*#__PURE__*/dual(2, (self, that) => make$h(self ^ that, that));
+/** @internal */
+const patch$4 = /*#__PURE__*/dual(2, (self, patch) => self & (invert(active(patch)) | enabled(patch)) | active(patch) & enabled(patch));
+/** @internal */
+const differ$1 = /*#__PURE__*/make$i({
+  empty: empty$8,
+  diff: (oldValue, newValue) => diff$3(oldValue, newValue),
+  combine: (first, second) => andThen$1(second)(first),
+  patch: (_patch, oldValue) => patch$4(oldValue, _patch)
+});
+
+/**
+ * @since 2.0.0
+ */
+/**
+ * Creates a `RuntimeFlagsPatch` describing enabling the provided `RuntimeFlag`.
+ *
+ * @since 2.0.0
+ * @category constructors
+ */
+const enable = enable$2;
+/**
+ * Creates a `RuntimeFlagsPatch` describing disabling the provided `RuntimeFlag`.
+ *
+ * @since 2.0.0
+ * @category constructors
+ */
+const disable = disable$1;
+/**
+ * Creates a `RuntimeFlagsPatch` which describes exclusion of the specified
+ * `RuntimeFlag` from the set of `RuntimeFlags`.
+ *
+ * @category utils
+ * @since 2.0.0
+ */
+const exclude = exclude$1;
+
+/**
+ * Combines this collection of blocked requests with the specified collection
+ * of blocked requests, in parallel.
+ *
+ * @internal
+ */
+const par = (self, that) => ({
+  _tag: "Par",
+  left: self,
+  right: that
+});
+/**
+ * Combines this collection of blocked requests with the specified collection
+ * of blocked requests, in sequence.
+ *
+ * @internal
+ */
+const seq = (self, that) => ({
+  _tag: "Seq",
+  left: self,
+  right: that
+});
+/**
+ * Flattens a collection of blocked requests into a collection of pipelined
+ * and batched requests that can be submitted for execution.
+ *
+ * @internal
+ */
+const flatten$1 = self => {
+  let current = of(self);
+  let updated = empty$c();
+  // eslint-disable-next-line no-constant-condition
+  while (1) {
+    const [parallel, sequential] = reduce(current, [parallelCollectionEmpty(), empty$c()], ([parallel, sequential], blockedRequest) => {
+      const [par, seq] = step$1(blockedRequest);
+      return [parallelCollectionCombine(parallel, par), appendAll(sequential, seq)];
+    });
+    updated = merge$2(updated, parallel);
+    if (isNil(sequential)) {
+      return reverse(updated);
+    }
+    current = sequential;
+  }
+  throw new Error("BUG: BlockedRequests.flatten - please report an issue at https://github.com/Effect-TS/effect/issues");
+};
+/**
+ * Takes one step in evaluating a collection of blocked requests, returning a
+ * collection of blocked requests that can be performed in parallel and a list
+ * of blocked requests that must be performed sequentially after those
+ * requests.
+ */
+const step$1 = requests => {
+  let current = requests;
+  let parallel = parallelCollectionEmpty();
+  let stack = empty$c();
+  let sequential = empty$c();
+  // eslint-disable-next-line no-constant-condition
+  while (1) {
+    switch (current._tag) {
+      case "Empty":
+        {
+          if (isNil(stack)) {
+            return [parallel, sequential];
+          }
+          current = stack.head;
+          stack = stack.tail;
+          break;
+        }
+      case "Par":
+        {
+          stack = cons(current.right, stack);
+          current = current.left;
+          break;
+        }
+      case "Seq":
+        {
+          const left = current.left;
+          const right = current.right;
+          switch (left._tag) {
+            case "Empty":
+              {
+                current = right;
+                break;
+              }
+            case "Par":
+              {
+                const l = left.left;
+                const r = left.right;
+                current = par(seq(l, right), seq(r, right));
+                break;
+              }
+            case "Seq":
+              {
+                const l = left.left;
+                const r = left.right;
+                current = seq(l, seq(r, right));
+                break;
+              }
+            case "Single":
+              {
+                current = left;
+                sequential = cons(right, sequential);
+                break;
+              }
+          }
+          break;
+        }
+      case "Single":
+        {
+          parallel = parallelCollectionAdd(parallel, current);
+          if (isNil(stack)) {
+            return [parallel, sequential];
+          }
+          current = stack.head;
+          stack = stack.tail;
+          break;
+        }
+    }
+  }
+  throw new Error("BUG: BlockedRequests.step - please report an issue at https://github.com/Effect-TS/effect/issues");
+};
+/**
+ * Merges a collection of requests that must be executed sequentially with a
+ * collection of requests that can be executed in parallel. If the collections
+ * are both from the same single data source then the requests can be
+ * pipelined while preserving ordering guarantees.
+ */
+const merge$2 = (sequential, parallel) => {
+  if (isNil(sequential)) {
+    return of(parallelCollectionToSequentialCollection(parallel));
+  }
+  if (parallelCollectionIsEmpty(parallel)) {
+    return sequential;
+  }
+  const seqHeadKeys = sequentialCollectionKeys(sequential.head);
+  const parKeys = parallelCollectionKeys(parallel);
+  if (seqHeadKeys.length === 1 && parKeys.length === 1 && equals$1(seqHeadKeys[0], parKeys[0])) {
+    return cons(sequentialCollectionCombine(sequential.head, parallelCollectionToSequentialCollection(parallel)), sequential.tail);
+  }
+  return cons(parallelCollectionToSequentialCollection(parallel), sequential);
+};
+/** @internal */
+const RequestBlockParallelTypeId = /*#__PURE__*/Symbol.for("effect/RequestBlock/RequestBlockParallel");
+const parallelVariance = {
+  /* c8 ignore next */
+  _R: _ => _
+};
+class ParallelImpl {
+  map;
+  [RequestBlockParallelTypeId] = parallelVariance;
+  constructor(map) {
+    this.map = map;
+  }
+}
+/** @internal */
+const parallelCollectionEmpty = () => new ParallelImpl(empty$d());
+/** @internal */
+const parallelCollectionAdd = (self, blockedRequest) => new ParallelImpl(modifyAt(self.map, blockedRequest.dataSource, _ => orElseSome(map$7(_, append(blockedRequest.blockedRequest)), () => of$1(blockedRequest.blockedRequest))));
+/** @internal */
+const parallelCollectionCombine = (self, that) => new ParallelImpl(reduce$1(self.map, that.map, (map, value, key) => set$2(map, key, match$3(get$3(map, key), {
+  onNone: () => value,
+  onSome: other => appendAll$1(value, other)
+}))));
+/** @internal */
+const parallelCollectionIsEmpty = self => isEmpty$2(self.map);
+/** @internal */
+const parallelCollectionKeys = self => Array.from(keys(self.map));
+/** @internal */
+const parallelCollectionToSequentialCollection = self => sequentialCollectionMake(map$4(self.map, x => of$1(x)));
+// TODO
+// /** @internal */
+// export const parallelCollectionToChunk = <R>(
+//   self: ParallelCollection<R>
+// ): Array<[RequestResolver.RequestResolver<unknown, R>, Array<Request.Entry<unknown>>]> => Array.from(self.map) as any
+/** @internal */
+const SequentialCollectionTypeId = /*#__PURE__*/Symbol.for("effect/RequestBlock/RequestBlockSequential");
+const sequentialVariance = {
+  /* c8 ignore next */
+  _R: _ => _
+};
+class SequentialImpl {
+  map;
+  [SequentialCollectionTypeId] = sequentialVariance;
+  constructor(map) {
+    this.map = map;
+  }
+}
+/** @internal */
+const sequentialCollectionMake = map => new SequentialImpl(map);
+/** @internal */
+const sequentialCollectionCombine = (self, that) => new SequentialImpl(reduce$1(that.map, self.map, (map, value, key) => set$2(map, key, match$3(get$3(map, key), {
+  onNone: () => empty$k(),
+  onSome: a => appendAll$1(a, value)
+}))));
+/** @internal */
+const sequentialCollectionKeys = self => Array.from(keys(self.map));
+/** @internal */
+const sequentialCollectionToChunk = self => Array.from(self.map);
+
+/** @internal */
+const OP_STATE_PENDING = "Pending";
+/** @internal */
+const OP_STATE_DONE = "Done";
+
+/** @internal */
+const DeferredSymbolKey = "effect/Deferred";
+/** @internal */
+const DeferredTypeId = /*#__PURE__*/Symbol.for(DeferredSymbolKey);
+/** @internal */
+const deferredVariance = {
+  /* c8 ignore next */
+  _E: _ => _,
+  /* c8 ignore next */
+  _A: _ => _
+};
+/** @internal */
+const pending = joiners => {
+  return {
+    _tag: OP_STATE_PENDING,
+    joiners
+  };
+};
+/** @internal */
+const done$4 = effect => {
+  return {
+    _tag: OP_STATE_DONE,
+    effect
+  };
+};
+
+/** @internal */
+class SingleShotGen {
+  self;
+  called = false;
+  constructor(self) {
+    this.self = self;
+  }
+  next(a) {
+    return this.called ? {
+      value: a,
+      done: true
+    } : (this.called = true, {
+      value: this.self,
+      done: false
+    });
+  }
+  return(a) {
+    return {
+      value: a,
+      done: true
+    };
+  }
+  throw(e) {
+    throw e;
+  }
+  [Symbol.iterator]() {
+    return new SingleShotGen(this.self);
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Effect
+// -----------------------------------------------------------------------------
+/**
+ * @internal
+ */
+const blocked = (blockedRequests, _continue) => {
+  const effect = new EffectPrimitive("Blocked");
+  effect.effect_instruction_i0 = blockedRequests;
+  effect.effect_instruction_i1 = _continue;
+  return effect;
+};
+/**
+ * @internal
+ */
+const runRequestBlock = blockedRequests => {
+  const effect = new EffectPrimitive("RunBlocked");
+  effect.effect_instruction_i0 = blockedRequests;
+  return effect;
+};
+/** @internal */
+const EffectTypeId = /*#__PURE__*/Symbol.for("effect/Effect");
+/** @internal */
+class RevertFlags {
+  patch;
+  op;
+  _op = OP_REVERT_FLAGS;
+  constructor(patch, op) {
+    this.patch = patch;
+    this.op = op;
+  }
+}
+class EffectPrimitive {
+  _op;
+  effect_instruction_i0 = undefined;
+  effect_instruction_i1 = undefined;
+  effect_instruction_i2 = undefined;
+  trace = undefined;
+  [EffectTypeId] = effectVariance;
+  constructor(_op) {
+    this._op = _op;
+  }
+  [symbol](that) {
+    return this === that;
+  }
+  [symbol$1]() {
+    return cached(this, random(this));
+  }
+  pipe() {
+    return pipeArguments(this, arguments);
+  }
+  toJSON() {
+    return {
+      _id: "Effect",
+      _op: this._op,
+      effect_instruction_i0: toJSON(this.effect_instruction_i0),
+      effect_instruction_i1: toJSON(this.effect_instruction_i1),
+      effect_instruction_i2: toJSON(this.effect_instruction_i2)
+    };
+  }
+  toString() {
+    return format$2(this.toJSON());
+  }
+  [NodeInspectSymbol]() {
+    return this.toJSON();
+  }
+  [Symbol.iterator]() {
+    return new SingleShotGen(new YieldWrap(this));
+  }
+}
+/** @internal */
+class EffectPrimitiveFailure {
+  _op;
+  effect_instruction_i0 = undefined;
+  effect_instruction_i1 = undefined;
+  effect_instruction_i2 = undefined;
+  trace = undefined;
+  [EffectTypeId] = effectVariance;
+  constructor(_op) {
+    this._op = _op;
+    // @ts-expect-error
+    this._tag = _op;
+  }
+  [symbol](that) {
+    return exitIsExit(that) && that._op === "Failure" &&
+    // @ts-expect-error
+    equals$1(this.effect_instruction_i0, that.effect_instruction_i0);
+  }
+  [symbol$1]() {
+    return pipe(
+    // @ts-expect-error
+    string$1(this._tag),
+    // @ts-expect-error
+    combine$7(hash(this.effect_instruction_i0)), cached(this));
+  }
+  get cause() {
+    return this.effect_instruction_i0;
+  }
+  pipe() {
+    return pipeArguments(this, arguments);
+  }
+  toJSON() {
+    return {
+      _id: "Exit",
+      _tag: this._op,
+      cause: this.cause.toJSON()
+    };
+  }
+  toString() {
+    return format$2(this.toJSON());
+  }
+  [NodeInspectSymbol]() {
+    return this.toJSON();
+  }
+  [Symbol.iterator]() {
+    return new SingleShotGen(new YieldWrap(this));
+  }
+}
+/** @internal */
+class EffectPrimitiveSuccess {
+  _op;
+  effect_instruction_i0 = undefined;
+  effect_instruction_i1 = undefined;
+  effect_instruction_i2 = undefined;
+  trace = undefined;
+  [EffectTypeId] = effectVariance;
+  constructor(_op) {
+    this._op = _op;
+    // @ts-expect-error
+    this._tag = _op;
+  }
+  [symbol](that) {
+    return exitIsExit(that) && that._op === "Success" &&
+    // @ts-expect-error
+    equals$1(this.effect_instruction_i0, that.effect_instruction_i0);
+  }
+  [symbol$1]() {
+    return pipe(
+    // @ts-expect-error
+    string$1(this._tag),
+    // @ts-expect-error
+    combine$7(hash(this.effect_instruction_i0)), cached(this));
+  }
+  get value() {
+    return this.effect_instruction_i0;
+  }
+  pipe() {
+    return pipeArguments(this, arguments);
+  }
+  toJSON() {
+    return {
+      _id: "Exit",
+      _tag: this._op,
+      value: toJSON(this.value)
+    };
+  }
+  toString() {
+    return format$2(this.toJSON());
+  }
+  [NodeInspectSymbol]() {
+    return this.toJSON();
+  }
+  [Symbol.iterator]() {
+    return new SingleShotGen(new YieldWrap(this));
+  }
+}
+/** @internal */
+const isEffect = u => hasProperty(u, EffectTypeId);
+/* @internal */
+const withFiberRuntime = withRuntime => {
+  const effect = new EffectPrimitive(OP_WITH_RUNTIME);
+  effect.effect_instruction_i0 = withRuntime;
+  return effect;
+};
+/* @internal */
+const acquireUseRelease = /*#__PURE__*/dual(3, (acquire, use, release) => uninterruptibleMask$1(restore => flatMap$1(acquire, a => flatMap$1(exit$1(suspend$2(() => restore(use(a)))), exit => {
+  return suspend$2(() => release(a, exit)).pipe(matchCauseEffect$1({
+    onFailure: cause => {
+      switch (exit._tag) {
+        case OP_FAILURE:
+          return failCause$1(sequential$2(exit.effect_instruction_i0, cause));
+        case OP_SUCCESS:
+          return failCause$1(cause);
+      }
+    },
+    onSuccess: () => exit
+  }));
+}))));
+/* @internal */
+const as = /*#__PURE__*/dual(2, (self, value) => flatMap$1(self, () => succeed$3(value)));
+/* @internal */
+const asVoid = self => as(self, void 0);
+/* @internal */
+const custom = function () {
+  const wrapper = new EffectPrimitive(OP_COMMIT);
+  switch (arguments.length) {
+    case 2:
+      {
+        wrapper.effect_instruction_i0 = arguments[0];
+        wrapper.commit = arguments[1];
+        break;
+      }
+    case 3:
+      {
+        wrapper.effect_instruction_i0 = arguments[0];
+        wrapper.effect_instruction_i1 = arguments[1];
+        wrapper.commit = arguments[2];
+        break;
+      }
+    case 4:
+      {
+        wrapper.effect_instruction_i0 = arguments[0];
+        wrapper.effect_instruction_i1 = arguments[1];
+        wrapper.effect_instruction_i2 = arguments[2];
+        wrapper.commit = arguments[3];
+        break;
+      }
+    default:
+      {
+        throw new Error(getBugErrorMessage("you're not supposed to end up here"));
+      }
+  }
+  return wrapper;
+};
+/* @internal */
+const unsafeAsync = (register, blockingOn = none$2) => {
+  const effect = new EffectPrimitive(OP_ASYNC);
+  let cancelerRef = undefined;
+  effect.effect_instruction_i0 = resume => {
+    cancelerRef = register(resume);
+  };
+  effect.effect_instruction_i1 = blockingOn;
+  return onInterrupt(effect, _ => isEffect(cancelerRef) ? cancelerRef : void_$1);
+};
+/* @internal */
+const asyncInterrupt = (register, blockingOn = none$2) => suspend$2(() => unsafeAsync(register, blockingOn));
+const async_ = (resume, blockingOn = none$2) => {
+  return custom(resume, function () {
+    let backingResume = undefined;
+    let pendingEffect = undefined;
+    function proxyResume(effect) {
+      if (backingResume) {
+        backingResume(effect);
+      } else if (pendingEffect === undefined) {
+        pendingEffect = effect;
+      }
+    }
+    const effect = new EffectPrimitive(OP_ASYNC);
+    effect.effect_instruction_i0 = resume => {
+      backingResume = resume;
+      if (pendingEffect) {
+        resume(pendingEffect);
+      }
+    };
+    effect.effect_instruction_i1 = blockingOn;
+    let cancelerRef = undefined;
+    let controllerRef = undefined;
+    if (this.effect_instruction_i0.length !== 1) {
+      controllerRef = new AbortController();
+      cancelerRef = internalCall(() => this.effect_instruction_i0(proxyResume, controllerRef.signal));
+    } else {
+      cancelerRef = internalCall(() => this.effect_instruction_i0(proxyResume));
+    }
+    return cancelerRef || controllerRef ? onInterrupt(effect, _ => {
+      if (controllerRef) {
+        controllerRef.abort();
+      }
+      return cancelerRef ?? void_$1;
+    }) : effect;
+  });
+};
+/* @internal */
+const catchAllCause = /*#__PURE__*/dual(2, (self, f) => {
+  const effect = new EffectPrimitive(OP_ON_FAILURE);
+  effect.effect_instruction_i0 = self;
+  effect.effect_instruction_i1 = f;
+  return effect;
+});
+/* @internal */
+const catchAll = /*#__PURE__*/dual(2, (self, f) => matchEffect(self, {
+  onFailure: f,
+  onSuccess: succeed$3
+}));
+/* @internal */
+const catchIf = /*#__PURE__*/dual(3, (self, predicate, f) => catchAllCause(self, cause => {
+  const either = failureOrCause(cause);
+  switch (either._tag) {
+    case "Left":
+      return predicate(either.left) ? f(either.left) : failCause$1(cause);
+    case "Right":
+      return failCause$1(either.right);
+  }
+}));
+const originalSymbol = /*#__PURE__*/Symbol.for("effect/OriginalAnnotation");
+/* @internal */
+const capture = (obj, span) => {
+  if (isSome(span)) {
+    return new Proxy(obj, {
+      has(target, p) {
+        return p === spanSymbol || p === originalSymbol || p in target;
+      },
+      get(target, p) {
+        if (p === spanSymbol) {
+          return span.value;
+        }
+        if (p === originalSymbol) {
+          return obj;
+        }
+        // @ts-expect-error
+        return target[p];
+      }
+    });
+  }
+  return obj;
+};
+/* @internal */
+const die = defect => isObject(defect) && !(spanSymbol in defect) ? withFiberRuntime(fiber => failCause$1(die$1(capture(defect, currentSpanFromFiber(fiber))))) : failCause$1(die$1(defect));
+/* @internal */
+const dieMessage = message => failCauseSync(() => die$1(new RuntimeException(message)));
+/* @internal */
+const either = self => matchEffect(self, {
+  onFailure: e => succeed$3(left(e)),
+  onSuccess: a => succeed$3(right(a))
+});
+/* @internal */
+const exit$1 = self => matchCause(self, {
+  onFailure: exitFailCause$1,
+  onSuccess: exitSucceed$1
+});
+/* @internal */
+const fail = error => isObject(error) && !(spanSymbol in error) ? withFiberRuntime(fiber => failCause$1(fail$1(capture(error, currentSpanFromFiber(fiber))))) : failCause$1(fail$1(error));
+/* @internal */
+const failSync = evaluate => flatMap$1(sync$2(evaluate), fail);
+/* @internal */
+const failCause$1 = cause => {
+  const effect = new EffectPrimitiveFailure(OP_FAILURE);
+  effect.effect_instruction_i0 = cause;
+  return effect;
+};
+/* @internal */
+const failCauseSync = evaluate => flatMap$1(sync$2(evaluate), failCause$1);
+/* @internal */
+const fiberId = /*#__PURE__*/withFiberRuntime(state => succeed$3(state.id()));
+/* @internal */
+const fiberIdWith = f => withFiberRuntime(state => f(state.id()));
+/* @internal */
+const flatMap$1 = /*#__PURE__*/dual(2, (self, f) => {
+  const effect = new EffectPrimitive(OP_ON_SUCCESS);
+  effect.effect_instruction_i0 = self;
+  effect.effect_instruction_i1 = f;
+  return effect;
+});
+/* @internal */
+const andThen = /*#__PURE__*/dual(2, (self, f) => flatMap$1(self, a => {
+  const b = typeof f === "function" ? f(a) : f;
+  if (isEffect(b)) {
+    return b;
+  } else if (isPromiseLike(b)) {
+    return unsafeAsync(resume => {
+      b.then(a => resume(succeed$3(a)), e => resume(fail(new UnknownException(e, "An unknown error occurred in Effect.andThen"))));
+    });
+  }
+  return succeed$3(b);
+}));
+/* @internal */
+const step = self => {
+  const effect = new EffectPrimitive("OnStep");
+  effect.effect_instruction_i0 = self;
+  return effect;
+};
+/* @internal */
+const flatten = self => flatMap$1(self, identity);
+/* @internal */
+const matchCause = /*#__PURE__*/dual(2, (self, options) => matchCauseEffect$1(self, {
+  onFailure: cause => succeed$3(options.onFailure(cause)),
+  onSuccess: a => succeed$3(options.onSuccess(a))
+}));
+/* @internal */
+const matchCauseEffect$1 = /*#__PURE__*/dual(2, (self, options) => {
+  const effect = new EffectPrimitive(OP_ON_SUCCESS_AND_FAILURE);
+  effect.effect_instruction_i0 = self;
+  effect.effect_instruction_i1 = options.onFailure;
+  effect.effect_instruction_i2 = options.onSuccess;
+  return effect;
+});
+/* @internal */
+const matchEffect = /*#__PURE__*/dual(2, (self, options) => matchCauseEffect$1(self, {
+  onFailure: cause => {
+    const defects$1 = defects(cause);
+    if (defects$1.length > 0) {
+      return failCause$1(electFailures(cause));
+    }
+    const failures$1 = failures(cause);
+    if (failures$1.length > 0) {
+      return options.onFailure(unsafeHead(failures$1));
+    }
+    return failCause$1(cause);
+  },
+  onSuccess: options.onSuccess
+}));
+/* @internal */
+const forEachSequential = /*#__PURE__*/dual(2, (self, f) => suspend$2(() => {
+  const arr = fromIterable$6(self);
+  const ret = allocate(arr.length);
+  let i = 0;
+  return as(whileLoop({
+    while: () => i < arr.length,
+    body: () => f(arr[i], i),
+    step: b => {
+      ret[i++] = b;
+    }
+  }), ret);
+}));
+/* @internal */
+const forEachSequentialDiscard = /*#__PURE__*/dual(2, (self, f) => suspend$2(() => {
+  const arr = fromIterable$6(self);
+  let i = 0;
+  return whileLoop({
+    while: () => i < arr.length,
+    body: () => f(arr[i], i),
+    step: () => {
+      i++;
+    }
+  });
+}));
+/* @internal */
+const interruptible$1 = self => {
+  const effect = new EffectPrimitive(OP_UPDATE_RUNTIME_FLAGS);
+  effect.effect_instruction_i0 = enable(Interruption);
+  effect.effect_instruction_i1 = () => self;
+  return effect;
+};
+/* @internal */
+const map$3 = /*#__PURE__*/dual(2, (self, f) => flatMap$1(self, a => sync$2(() => f(a))));
+/* @internal */
+const mapBoth = /*#__PURE__*/dual(2, (self, options) => matchEffect(self, {
+  onFailure: e => failSync(() => options.onFailure(e)),
+  onSuccess: a => sync$2(() => options.onSuccess(a))
+}));
+/* @internal */
+const mapError = /*#__PURE__*/dual(2, (self, f) => matchCauseEffect$1(self, {
+  onFailure: cause => {
+    const either = failureOrCause(cause);
+    switch (either._tag) {
+      case "Left":
+        {
+          return failSync(() => f(either.left));
+        }
+      case "Right":
+        {
+          return failCause$1(either.right);
+        }
+    }
+  },
+  onSuccess: succeed$3
+}));
+/* @internal */
+const onExit$1 = /*#__PURE__*/dual(2, (self, cleanup) => uninterruptibleMask$1(restore => matchCauseEffect$1(restore(self), {
+  onFailure: cause1 => {
+    const result = exitFailCause$1(cause1);
+    return matchCauseEffect$1(cleanup(result), {
+      onFailure: cause2 => exitFailCause$1(sequential$2(cause1, cause2)),
+      onSuccess: () => result
+    });
+  },
+  onSuccess: success => {
+    const result = exitSucceed$1(success);
+    return zipRight(cleanup(result), result);
+  }
+})));
+/* @internal */
+const onInterrupt = /*#__PURE__*/dual(2, (self, cleanup) => onExit$1(self, exitMatch({
+  onFailure: cause => isInterruptedOnly(cause) ? asVoid(cleanup(interruptors(cause))) : void_$1,
+  onSuccess: () => void_$1
+})));
+/* @internal */
+const orDie = self => orDieWith(self, identity);
+/* @internal */
+const orDieWith = /*#__PURE__*/dual(2, (self, f) => matchEffect(self, {
+  onFailure: e => die(f(e)),
+  onSuccess: succeed$3
+}));
+/* @internal */
+const succeed$3 = value => {
+  const effect = new EffectPrimitiveSuccess(OP_SUCCESS);
+  effect.effect_instruction_i0 = value;
+  return effect;
+};
+/* @internal */
+const suspend$2 = evaluate => {
+  const effect = new EffectPrimitive(OP_COMMIT);
+  effect.commit = evaluate;
+  return effect;
+};
+/* @internal */
+const sync$2 = thunk => {
+  const effect = new EffectPrimitive(OP_SYNC);
+  effect.effect_instruction_i0 = thunk;
+  return effect;
+};
+/* @internal */
+const tap$1 = /*#__PURE__*/dual(args => args.length === 3 || args.length === 2 && !(isObject(args[1]) && "onlyEffect" in args[1]), (self, f) => flatMap$1(self, a => {
+  const b = typeof f === "function" ? f(a) : f;
+  if (isEffect(b)) {
+    return as(b, a);
+  } else if (isPromiseLike(b)) {
+    return unsafeAsync(resume => {
+      b.then(_ => resume(succeed$3(a)), e => resume(fail(new UnknownException(e, "An unknown error occurred in Effect.tap"))));
+    });
+  }
+  return succeed$3(a);
+}));
+/* @internal */
+const transplant = f => withFiberRuntime(state => {
+  const scopeOverride = state.getFiberRef(currentForkScopeOverride);
+  const scope = pipe(scopeOverride, getOrElse(() => state.scope()));
+  return f(fiberRefLocally(currentForkScopeOverride, some(scope)));
+});
+/* @internal */
+const uninterruptible = self => {
+  const effect = new EffectPrimitive(OP_UPDATE_RUNTIME_FLAGS);
+  effect.effect_instruction_i0 = disable(Interruption);
+  effect.effect_instruction_i1 = () => self;
+  return effect;
+};
+/* @internal */
+const uninterruptibleMask$1 = f => custom(f, function () {
+  const effect = new EffectPrimitive(OP_UPDATE_RUNTIME_FLAGS);
+  effect.effect_instruction_i0 = disable(Interruption);
+  effect.effect_instruction_i1 = oldFlags => interruption(oldFlags) ? internalCall(() => this.effect_instruction_i0(interruptible$1)) : internalCall(() => this.effect_instruction_i0(uninterruptible));
+  return effect;
+});
+const void_$1 = /*#__PURE__*/succeed$3(void 0);
+/* @internal */
+const updateRuntimeFlags = patch => {
+  const effect = new EffectPrimitive(OP_UPDATE_RUNTIME_FLAGS);
+  effect.effect_instruction_i0 = patch;
+  effect.effect_instruction_i1 = void 0;
+  return effect;
+};
+/* @internal */
+const whenEffect = /*#__PURE__*/dual(2, (self, condition) => flatMap$1(condition, b => {
+  if (b) {
+    return pipe(self, map$3(some));
+  }
+  return succeed$3(none$4());
+}));
+/* @internal */
+const whileLoop = options => {
+  const effect = new EffectPrimitive(OP_WHILE);
+  effect.effect_instruction_i0 = options.while;
+  effect.effect_instruction_i1 = options.body;
+  effect.effect_instruction_i2 = options.step;
+  return effect;
+};
+/* @internal */
+const fromIterator = iterator => suspend$2(() => {
+  const effect = new EffectPrimitive(OP_ITERATOR);
+  effect.effect_instruction_i0 = iterator();
+  return effect;
+});
+/* @internal */
+const gen$1 = function () {
+  const f = arguments.length === 1 ? arguments[0] : arguments[1].bind(arguments[0]);
+  return fromIterator(() => f(pipe));
+};
+/* @internal */
+const yieldNow$2 = options => {
+  const effect = new EffectPrimitive(OP_YIELD);
+  return typeof options?.priority !== "undefined" ? withSchedulingPriority(effect, options.priority) : effect;
+};
+/* @internal */
+const zip = /*#__PURE__*/dual(2, (self, that) => flatMap$1(self, a => map$3(that, b => [a, b])));
+/* @internal */
+const zipLeft = /*#__PURE__*/dual(2, (self, that) => flatMap$1(self, a => as(that, a)));
+/* @internal */
+const zipRight = /*#__PURE__*/dual(2, (self, that) => flatMap$1(self, () => that));
+/* @internal */
+const zipWith$1 = /*#__PURE__*/dual(3, (self, that, f) => flatMap$1(self, a => map$3(that, b => f(a, b))));
+// -----------------------------------------------------------------------------
+// Fiber
+// -----------------------------------------------------------------------------
+/* @internal */
+const interruptFiber = self => flatMap$1(fiberId, fiberId => pipe(self, interruptAsFiber(fiberId)));
+/* @internal */
+const interruptAsFiber = /*#__PURE__*/dual(2, (self, fiberId) => flatMap$1(self.interruptAsFork(fiberId), () => self.await));
+// -----------------------------------------------------------------------------
+// LogLevel
+// -----------------------------------------------------------------------------
+/** @internal */
+const logLevelAll = {
+  _tag: "All",
+  syslog: 0,
+  label: "ALL",
+  ordinal: Number.MIN_SAFE_INTEGER,
+  pipe() {
+    return pipeArguments(this, arguments);
+  }
+};
+/** @internal */
+const logLevelFatal = {
+  _tag: "Fatal",
+  syslog: 2,
+  label: "FATAL",
+  ordinal: 50000,
+  pipe() {
+    return pipeArguments(this, arguments);
+  }
+};
+/** @internal */
+const logLevelError = {
+  _tag: "Error",
+  syslog: 3,
+  label: "ERROR",
+  ordinal: 40000,
+  pipe() {
+    return pipeArguments(this, arguments);
+  }
+};
+/** @internal */
+const logLevelWarning = {
+  _tag: "Warning",
+  syslog: 4,
+  label: "WARN",
+  ordinal: 30000,
+  pipe() {
+    return pipeArguments(this, arguments);
+  }
+};
+/** @internal */
+const logLevelInfo = {
+  _tag: "Info",
+  syslog: 6,
+  label: "INFO",
+  ordinal: 20000,
+  pipe() {
+    return pipeArguments(this, arguments);
+  }
+};
+/** @internal */
+const logLevelDebug = {
+  _tag: "Debug",
+  syslog: 7,
+  label: "DEBUG",
+  ordinal: 10000,
+  pipe() {
+    return pipeArguments(this, arguments);
+  }
+};
+/** @internal */
+const logLevelTrace = {
+  _tag: "Trace",
+  syslog: 7,
+  label: "TRACE",
+  ordinal: 0,
+  pipe() {
+    return pipeArguments(this, arguments);
+  }
+};
+/** @internal */
+const logLevelNone = {
+  _tag: "None",
+  syslog: 7,
+  label: "OFF",
+  ordinal: Number.MAX_SAFE_INTEGER,
+  pipe() {
+    return pipeArguments(this, arguments);
+  }
+};
+// -----------------------------------------------------------------------------
+// FiberRef
+// -----------------------------------------------------------------------------
+/** @internal */
+const FiberRefSymbolKey = "effect/FiberRef";
+/** @internal */
+const FiberRefTypeId = /*#__PURE__*/Symbol.for(FiberRefSymbolKey);
+const fiberRefVariance = {
+  /* c8 ignore next */
+  _A: _ => _
+};
+/* @internal */
+const fiberRefGet = self => withFiberRuntime(fiber => exitSucceed$1(fiber.getFiberRef(self)));
+/* @internal */
+const fiberRefGetWith = /*#__PURE__*/dual(2, (self, f) => flatMap$1(fiberRefGet(self), f));
+/* @internal */
+const fiberRefSet = /*#__PURE__*/dual(2, (self, value) => fiberRefModify(self, () => [void 0, value]));
+/* @internal */
+const fiberRefModify = /*#__PURE__*/dual(2, (self, f) => withFiberRuntime(state => {
+  const [b, a] = f(state.getFiberRef(self));
+  state.setFiberRef(self, a);
+  return succeed$3(b);
+}));
+/* @internal */
+const fiberRefLocally = /*#__PURE__*/dual(3, (use, self, value) => acquireUseRelease(zipLeft(fiberRefGet(self), fiberRefSet(self, value)), () => use, oldValue => fiberRefSet(self, oldValue)));
+/* @internal */
+const fiberRefLocallyWith = /*#__PURE__*/dual(3, (use, self, f) => fiberRefGetWith(self, a => fiberRefLocally(use, self, f(a))));
+/** @internal */
+const fiberRefUnsafeMake = (initial, options) => fiberRefUnsafeMakePatch(initial, {
+  differ: update$2(),
+  fork: options?.fork ?? identity,
+  join: options?.join
+});
+/** @internal */
+const fiberRefUnsafeMakeHashSet = initial => {
+  const differ = hashSet();
+  return fiberRefUnsafeMakePatch(initial, {
+    differ,
+    fork: differ.empty
+  });
+};
+/** @internal */
+const fiberRefUnsafeMakeReadonlyArray = initial => {
+  const differ = readonlyArray(update$2());
+  return fiberRefUnsafeMakePatch(initial, {
+    differ,
+    fork: differ.empty
+  });
+};
+/** @internal */
+const fiberRefUnsafeMakeContext = initial => {
+  const differ = environment();
+  return fiberRefUnsafeMakePatch(initial, {
+    differ,
+    fork: differ.empty
+  });
+};
+/** @internal */
+const fiberRefUnsafeMakePatch = (initial, options) => {
+  const _fiberRef = {
+    ...CommitPrototype$1,
+    [FiberRefTypeId]: fiberRefVariance,
+    initial,
+    commit() {
+      return fiberRefGet(this);
+    },
+    diff: (oldValue, newValue) => options.differ.diff(oldValue, newValue),
+    combine: (first, second) => options.differ.combine(first, second),
+    patch: patch => oldValue => options.differ.patch(patch, oldValue),
+    fork: options.fork,
+    join: options.join ?? ((_, n) => n)
+  };
+  return _fiberRef;
+};
+/** @internal */
+const fiberRefUnsafeMakeRuntimeFlags = initial => fiberRefUnsafeMakePatch(initial, {
+  differ: differ$1,
+  fork: differ$1.empty
+});
+/** @internal */
+const currentContext = /*#__PURE__*/globalValue(/*#__PURE__*/Symbol.for("effect/FiberRef/currentContext"), () => fiberRefUnsafeMakeContext(empty$e()));
+/** @internal */
+const currentSchedulingPriority = /*#__PURE__*/globalValue(/*#__PURE__*/Symbol.for("effect/FiberRef/currentSchedulingPriority"), () => fiberRefUnsafeMake(0));
+/** @internal */
+const currentMaxOpsBeforeYield = /*#__PURE__*/globalValue(/*#__PURE__*/Symbol.for("effect/FiberRef/currentMaxOpsBeforeYield"), () => fiberRefUnsafeMake(2048));
+/** @internal */
+const currentLogAnnotations = /*#__PURE__*/globalValue(/*#__PURE__*/Symbol.for("effect/FiberRef/currentLogAnnotation"), () => fiberRefUnsafeMake(empty$d()));
+/** @internal */
+const currentLogLevel = /*#__PURE__*/globalValue(/*#__PURE__*/Symbol.for("effect/FiberRef/currentLogLevel"), () => fiberRefUnsafeMake(logLevelInfo));
+/** @internal */
+const currentLogSpan = /*#__PURE__*/globalValue(/*#__PURE__*/Symbol.for("effect/FiberRef/currentLogSpan"), () => fiberRefUnsafeMake(empty$c()));
+/** @internal */
+const withSchedulingPriority = /*#__PURE__*/dual(2, (self, scheduler) => fiberRefLocally(self, currentSchedulingPriority, scheduler));
+/** @internal */
+const currentConcurrency = /*#__PURE__*/globalValue(/*#__PURE__*/Symbol.for("effect/FiberRef/currentConcurrency"), () => fiberRefUnsafeMake("unbounded"));
+/**
+ * @internal
+ */
+const currentRequestBatching = /*#__PURE__*/globalValue(/*#__PURE__*/Symbol.for("effect/FiberRef/currentRequestBatching"), () => fiberRefUnsafeMake(true));
+/** @internal */
+const currentUnhandledErrorLogLevel = /*#__PURE__*/globalValue(/*#__PURE__*/Symbol.for("effect/FiberRef/currentUnhandledErrorLogLevel"), () => fiberRefUnsafeMake(some(logLevelDebug)));
+/** @internal */
+const currentVersionMismatchErrorLogLevel = /*#__PURE__*/globalValue(/*#__PURE__*/Symbol.for("effect/FiberRef/versionMismatchErrorLogLevel"), () => fiberRefUnsafeMake(some(logLevelWarning)));
+/** @internal */
+const currentMetricLabels = /*#__PURE__*/globalValue(/*#__PURE__*/Symbol.for("effect/FiberRef/currentMetricLabels"), () => fiberRefUnsafeMakeReadonlyArray(empty$l()));
+/** @internal */
+const currentForkScopeOverride = /*#__PURE__*/globalValue(/*#__PURE__*/Symbol.for("effect/FiberRef/currentForkScopeOverride"), () => fiberRefUnsafeMake(none$4(), {
+  fork: () => none$4(),
+  join: (parent, _) => parent
+}));
+/** @internal */
+const currentInterruptedCause = /*#__PURE__*/globalValue(/*#__PURE__*/Symbol.for("effect/FiberRef/currentInterruptedCause"), () => fiberRefUnsafeMake(empty$g, {
+  fork: () => empty$g,
+  join: (parent, _) => parent
+}));
+// -----------------------------------------------------------------------------
+// Scope
+// -----------------------------------------------------------------------------
+/** @internal */
+const ScopeTypeId = /*#__PURE__*/Symbol.for("effect/Scope");
+/** @internal */
+const CloseableScopeTypeId = /*#__PURE__*/Symbol.for("effect/CloseableScope");
+/* @internal */
+const scopeAddFinalizer = (self, finalizer) => self.addFinalizer(() => asVoid(finalizer));
+/* @internal */
+const scopeAddFinalizerExit = (self, finalizer) => self.addFinalizer(finalizer);
+/* @internal */
+const scopeClose = (self, exit) => self.close(exit);
+/* @internal */
+const scopeFork = (self, strategy) => self.fork(strategy);
+// -----------------------------------------------------------------------------
+// Errors
+// -----------------------------------------------------------------------------
+/** @internal */
+const YieldableError = /*#__PURE__*/function () {
+  class YieldableError extends globalThis.Error {
+    commit() {
+      return fail(this);
+    }
+    toJSON() {
+      const obj = {
+        ...this
+      };
+      if (this.message) obj.message = this.message;
+      if (this.cause) obj.cause = this.cause;
+      return obj;
+    }
+    [NodeInspectSymbol]() {
+      if (this.toString !== globalThis.Error.prototype.toString) {
+        return this.stack ? `${this.toString()}\n${this.stack.split("\n").slice(1).join("\n")}` : this.toString();
+      } else if ("Bun" in globalThis) {
+        return pretty(fail$1(this), {
+          renderErrorCause: true
+        });
+      }
+      return this;
+    }
+  }
+  // @effect-diagnostics-next-line floatingEffect:off
+  Object.assign(YieldableError.prototype, StructuralCommitPrototype);
+  return YieldableError;
+}();
+const makeException = (proto, tag) => {
+  class Base extends YieldableError {
+    _tag = tag;
+  }
+  Object.assign(Base.prototype, proto);
+  Base.prototype.name = tag;
+  return Base;
+};
+/** @internal */
+const RuntimeExceptionTypeId = /*#__PURE__*/Symbol.for("effect/Cause/errors/RuntimeException");
+/** @internal */
+const RuntimeException = /*#__PURE__*/makeException({
+  [RuntimeExceptionTypeId]: RuntimeExceptionTypeId
+}, "RuntimeException");
+/** @internal */
+const InterruptedExceptionTypeId = /*#__PURE__*/Symbol.for("effect/Cause/errors/InterruptedException");
+/** @internal */
+const isInterruptedException = u => hasProperty(u, InterruptedExceptionTypeId);
+/** @internal */
+const NoSuchElementExceptionTypeId = /*#__PURE__*/Symbol.for("effect/Cause/errors/NoSuchElement");
+/** @internal */
+const NoSuchElementException = /*#__PURE__*/makeException({
+  [NoSuchElementExceptionTypeId]: NoSuchElementExceptionTypeId
+}, "NoSuchElementException");
+/** @internal */
+const TimeoutExceptionTypeId = /*#__PURE__*/Symbol.for("effect/Cause/errors/Timeout");
+/** @internal */
+const TimeoutException = /*#__PURE__*/makeException({
+  [TimeoutExceptionTypeId]: TimeoutExceptionTypeId
+}, "TimeoutException");
+/** @internal */
+const timeoutExceptionFromDuration = duration => new TimeoutException(`Operation timed out after '${format$1(duration)}'`);
+/** @internal */
+const UnknownExceptionTypeId = /*#__PURE__*/Symbol.for("effect/Cause/errors/UnknownException");
+/** @internal */
+const UnknownException = /*#__PURE__*/function () {
+  class UnknownException extends YieldableError {
+    _tag = "UnknownException";
+    error;
+    constructor(cause, message) {
+      super(message ?? "An unknown error occurred", {
+        cause
+      });
+      this.error = cause;
+    }
+  }
+  Object.assign(UnknownException.prototype, {
+    [UnknownExceptionTypeId]: UnknownExceptionTypeId,
+    name: "UnknownException"
+  });
+  return UnknownException;
+}();
+// -----------------------------------------------------------------------------
+// Exit
+// -----------------------------------------------------------------------------
+/** @internal */
+const exitIsExit = u => isEffect(u) && "_tag" in u && (u._tag === "Success" || u._tag === "Failure");
+/** @internal */
+const exitAs = /*#__PURE__*/dual(2, (self, value) => {
+  switch (self._tag) {
+    case OP_FAILURE:
+      {
+        return exitFailCause$1(self.effect_instruction_i0);
+      }
+    case OP_SUCCESS:
+      {
+        return exitSucceed$1(value);
+      }
+  }
+});
+/** @internal */
+const exitAsVoid = self => exitAs(self, void 0);
+/** @internal */
+const exitCollectAll = (exits, options) => exitCollectAllInternal(exits, options?.parallel ? parallel$2 : sequential$2);
+/** @internal */
+const exitFail = error => exitFailCause$1(fail$1(error));
+/** @internal */
+const exitFailCause$1 = cause => {
+  const effect = new EffectPrimitiveFailure(OP_FAILURE);
+  effect.effect_instruction_i0 = cause;
+  return effect;
+};
+/** @internal */
+const exitInterrupt$1 = fiberId => exitFailCause$1(interrupt(fiberId));
+/** @internal */
+const exitMap = /*#__PURE__*/dual(2, (self, f) => {
+  switch (self._tag) {
+    case OP_FAILURE:
+      return exitFailCause$1(self.effect_instruction_i0);
+    case OP_SUCCESS:
+      return exitSucceed$1(f(self.effect_instruction_i0));
+  }
+});
+/** @internal */
+const exitMatch = /*#__PURE__*/dual(2, (self, {
+  onFailure,
+  onSuccess
+}) => {
+  switch (self._tag) {
+    case OP_FAILURE:
+      return onFailure(self.effect_instruction_i0);
+    case OP_SUCCESS:
+      return onSuccess(self.effect_instruction_i0);
+  }
+});
+/** @internal */
+const exitMatchEffect = /*#__PURE__*/dual(2, (self, {
+  onFailure,
+  onSuccess
+}) => {
+  switch (self._tag) {
+    case OP_FAILURE:
+      return onFailure(self.effect_instruction_i0);
+    case OP_SUCCESS:
+      return onSuccess(self.effect_instruction_i0);
+  }
+});
+/** @internal */
+const exitSucceed$1 = value => {
+  const effect = new EffectPrimitiveSuccess(OP_SUCCESS);
+  effect.effect_instruction_i0 = value;
+  return effect;
+};
+/** @internal */
+const exitVoid$1 = /*#__PURE__*/exitSucceed$1(void 0);
+/** @internal */
+const exitZipWith = /*#__PURE__*/dual(3, (self, that, {
+  onFailure,
+  onSuccess
+}) => {
+  switch (self._tag) {
+    case OP_FAILURE:
+      {
+        switch (that._tag) {
+          case OP_SUCCESS:
+            return exitFailCause$1(self.effect_instruction_i0);
+          case OP_FAILURE:
+            {
+              return exitFailCause$1(onFailure(self.effect_instruction_i0, that.effect_instruction_i0));
+            }
+        }
+      }
+    case OP_SUCCESS:
+      {
+        switch (that._tag) {
+          case OP_SUCCESS:
+            return exitSucceed$1(onSuccess(self.effect_instruction_i0, that.effect_instruction_i0));
+          case OP_FAILURE:
+            return exitFailCause$1(that.effect_instruction_i0);
+        }
+      }
+  }
+});
+const exitCollectAllInternal = (exits, combineCauses) => {
+  const list = fromIterable$5(exits);
+  if (!isNonEmpty$2(list)) {
+    return none$4();
+  }
+  return pipe(tailNonEmpty(list), reduce$6(pipe(headNonEmpty(list), exitMap(of$1)), (accumulator, current) => pipe(accumulator, exitZipWith(current, {
+    onSuccess: (list, value) => pipe(list, prepend$1(value)),
+    onFailure: combineCauses
+  }))), exitMap(reverse$1), exitMap(chunk => toReadonlyArray(chunk)), some);
+};
+// -----------------------------------------------------------------------------
+// Deferred
+// -----------------------------------------------------------------------------
+/** @internal */
+const deferredUnsafeMake = fiberId => {
+  const _deferred = {
+    ...CommitPrototype$1,
+    [DeferredTypeId]: deferredVariance,
+    state: make$j(pending([])),
+    commit() {
+      return deferredAwait(this);
+    },
+    blockingOn: fiberId
+  };
+  return _deferred;
+};
+/* @internal */
+const deferredMake = () => flatMap$1(fiberId, id => deferredMakeAs(id));
+/* @internal */
+const deferredMakeAs = fiberId => sync$2(() => deferredUnsafeMake(fiberId));
+/* @internal */
+const deferredAwait = self => asyncInterrupt(resume => {
+  const state = get$4(self.state);
+  switch (state._tag) {
+    case OP_STATE_DONE:
+      {
+        return resume(state.effect);
+      }
+    case OP_STATE_PENDING:
+      {
+        // we can push here as the internal state is mutable
+        state.joiners.push(resume);
+        return deferredInterruptJoiner(self, resume);
+      }
+  }
+}, self.blockingOn);
+/* @internal */
+const deferredCompleteWith = /*#__PURE__*/dual(2, (self, effect) => sync$2(() => {
+  const state = get$4(self.state);
+  switch (state._tag) {
+    case OP_STATE_DONE:
+      {
+        return false;
+      }
+    case OP_STATE_PENDING:
+      {
+        set$3(self.state, done$4(effect));
+        for (let i = 0, len = state.joiners.length; i < len; i++) {
+          state.joiners[i](effect);
+        }
+        return true;
+      }
+  }
+}));
+/* @internal */
+const deferredFailCause = /*#__PURE__*/dual(2, (self, cause) => deferredCompleteWith(self, failCause$1(cause)));
+/* @internal */
+const deferredSucceed = /*#__PURE__*/dual(2, (self, value) => deferredCompleteWith(self, succeed$3(value)));
+/** @internal */
+const deferredUnsafeDone = (self, effect) => {
+  const state = get$4(self.state);
+  if (state._tag === OP_STATE_PENDING) {
+    set$3(self.state, done$4(effect));
+    for (let i = 0, len = state.joiners.length; i < len; i++) {
+      state.joiners[i](effect);
+    }
+  }
+};
+const deferredInterruptJoiner = (self, joiner) => sync$2(() => {
+  const state = get$4(self.state);
+  if (state._tag === OP_STATE_PENDING) {
+    const index = state.joiners.indexOf(joiner);
+    if (index >= 0) {
+      // we can splice here as the internal state is mutable
+      state.joiners.splice(index, 1);
+    }
+  }
+});
+// -----------------------------------------------------------------------------
+// Context
+// -----------------------------------------------------------------------------
+const constContext = /*#__PURE__*/withFiberRuntime(fiber => exitSucceed$1(fiber.currentContext));
+/* @internal */
+const context$2 = () => constContext;
+/* @internal */
+const contextWithEffect = f => flatMap$1(context$2(), f);
+/* @internal */
+const provideContext$1 = /*#__PURE__*/dual(2, (self, context) => fiberRefLocally(currentContext, context)(self));
+/* @internal */
+const provideSomeContext = /*#__PURE__*/dual(2, (self, context) => fiberRefLocallyWith(currentContext, parent => merge$3(parent, context))(self));
+/* @internal */
+const mapInputContext = /*#__PURE__*/dual(2, (self, f) => contextWithEffect(context => provideContext$1(self, f(context))));
+// -----------------------------------------------------------------------------
+// Tracing
+// -----------------------------------------------------------------------------
+/** @internal */
+const currentSpanFromFiber = fiber => {
+  const span = fiber.currentSpan;
+  return span !== undefined && span._tag === "Span" ? some(span) : none$4();
+};
+
+/** @internal */
+const ClockSymbolKey = "effect/Clock";
+/** @internal */
+const ClockTypeId = /*#__PURE__*/Symbol.for(ClockSymbolKey);
+/** @internal */
+const clockTag = /*#__PURE__*/GenericTag("effect/Clock");
+/** @internal */
+const MAX_TIMER_MILLIS = 2 ** 31 - 1;
+/** @internal */
+const globalClockScheduler = {
+  unsafeSchedule(task, duration) {
+    const millis = toMillis(duration);
+    // If the duration is greater than the value allowable by the JS timer
+    // functions, treat the value as an infinite duration
+    if (millis > MAX_TIMER_MILLIS) {
+      return constFalse;
+    }
+    let completed = false;
+    const handle = setTimeout(() => {
+      completed = true;
+      task();
+    }, millis);
+    return () => {
+      clearTimeout(handle);
+      return !completed;
+    };
+  }
+};
+const performanceNowNanos = /*#__PURE__*/function () {
+  const bigint1e6 = /*#__PURE__*/BigInt(1_000_000);
+  if (typeof performance === "undefined") {
+    return () => BigInt(Date.now()) * bigint1e6;
+  }
+  let origin;
+  return () => {
+    if (origin === undefined) {
+      origin = BigInt(Date.now()) * bigint1e6 - BigInt(Math.round(performance.now() * 1_000_000));
+    }
+    return origin + BigInt(Math.round(performance.now() * 1000000));
+  };
+}();
+const processOrPerformanceNow = /*#__PURE__*/function () {
+  const processHrtime = typeof process === "object" && "hrtime" in process && typeof process.hrtime.bigint === "function" ? process.hrtime : undefined;
+  if (!processHrtime) {
+    return performanceNowNanos;
+  }
+  const origin = /*#__PURE__*/performanceNowNanos() - /*#__PURE__*/processHrtime.bigint();
+  return () => origin + processHrtime.bigint();
+}();
+/** @internal */
+class ClockImpl {
+  [ClockTypeId] = ClockTypeId;
+  unsafeCurrentTimeMillis() {
+    return Date.now();
+  }
+  unsafeCurrentTimeNanos() {
+    return processOrPerformanceNow();
+  }
+  currentTimeMillis = /*#__PURE__*/sync$2(() => this.unsafeCurrentTimeMillis());
+  currentTimeNanos = /*#__PURE__*/sync$2(() => this.unsafeCurrentTimeNanos());
+  scheduler() {
+    return succeed$3(globalClockScheduler);
+  }
+  sleep(duration) {
+    return async_(resume => {
+      const canceler = globalClockScheduler.unsafeSchedule(() => resume(void_$1), duration);
+      return asVoid(sync$2(canceler));
+    });
+  }
+}
+/** @internal */
+const make$f = () => new ClockImpl();
+
+/**
+ * # Number
+ *
+ * This module provides utility functions and type class instances for working
+ * with the `number` type in TypeScript. It includes functions for basic
+ * arithmetic operations, as well as type class instances for `Equivalence` and
+ * `Order`.
+ *
+ * ## Operations Reference
+ *
+ * | Category     | Operation                                  | Description                                             | Domain                         | Co-domain             |
+ * | ------------ | ------------------------------------------ | ------------------------------------------------------- | ------------------------------ | --------------------- |
+ * | constructors | {@link module:Number.parse}                | Safely parses a string to a number                      | `string`                       | `Option<number>`      |
+ * |              |                                            |                                                         |                                |                       |
+ * | math         | {@link module:Number.sum}                  | Adds two numbers                                        | `number`, `number`             | `number`              |
+ * | math         | {@link module:Number.sumAll}               | Sums all numbers in a collection                        | `Iterable<number>`             | `number`              |
+ * | math         | {@link module:Number.subtract}             | Subtracts one number from another                       | `number`, `number`             | `number`              |
+ * | math         | {@link module:Number.multiply}             | Multiplies two numbers                                  | `number`, `number`             | `number`              |
+ * | math         | {@link module:Number.multiplyAll}          | Multiplies all numbers in a collection                  | `Iterable<number>`             | `number`              |
+ * | math         | {@link module:Number.divide}               | Safely divides handling division by zero                | `number`, `number`             | `Option<number>`      |
+ * | math         | {@link module:Number.unsafeDivide}         | Divides but misbehaves for division by zero             | `number`, `number`             | `number`              |
+ * | math         | {@link module:Number.remainder}            | Calculates remainder of division                        | `number`, `number`             | `number`              |
+ * | math         | {@link module:Number.increment}            | Adds 1 to a number                                      | `number`                       | `number`              |
+ * | math         | {@link module:Number.decrement}            | Subtracts 1 from a number                               | `number`                       | `number`              |
+ * | math         | {@link module:Number.sign}                 | Determines the sign of a number                         | `number`                       | `Ordering`            |
+ * | math         | {@link module:Number.nextPow2}             | Finds the next power of 2                               | `number`                       | `number`              |
+ * | math         | {@link module:Number.round}                | Rounds a number with specified precision                | `number`, `number`             | `number`              |
+ * |              |                                            |                                                         |                                |                       |
+ * | predicates   | {@link module:Number.between}              | Checks if a number is in a range                        | `number`, `{minimum, maximum}` | `boolean`             |
+ * | predicates   | {@link module:Number.lessThan}             | Checks if one number is less than another               | `number`, `number`             | `boolean`             |
+ * | predicates   | {@link module:Number.lessThanOrEqualTo}    | Checks if one number is less than or equal              | `number`, `number`             | `boolean`             |
+ * | predicates   | {@link module:Number.greaterThan}          | Checks if one number is greater than another            | `number`, `number`             | `boolean`             |
+ * | predicates   | {@link module:Number.greaterThanOrEqualTo} | Checks if one number is greater or equal                | `number`, `number`             | `boolean`             |
+ * |              |                                            |                                                         |                                |                       |
+ * | guards       | {@link module:Number.isNumber}             | Type guard for JavaScript numbers                       | `unknown`                      | `boolean`             |
+ * |              |                                            |                                                         |                                |                       |
+ * | comparison   | {@link module:Number.min}                  | Returns the minimum of two numbers                      | `number`, `number`             | `number`              |
+ * | comparison   | {@link module:Number.max}                  | Returns the maximum of two numbers                      | `number`, `number`             | `number`              |
+ * | comparison   | {@link module:Number.clamp}                | Restricts a number to a range                           | `number`, `{minimum, maximum}` | `number`              |
+ * |              |                                            |                                                         |                                |                       |
+ * | instances    | {@link module:Number.Equivalence}          | Equivalence instance for numbers                        |                                | `Equivalence<number>` |
+ * | instances    | {@link module:Number.Order}                | Order instance for numbers                              |                                | `Order<number>`       |
+ * |              |                                            |                                                         |                                |                       |
+ * | errors       | {@link module:Number.DivisionByZeroError}  | Error thrown by unsafeDivide                            |                                |                       |
+ *
+ * ## Composition Patterns and Type Safety
+ *
+ * When building function pipelines, understanding how types flow through
+ * operations is critical:
+ *
+ * ### Composing with type-preserving operations
+ *
+ * Most operations in this module are type-preserving (`number → number`),
+ * making them easily composable in pipelines:
+ *
+ * ```ts
+ * import { pipe } from "effect"
+ * import * as Number from "effect/Number"
+ *
+ * const result = pipe(
+ *   10,
+ *   Number.increment, // number → number
+ *   Number.multiply(2), // number → number
+ *   Number.round(1) // number → number
+ * ) // Result: number (21)
+ * ```
+ *
+ * ### Working with Option results
+ *
+ * Operations that might fail (like division by zero) return Option types and
+ * require Option combinators:
+ *
+ * ```ts
+ * import { pipe, Option } from "effect"
+ * import * as Number from "effect/Number"
+ *
+ * const result = pipe(
+ *   10,
+ *   Number.divide(0), // number → Option<number>
+ *   Option.getOrElse(() => 0) // Option<number> → number
+ * ) // Result: number (0)
+ * ```
+ *
+ * ### Composition best practices
+ *
+ * - Chain type-preserving operations for maximum composability
+ * - Use Option combinators when working with potentially failing operations
+ * - Consider using Effect for operations that might fail with specific errors
+ * - Remember that all operations maintain JavaScript's floating-point precision
+ *   limitations
+ *
+ * @module Number
+ * @since 2.0.0
+ * @see {@link module:BigInt} for more similar operations on `bigint` types
+ * @see {@link module:BigDecimal} for more similar operations on `BigDecimal` types
+ */
+/**
+ * @memberof Number
+ * @since 2.0.0
+ * @category instances
+ */
+const Order$1 = number$2;
+
+/**
+ * This module provides utility functions for working with RegExp in TypeScript.
+ *
+ * @since 2.0.0
+ */
+/**
+ * Escapes special characters in a regular expression pattern.
+ *
+ * @example
+ * ```ts
+ * import * as assert from "node:assert"
+ * import { RegExp } from "effect"
+ *
+ * assert.deepStrictEqual(RegExp.escape("a*b"), "a\\*b")
+ * ```
+ *
+ * @since 2.0.0
+ */
+const escape = string => string.replace(/[/\\^$*+?.()|[\]{}]/g, "\\$&");
+
+/** @internal */
+const OP_AND = "And";
+/** @internal */
+const OP_OR = "Or";
+/** @internal */
+const OP_INVALID_DATA = "InvalidData";
+/** @internal */
+const OP_MISSING_DATA = "MissingData";
+/** @internal */
+const OP_SOURCE_UNAVAILABLE = "SourceUnavailable";
+/** @internal */
+const OP_UNSUPPORTED = "Unsupported";
+
+/** @internal */
+const ConfigErrorSymbolKey = "effect/ConfigError";
+/** @internal */
+const ConfigErrorTypeId = /*#__PURE__*/Symbol.for(ConfigErrorSymbolKey);
+/** @internal */
+const proto$3 = {
+  _tag: "ConfigError",
+  [ConfigErrorTypeId]: ConfigErrorTypeId
+};
+/** @internal */
+const And = (self, that) => {
+  const error = Object.create(proto$3);
+  error._op = OP_AND;
+  error.left = self;
+  error.right = that;
+  Object.defineProperty(error, "toString", {
+    enumerable: false,
+    value() {
+      return `${this.left} and ${this.right}`;
+    }
+  });
+  Object.defineProperty(error, "message", {
+    enumerable: false,
+    get() {
+      return this.toString();
+    }
+  });
+  return error;
+};
+/** @internal */
+const Or = (self, that) => {
+  const error = Object.create(proto$3);
+  error._op = OP_OR;
+  error.left = self;
+  error.right = that;
+  Object.defineProperty(error, "toString", {
+    enumerable: false,
+    value() {
+      return `${this.left} or ${this.right}`;
+    }
+  });
+  Object.defineProperty(error, "message", {
+    enumerable: false,
+    get() {
+      return this.toString();
+    }
+  });
+  return error;
+};
+/** @internal */
+const InvalidData = (path, message, options = {
+  pathDelim: "."
+}) => {
+  const error = Object.create(proto$3);
+  error._op = OP_INVALID_DATA;
+  error.path = path;
+  error.message = message;
+  Object.defineProperty(error, "toString", {
+    enumerable: false,
+    value() {
+      const path = pipe(this.path, join$1(options.pathDelim));
+      return `(Invalid data at ${path}: "${this.message}")`;
+    }
+  });
+  return error;
+};
+/** @internal */
+const MissingData = (path, message, options = {
+  pathDelim: "."
+}) => {
+  const error = Object.create(proto$3);
+  error._op = OP_MISSING_DATA;
+  error.path = path;
+  error.message = message;
+  Object.defineProperty(error, "toString", {
+    enumerable: false,
+    value() {
+      const path = pipe(this.path, join$1(options.pathDelim));
+      return `(Missing data at ${path}: "${this.message}")`;
+    }
+  });
+  return error;
+};
+/** @internal */
+const SourceUnavailable = (path, message, cause, options = {
+  pathDelim: "."
+}) => {
+  const error = Object.create(proto$3);
+  error._op = OP_SOURCE_UNAVAILABLE;
+  error.path = path;
+  error.message = message;
+  error.cause = cause;
+  Object.defineProperty(error, "toString", {
+    enumerable: false,
+    value() {
+      const path = pipe(this.path, join$1(options.pathDelim));
+      return `(Source unavailable at ${path}: "${this.message}")`;
+    }
+  });
+  return error;
+};
+/** @internal */
+const Unsupported = (path, message, options = {
+  pathDelim: "."
+}) => {
+  const error = Object.create(proto$3);
+  error._op = OP_UNSUPPORTED;
+  error.path = path;
+  error.message = message;
+  Object.defineProperty(error, "toString", {
+    enumerable: false,
+    value() {
+      const path = pipe(this.path, join$1(options.pathDelim));
+      return `(Unsupported operation at ${path}: "${this.message}")`;
+    }
+  });
+  return error;
+};
+/** @internal */
+const prefixed = /*#__PURE__*/dual(2, (self, prefix) => {
+  switch (self._op) {
+    case OP_AND:
+      {
+        return And(prefixed(self.left, prefix), prefixed(self.right, prefix));
+      }
+    case OP_OR:
+      {
+        return Or(prefixed(self.left, prefix), prefixed(self.right, prefix));
+      }
+    case OP_INVALID_DATA:
+      {
+        return InvalidData([...prefix, ...self.path], self.message);
+      }
+    case OP_MISSING_DATA:
+      {
+        return MissingData([...prefix, ...self.path], self.message);
+      }
+    case OP_SOURCE_UNAVAILABLE:
+      {
+        return SourceUnavailable([...prefix, ...self.path], self.message, self.cause);
+      }
+    case OP_UNSUPPORTED:
+      {
+        return Unsupported([...prefix, ...self.path], self.message);
+      }
+  }
+});
+/** @internal */
+const IsMissingDataOnlyReducer = {
+  andCase: (_, left, right) => left && right,
+  orCase: (_, left, right) => left && right,
+  invalidDataCase: constFalse,
+  missingDataCase: constTrue,
+  sourceUnavailableCase: constFalse,
+  unsupportedCase: constFalse
+};
+/** @internal */
+const reduceWithContext = /*#__PURE__*/dual(3, (self, context, reducer) => {
+  const input = [self];
+  const output = [];
+  while (input.length > 0) {
+    const error = input.pop();
+    switch (error._op) {
+      case OP_AND:
+        {
+          input.push(error.right);
+          input.push(error.left);
+          output.push(left({
+            _op: "AndCase"
+          }));
+          break;
+        }
+      case OP_OR:
+        {
+          input.push(error.right);
+          input.push(error.left);
+          output.push(left({
+            _op: "OrCase"
+          }));
+          break;
+        }
+      case OP_INVALID_DATA:
+        {
+          output.push(right(reducer.invalidDataCase(context, error.path, error.message)));
+          break;
+        }
+      case OP_MISSING_DATA:
+        {
+          output.push(right(reducer.missingDataCase(context, error.path, error.message)));
+          break;
+        }
+      case OP_SOURCE_UNAVAILABLE:
+        {
+          output.push(right(reducer.sourceUnavailableCase(context, error.path, error.message, error.cause)));
+          break;
+        }
+      case OP_UNSUPPORTED:
+        {
+          output.push(right(reducer.unsupportedCase(context, error.path, error.message)));
+          break;
+        }
+    }
+  }
+  const accumulator = [];
+  while (output.length > 0) {
+    const either = output.pop();
+    switch (either._op) {
+      case "Left":
+        {
+          switch (either.left._op) {
+            case "AndCase":
+              {
+                const left = accumulator.pop();
+                const right = accumulator.pop();
+                const value = reducer.andCase(context, left, right);
+                accumulator.push(value);
+                break;
+              }
+            case "OrCase":
+              {
+                const left = accumulator.pop();
+                const right = accumulator.pop();
+                const value = reducer.orCase(context, left, right);
+                accumulator.push(value);
+                break;
+              }
+          }
+          break;
+        }
+      case "Right":
+        {
+          accumulator.push(either.right);
+          break;
+        }
+    }
+  }
+  if (accumulator.length === 0) {
+    throw new Error("BUG: ConfigError.reduceWithContext - please report an issue at https://github.com/Effect-TS/effect/issues");
+  }
+  return accumulator.pop();
+});
+/** @internal */
+const isMissingDataOnly$1 = self => reduceWithContext(self, void 0, IsMissingDataOnlyReducer);
+
+/** @internal */
+const empty$7 = {
+  _tag: "Empty"
+};
+/** @internal */
+const patch$3 = /*#__PURE__*/dual(2, (path, patch) => {
+  let input = of(patch);
+  let output = path;
+  while (isCons(input)) {
+    const patch = input.head;
+    switch (patch._tag) {
+      case "Empty":
+        {
+          input = input.tail;
+          break;
+        }
+      case "AndThen":
+        {
+          input = cons(patch.first, cons(patch.second, input.tail));
+          break;
+        }
+      case "MapName":
+        {
+          output = map$6(output, patch.f);
+          input = input.tail;
+          break;
+        }
+      case "Nested":
+        {
+          output = prepend$2(output, patch.name);
+          input = input.tail;
+          break;
+        }
+      case "Unnested":
+        {
+          const containsName = pipe(head$1(output), contains(patch.name));
+          if (containsName) {
+            output = tailNonEmpty$1(output);
+            input = input.tail;
+          } else {
+            return left(MissingData(output, `Expected ${patch.name} to be in path in ConfigProvider#unnested`));
+          }
+          break;
+        }
+    }
+  }
+  return right(output);
+});
+
+/** @internal */
+const OP_CONSTANT = "Constant";
+/** @internal */
+const OP_FAIL = "Fail";
+/** @internal */
+const OP_FALLBACK = "Fallback";
+/** @internal */
+const OP_DESCRIBED = "Described";
+/** @internal */
+const OP_LAZY = "Lazy";
+/** @internal */
+const OP_MAP_OR_FAIL = "MapOrFail";
+/** @internal */
+const OP_NESTED = "Nested";
+/** @internal */
+const OP_PRIMITIVE = "Primitive";
+/** @internal */
+const OP_SEQUENCE = "Sequence";
+/** @internal */
+const OP_HASHMAP = "HashMap";
+/** @internal */
+const OP_ZIP_WITH$1 = "ZipWith";
+
+const concat = (l, r) => [...l, ...r];
+/** @internal */
+const ConfigProviderSymbolKey = "effect/ConfigProvider";
+/** @internal */
+const ConfigProviderTypeId = /*#__PURE__*/Symbol.for(ConfigProviderSymbolKey);
+/** @internal */
+const configProviderTag = /*#__PURE__*/GenericTag("effect/ConfigProvider");
+/** @internal */
+const FlatConfigProviderSymbolKey = "effect/ConfigProviderFlat";
+/** @internal */
+const FlatConfigProviderTypeId = /*#__PURE__*/Symbol.for(FlatConfigProviderSymbolKey);
+/** @internal */
+const make$e = options => ({
+  [ConfigProviderTypeId]: ConfigProviderTypeId,
+  pipe() {
+    return pipeArguments(this, arguments);
+  },
+  ...options
+});
+/** @internal */
+const makeFlat = options => ({
+  [FlatConfigProviderTypeId]: FlatConfigProviderTypeId,
+  patch: options.patch,
+  load: (path, config, split = true) => options.load(path, config, split),
+  enumerateChildren: options.enumerateChildren
+});
+/** @internal */
+const fromFlat = flat => make$e({
+  load: config => flatMap$1(fromFlatLoop(flat, empty$l(), config, false), chunk => match$3(head$1(chunk), {
+    onNone: () => fail(MissingData(empty$l(), `Expected a single value having structure: ${config}`)),
+    onSome: succeed$3
+  })),
+  flattened: flat
+});
+/** @internal */
+const fromEnv = options => {
+  const {
+    pathDelim,
+    seqDelim
+  } = Object.assign({}, {
+    pathDelim: "_",
+    seqDelim: ","
+  }, options);
+  const makePathString = path => pipe(path, join$1(pathDelim));
+  const unmakePathString = pathString => pathString.split(pathDelim);
+  const getEnv = () => typeof process !== "undefined" && "env" in process && typeof process.env === "object" ? process.env : {};
+  const load = (path, primitive, split = true) => {
+    const pathString = makePathString(path);
+    const current = getEnv();
+    const valueOpt = pathString in current ? some(current[pathString]) : none$4();
+    return pipe(valueOpt, mapError(() => MissingData(path, `Expected ${pathString} to exist in the process context`)), flatMap$1(value => parsePrimitive(value, path, primitive, seqDelim, split)));
+  };
+  const enumerateChildren = path => sync$2(() => {
+    const current = getEnv();
+    const keys = Object.keys(current);
+    const keyPaths = keys.map(value => unmakePathString(value.toUpperCase()));
+    const filteredKeyPaths = keyPaths.filter(keyPath => {
+      for (let i = 0; i < path.length; i++) {
+        const pathComponent = pipe(path, unsafeGet$3(i));
+        const currentElement = keyPath[i];
+        if (currentElement === undefined || pathComponent !== currentElement) {
+          return false;
+        }
+      }
+      return true;
+    }).flatMap(keyPath => keyPath.slice(path.length, path.length + 1));
+    return fromIterable$2(filteredKeyPaths);
+  });
+  return fromFlat(makeFlat({
+    load,
+    enumerateChildren,
+    patch: empty$7
+  }));
+};
+const extend = (leftDef, rightDef, left, right) => {
+  const leftPad = unfold$1(left.length, index => index >= right.length ? none$4() : some([leftDef(index), index + 1]));
+  const rightPad = unfold$1(right.length, index => index >= left.length ? none$4() : some([rightDef(index), index + 1]));
+  const leftExtension = concat(left, leftPad);
+  const rightExtension = concat(right, rightPad);
+  return [leftExtension, rightExtension];
+};
+const appendConfigPath = (path, config) => {
+  let op = config;
+  if (op._tag === "Nested") {
+    const out = path.slice();
+    while (op._tag === "Nested") {
+      out.push(op.name);
+      op = op.config;
+    }
+    return out;
+  }
+  return path;
+};
+const fromFlatLoop = (flat, prefix, config, split) => {
+  const op = config;
+  switch (op._tag) {
+    case OP_CONSTANT:
+      {
+        return succeed$3(of$2(op.value));
+      }
+    case OP_DESCRIBED:
+      {
+        return suspend$2(() => fromFlatLoop(flat, prefix, op.config, split));
+      }
+    case OP_FAIL:
+      {
+        return fail(MissingData(prefix, op.message));
+      }
+    case OP_FALLBACK:
+      {
+        return pipe(suspend$2(() => fromFlatLoop(flat, prefix, op.first, split)), catchAll(error1 => {
+          if (op.condition(error1)) {
+            return pipe(fromFlatLoop(flat, prefix, op.second, split), catchAll(error2 => fail(Or(error1, error2))));
+          }
+          return fail(error1);
+        }));
+      }
+    case OP_LAZY:
+      {
+        return suspend$2(() => fromFlatLoop(flat, prefix, op.config(), split));
+      }
+    case OP_MAP_OR_FAIL:
+      {
+        return suspend$2(() => pipe(fromFlatLoop(flat, prefix, op.original, split), flatMap$1(forEachSequential(a => pipe(op.mapOrFail(a), mapError(prefixed(appendConfigPath(prefix, op.original))))))));
+      }
+    case OP_NESTED:
+      {
+        return suspend$2(() => fromFlatLoop(flat, concat(prefix, of$2(op.name)), op.config, split));
+      }
+    case OP_PRIMITIVE:
+      {
+        return pipe(patch$3(prefix, flat.patch), flatMap$1(prefix => pipe(flat.load(prefix, op, split), flatMap$1(values => {
+          if (values.length === 0) {
+            const name = pipe(last(prefix), getOrElse(() => "<n/a>"));
+            return fail(MissingData([], `Expected ${op.description} with name ${name}`));
+          }
+          return succeed$3(values);
+        }))));
+      }
+    case OP_SEQUENCE:
+      {
+        return pipe(patch$3(prefix, flat.patch), flatMap$1(patchedPrefix => pipe(flat.enumerateChildren(patchedPrefix), flatMap$1(indicesFrom), flatMap$1(indices => {
+          if (indices.length === 0) {
+            return suspend$2(() => map$3(fromFlatLoop(flat, prefix, op.config, true), of$2));
+          }
+          return pipe(forEachSequential(indices, index => fromFlatLoop(flat, append$1(prefix, `[${index}]`), op.config, true)), map$3(chunkChunk => {
+            const flattened = flatten$2(chunkChunk);
+            if (flattened.length === 0) {
+              return of$2(empty$l());
+            }
+            return of$2(flattened);
+          }));
+        }))));
+      }
+    case OP_HASHMAP:
+      {
+        return suspend$2(() => pipe(patch$3(prefix, flat.patch), flatMap$1(prefix => pipe(flat.enumerateChildren(prefix), flatMap$1(keys => {
+          return pipe(keys, forEachSequential(key => fromFlatLoop(flat, concat(prefix, of$2(key)), op.valueConfig, split)), map$3(matrix => {
+            if (matrix.length === 0) {
+              return of$2(empty$d());
+            }
+            return pipe(transpose(matrix), map$6(values => fromIterable$1(zip$1(fromIterable$6(keys), values))));
+          }));
+        })))));
+      }
+    case OP_ZIP_WITH$1:
+      {
+        return suspend$2(() => pipe(fromFlatLoop(flat, prefix, op.left, split), either, flatMap$1(left => pipe(fromFlatLoop(flat, prefix, op.right, split), either, flatMap$1(right$1 => {
+          if (isLeft(left) && isLeft(right$1)) {
+            return fail(And(left.left, right$1.left));
+          }
+          if (isLeft(left) && isRight(right$1)) {
+            return fail(left.left);
+          }
+          if (isRight(left) && isLeft(right$1)) {
+            return fail(right$1.left);
+          }
+          if (isRight(left) && isRight(right$1)) {
+            const path = pipe(prefix, join$1("."));
+            const fail = fromFlatLoopFail(prefix, path);
+            const [lefts, rights] = extend(fail, fail, pipe(left.right, map$6(right)), pipe(right$1.right, map$6(right)));
+            return pipe(lefts, zip$1(rights), forEachSequential(([left, right]) => pipe(zip(left, right), map$3(([left, right]) => op.zip(left, right)))));
+          }
+          throw new Error("BUG: ConfigProvider.fromFlatLoop - please report an issue at https://github.com/Effect-TS/effect/issues");
+        })))));
+      }
+  }
+};
+const fromFlatLoopFail = (prefix, path) => index => left(MissingData(prefix, `The element at index ${index} in a sequence at path "${path}" was missing`));
+const splitPathString = (text, delim) => {
+  const split = text.split(new RegExp(`\\s*${escape(delim)}\\s*`));
+  return split;
+};
+const parsePrimitive = (text, path, primitive, delimiter, split) => {
+  if (!split) {
+    return pipe(primitive.parse(text), mapBoth({
+      onFailure: prefixed(path),
+      onSuccess: of$2
+    }));
+  }
+  return pipe(splitPathString(text, delimiter), forEachSequential(char => primitive.parse(char.trim())), mapError(prefixed(path)));
+};
+const transpose = array => {
+  return Object.keys(array[0]).map(column => array.map(row => row[column]));
+};
+const indicesFrom = quotedIndices => pipe(forEachSequential(quotedIndices, parseQuotedIndex), mapBoth({
+  onFailure: () => empty$l(),
+  onSuccess: sort(Order$1)
+}), either, map$3(merge$5));
+const QUOTED_INDEX_REGEX = /^(\[(\d+)\])$/;
+const parseQuotedIndex = str => {
+  const match = str.match(QUOTED_INDEX_REGEX);
+  if (match !== null) {
+    const matchedIndex = match[2];
+    return pipe(matchedIndex !== undefined && matchedIndex.length > 0 ? some(matchedIndex) : none$4(), flatMap$3(parseInteger));
+  }
+  return none$4();
+};
+const parseInteger = str => {
+  const parsedIndex = Number.parseInt(str);
+  return Number.isNaN(parsedIndex) ? none$4() : some(parsedIndex);
+};
+
+/** @internal */
+const TypeId$4 = /*#__PURE__*/Symbol.for("effect/Console");
+/** @internal */
+const consoleTag = /*#__PURE__*/GenericTag("effect/Console");
+/** @internal */
+const defaultConsole = {
+  [TypeId$4]: TypeId$4,
+  assert(condition, ...args) {
+    return sync$2(() => {
+      console.assert(condition, ...args);
+    });
+  },
+  clear: /*#__PURE__*/sync$2(() => {
+    console.clear();
+  }),
+  count(label) {
+    return sync$2(() => {
+      console.count(label);
+    });
+  },
+  countReset(label) {
+    return sync$2(() => {
+      console.countReset(label);
+    });
+  },
+  debug(...args) {
+    return sync$2(() => {
+      console.debug(...args);
+    });
+  },
+  dir(item, options) {
+    return sync$2(() => {
+      console.dir(item, options);
+    });
+  },
+  dirxml(...args) {
+    return sync$2(() => {
+      console.dirxml(...args);
+    });
+  },
+  error(...args) {
+    return sync$2(() => {
+      console.error(...args);
+    });
+  },
+  group(options) {
+    return options?.collapsed ? sync$2(() => console.groupCollapsed(options?.label)) : sync$2(() => console.group(options?.label));
+  },
+  groupEnd: /*#__PURE__*/sync$2(() => {
+    console.groupEnd();
+  }),
+  info(...args) {
+    return sync$2(() => {
+      console.info(...args);
+    });
+  },
+  log(...args) {
+    return sync$2(() => {
+      console.log(...args);
+    });
+  },
+  table(tabularData, properties) {
+    return sync$2(() => {
+      console.table(tabularData, properties);
+    });
+  },
+  time(label) {
+    return sync$2(() => console.time(label));
+  },
+  timeEnd(label) {
+    return sync$2(() => console.timeEnd(label));
+  },
+  timeLog(label, ...args) {
+    return sync$2(() => {
+      console.timeLog(label, ...args);
+    });
+  },
+  trace(...args) {
+    return sync$2(() => {
+      console.trace(...args);
+    });
+  },
+  warn(...args) {
+    return sync$2(() => {
+      console.warn(...args);
+    });
+  },
+  unsafe: console
+};
+
+/** @internal */
+const RandomSymbolKey = "effect/Random";
+/** @internal */
+const RandomTypeId = /*#__PURE__*/Symbol.for(RandomSymbolKey);
+/** @internal */
+const randomTag = /*#__PURE__*/GenericTag("effect/Random");
+/** @internal */
+class RandomImpl {
+  seed;
+  [RandomTypeId] = RandomTypeId;
+  PRNG;
+  constructor(seed) {
+    this.seed = seed;
+    this.PRNG = new PCGRandom(seed);
+  }
+  get next() {
+    return sync$2(() => this.PRNG.number());
+  }
+  get nextBoolean() {
+    return map$3(this.next, n => n > 0.5);
+  }
+  get nextInt() {
+    return sync$2(() => this.PRNG.integer(Number.MAX_SAFE_INTEGER));
+  }
+  nextRange(min, max) {
+    return map$3(this.next, n => (max - min) * n + min);
+  }
+  nextIntBetween(min, max) {
+    return sync$2(() => this.PRNG.integer(max - min) + min);
+  }
+  shuffle(elements) {
+    return shuffleWith(elements, n => this.nextIntBetween(0, n));
+  }
+}
+const shuffleWith = (elements, nextIntBounded) => {
+  return suspend$2(() => pipe(sync$2(() => Array.from(elements)), flatMap$1(buffer => {
+    const numbers = [];
+    for (let i = buffer.length; i >= 2; i = i - 1) {
+      numbers.push(i);
+    }
+    return pipe(numbers, forEachSequentialDiscard(n => pipe(nextIntBounded(n), map$3(k => swap(buffer, n - 1, k)))), as(fromIterable$5(buffer)));
+  })));
+};
+const swap = (buffer, index1, index2) => {
+  const tmp = buffer[index1];
+  buffer[index1] = buffer[index2];
+  buffer[index2] = tmp;
+  return buffer;
+};
+const make$d = seed => new RandomImpl(hash(seed));
+
+/**
+ * @since 2.0.0
+ */
+/** @internal */
+const TracerTypeId = /*#__PURE__*/Symbol.for("effect/Tracer");
+/** @internal */
+const make$c = options => ({
+  [TracerTypeId]: TracerTypeId,
+  ...options
+});
+/** @internal */
+const tracerTag = /*#__PURE__*/GenericTag("effect/Tracer");
+/** @internal */
+const spanTag = /*#__PURE__*/GenericTag("effect/ParentSpan");
+const randomHexString = /*#__PURE__*/function () {
+  const characters = "abcdef0123456789";
+  const charactersLength = characters.length;
+  return function (length) {
+    let result = "";
+    for (let i = 0; i < length; i++) {
+      result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    }
+    return result;
+  };
+}();
+/** @internal */
+class NativeSpan {
+  name;
+  parent;
+  context;
+  startTime;
+  kind;
+  _tag = "Span";
+  spanId;
+  traceId = "native";
+  sampled = true;
+  status;
+  attributes;
+  events = [];
+  links;
+  constructor(name, parent, context, links, startTime, kind) {
+    this.name = name;
+    this.parent = parent;
+    this.context = context;
+    this.startTime = startTime;
+    this.kind = kind;
+    this.status = {
+      _tag: "Started",
+      startTime
+    };
+    this.attributes = new Map();
+    this.traceId = parent._tag === "Some" ? parent.value.traceId : randomHexString(32);
+    this.spanId = randomHexString(16);
+    this.links = Array.from(links);
+  }
+  end(endTime, exit) {
+    this.status = {
+      _tag: "Ended",
+      endTime,
+      exit,
+      startTime: this.status.startTime
+    };
+  }
+  attribute(key, value) {
+    this.attributes.set(key, value);
+  }
+  event(name, startTime, attributes) {
+    this.events.push([name, startTime, attributes ?? {}]);
+  }
+  addLinks(links) {
+    // eslint-disable-next-line no-restricted-syntax
+    this.links.push(...links);
+  }
+}
+/** @internal */
+const nativeTracer = /*#__PURE__*/make$c({
+  span: (name, parent, context, links, startTime, kind) => new NativeSpan(name, parent, context, links, startTime, kind),
+  context: f => f()
+});
+
+/** @internal */
+const liveServices = /*#__PURE__*/pipe(/*#__PURE__*/empty$e(), /*#__PURE__*/add$1(clockTag, /*#__PURE__*/make$f()), /*#__PURE__*/add$1(consoleTag, defaultConsole), /*#__PURE__*/add$1(randomTag, /*#__PURE__*/make$d(/*#__PURE__*/Math.random())), /*#__PURE__*/add$1(configProviderTag, /*#__PURE__*/fromEnv()), /*#__PURE__*/add$1(tracerTag, nativeTracer));
+/**
+ * The `FiberRef` holding the default `Effect` services.
+ *
+ * @since 2.0.0
+ * @category fiberRefs
+ */
+const currentServices = /*#__PURE__*/globalValue(/*#__PURE__*/Symbol.for("effect/DefaultServices/currentServices"), () => fiberRefUnsafeMakeContext(liveServices));
+// circular with Clock
+/** @internal */
+const sleep$2 = duration => {
+  const decodedDuration = decode(duration);
+  return clockWith(clock => clock.sleep(decodedDuration));
+};
+/** @internal */
+const defaultServicesWith = f => withFiberRuntime(fiber => f(fiber.currentDefaultServices));
+/** @internal */
+const clockWith = f => defaultServicesWith(services => f(services.unsafeMap.get(clockTag.key)));
+/** @internal */
+const currentTimeMillis$1 = /*#__PURE__*/clockWith(clock => clock.currentTimeMillis);
+/** @internal */
+const configProviderWith = f => defaultServicesWith(services => f(services.unsafeMap.get(configProviderTag.key)));
+/** @internal */
+const config = config => configProviderWith(_ => _.load(config));
+
+/**
+ * @since 2.0.0
+ * @category prototypes
+ */
+const EffectPrototype = EffectPrototype$1;
+/**
+ * @since 2.0.0
+ * @category prototypes
+ */
+const CommitPrototype = CommitPrototype$1;
+const Base = Base$1;
+/**
+ * @since 2.0.0
+ * @category constructors
+ */
+class Class extends Base {}
+
+/** @internal */
+const OP_SEQUENTIAL = "Sequential";
+/** @internal */
+const OP_PARALLEL = "Parallel";
+/** @internal */
+const OP_PARALLEL_N = "ParallelN";
+/** @internal */
+const sequential$1 = {
+  _tag: OP_SEQUENTIAL
+};
+/** @internal */
+const parallel$1 = {
+  _tag: OP_PARALLEL
+};
+/** @internal */
+const parallelN$1 = parallelism => ({
+  _tag: OP_PARALLEL_N,
+  parallelism
+});
+/** @internal */
+const isSequential = self => self._tag === OP_SEQUENTIAL;
+/** @internal */
+const isParallel = self => self._tag === OP_PARALLEL;
+
+/**
+ * Execute effects sequentially.
+ *
+ * @since 2.0.0
+ * @category constructors
+ */
+const sequential = sequential$1;
+/**
+ * Execute effects in parallel.
+ *
+ * @since 2.0.0
+ * @category constructors
+ */
+const parallel = parallel$1;
+/**
+ * Execute effects in parallel, up to the specified number of concurrent fibers.
+ *
+ * @since 2.0.0
+ * @category constructors
+ */
+const parallelN = parallelN$1;
+
+/** @internal */
+function unsafeMake$3(fiberRefLocals) {
+  return new FiberRefsImpl(fiberRefLocals);
+}
+/** @internal */
+function empty$6() {
+  return unsafeMake$3(new Map());
+}
+/** @internal */
+const FiberRefsSym = /*#__PURE__*/Symbol.for("effect/FiberRefs");
+/** @internal */
+class FiberRefsImpl {
+  locals;
+  [FiberRefsSym] = FiberRefsSym;
+  constructor(locals) {
+    this.locals = locals;
+  }
+  pipe() {
+    return pipeArguments(this, arguments);
+  }
+}
+/** @internal */
+const findAncestor = (_ref, _parentStack, _childStack, _childModified = false) => {
+  const ref = _ref;
+  let parentStack = _parentStack;
+  let childStack = _childStack;
+  let childModified = _childModified;
+  let ret = undefined;
+  while (ret === undefined) {
+    if (isNonEmptyReadonlyArray(parentStack) && isNonEmptyReadonlyArray(childStack)) {
+      const parentFiberId = headNonEmpty$1(parentStack)[0];
+      const parentAncestors = tailNonEmpty$1(parentStack);
+      const childFiberId = headNonEmpty$1(childStack)[0];
+      const childRefValue = headNonEmpty$1(childStack)[1];
+      const childAncestors = tailNonEmpty$1(childStack);
+      if (parentFiberId.startTimeMillis < childFiberId.startTimeMillis) {
+        childStack = childAncestors;
+        childModified = true;
+      } else if (parentFiberId.startTimeMillis > childFiberId.startTimeMillis) {
+        parentStack = parentAncestors;
+      } else {
+        if (parentFiberId.id < childFiberId.id) {
+          childStack = childAncestors;
+          childModified = true;
+        } else if (parentFiberId.id > childFiberId.id) {
+          parentStack = parentAncestors;
+        } else {
+          ret = [childRefValue, childModified];
+        }
+      }
+    } else {
+      ret = [ref.initial, true];
+    }
+  }
+  return ret;
+};
+/** @internal */
+const joinAs = /*#__PURE__*/dual(3, (self, fiberId, that) => {
+  const parentFiberRefs = new Map(self.locals);
+  that.locals.forEach((childStack, fiberRef) => {
+    const childValue = childStack[0][1];
+    if (!childStack[0][0][symbol](fiberId)) {
+      if (!parentFiberRefs.has(fiberRef)) {
+        if (equals$1(childValue, fiberRef.initial)) {
+          return;
+        }
+        parentFiberRefs.set(fiberRef, [[fiberId, fiberRef.join(fiberRef.initial, childValue)]]);
+        return;
+      }
+      const parentStack = parentFiberRefs.get(fiberRef);
+      const [ancestor, wasModified] = findAncestor(fiberRef, parentStack, childStack);
+      if (wasModified) {
+        const patch = fiberRef.diff(ancestor, childValue);
+        const oldValue = parentStack[0][1];
+        const newValue = fiberRef.join(oldValue, fiberRef.patch(patch)(oldValue));
+        if (!equals$1(oldValue, newValue)) {
+          let newStack;
+          const parentFiberId = parentStack[0][0];
+          if (parentFiberId[symbol](fiberId)) {
+            newStack = [[parentFiberId, newValue], ...parentStack.slice(1)];
+          } else {
+            newStack = [[fiberId, newValue], ...parentStack];
+          }
+          parentFiberRefs.set(fiberRef, newStack);
+        }
+      }
+    }
+  });
+  return new FiberRefsImpl(parentFiberRefs);
+});
+/** @internal */
+const forkAs = /*#__PURE__*/dual(2, (self, childId) => {
+  const map = new Map();
+  unsafeForkAs(self, map, childId);
+  return new FiberRefsImpl(map);
+});
+const unsafeForkAs = (self, map, fiberId) => {
+  self.locals.forEach((stack, fiberRef) => {
+    const oldValue = stack[0][1];
+    const newValue = fiberRef.patch(fiberRef.fork)(oldValue);
+    if (equals$1(oldValue, newValue)) {
+      map.set(fiberRef, stack);
+    } else {
+      map.set(fiberRef, [[fiberId, newValue], ...stack]);
+    }
+  });
+};
+/** @internal */
+const delete_ = /*#__PURE__*/dual(2, (self, fiberRef) => {
+  const locals = new Map(self.locals);
+  locals.delete(fiberRef);
+  return new FiberRefsImpl(locals);
+});
+/** @internal */
+const get$2 = /*#__PURE__*/dual(2, (self, fiberRef) => {
+  if (!self.locals.has(fiberRef)) {
+    return none$4();
+  }
+  return some(headNonEmpty$1(self.locals.get(fiberRef))[1]);
+});
+/** @internal */
+const getOrDefault$1 = /*#__PURE__*/dual(2, (self, fiberRef) => pipe(get$2(self, fiberRef), getOrElse(() => fiberRef.initial)));
+/** @internal */
+const updateAs = /*#__PURE__*/dual(2, (self, {
+  fiberId,
+  fiberRef,
+  value
+}) => {
+  if (self.locals.size === 0) {
+    return new FiberRefsImpl(new Map([[fiberRef, [[fiberId, value]]]]));
+  }
+  const locals = new Map(self.locals);
+  unsafeUpdateAs(locals, fiberId, fiberRef, value);
+  return new FiberRefsImpl(locals);
+});
+const unsafeUpdateAs = (locals, fiberId, fiberRef, value) => {
+  const oldStack = locals.get(fiberRef) ?? [];
+  let newStack;
+  if (isNonEmptyReadonlyArray(oldStack)) {
+    const [currentId, currentValue] = headNonEmpty$1(oldStack);
+    if (currentId[symbol](fiberId)) {
+      if (equals$1(currentValue, value)) {
+        return;
+      } else {
+        newStack = [[fiberId, value], ...oldStack.slice(1)];
+      }
+    } else {
+      newStack = [[fiberId, value], ...oldStack];
+    }
+  } else {
+    newStack = [[fiberId, value]];
+  }
+  locals.set(fiberRef, newStack);
+};
+/** @internal */
+const updateManyAs$1 = /*#__PURE__*/dual(2, (self, {
+  entries,
+  forkAs
+}) => {
+  if (self.locals.size === 0) {
+    return new FiberRefsImpl(new Map(entries));
+  }
+  const locals = new Map(self.locals);
+  if (forkAs !== undefined) {
+    unsafeForkAs(self, locals, forkAs);
+  }
+  entries.forEach(([fiberRef, values]) => {
+    if (values.length === 1) {
+      unsafeUpdateAs(locals, values[0][0], fiberRef, values[0][1]);
+    } else {
+      values.forEach(([fiberId, value]) => {
+        unsafeUpdateAs(locals, fiberId, fiberRef, value);
+      });
+    }
+  });
+  return new FiberRefsImpl(locals);
+});
+
+/**
+ * Gets the value of the specified `FiberRef` in this collection of `FiberRef`
+ * values if it exists or the `initial` value of the `FiberRef` otherwise.
+ *
+ * @since 2.0.0
+ * @category getters
+ */
+const getOrDefault = getOrDefault$1;
+/**
+ * Updates the values of the specified `FiberRef` & value pairs using the provided `FiberId`
+ *
+ * @since 2.0.0
+ * @category utils
+ */
+const updateManyAs = updateManyAs$1;
+/**
+ * The empty collection of `FiberRef` values.
+ *
+ * @category constructors
+ * @since 2.0.0
+ */
+const empty$5 = empty$6;
+
+/** @internal */
+const OP_EMPTY$1 = "Empty";
+/** @internal */
+const OP_ADD = "Add";
+/** @internal */
+const OP_REMOVE = "Remove";
+/** @internal */
+const OP_UPDATE = "Update";
+/** @internal */
+const OP_AND_THEN$1 = "AndThen";
+/** @internal */
+const empty$4 = {
+  _tag: OP_EMPTY$1
+};
+/** @internal */
+const diff$2 = (oldValue, newValue) => {
+  const missingLocals = new Map(oldValue.locals);
+  let patch = empty$4;
+  for (const [fiberRef, pairs] of newValue.locals.entries()) {
+    const newValue = headNonEmpty$1(pairs)[1];
+    const old = missingLocals.get(fiberRef);
+    if (old !== undefined) {
+      const oldValue = headNonEmpty$1(old)[1];
+      if (!equals$1(oldValue, newValue)) {
+        patch = combine$1({
+          _tag: OP_UPDATE,
+          fiberRef,
+          patch: fiberRef.diff(oldValue, newValue)
+        })(patch);
+      }
+    } else {
+      patch = combine$1({
+        _tag: OP_ADD,
+        fiberRef,
+        value: newValue
+      })(patch);
+    }
+    missingLocals.delete(fiberRef);
+  }
+  for (const [fiberRef] of missingLocals.entries()) {
+    patch = combine$1({
+      _tag: OP_REMOVE,
+      fiberRef
+    })(patch);
+  }
+  return patch;
+};
+/** @internal */
+const combine$1 = /*#__PURE__*/dual(2, (self, that) => ({
+  _tag: OP_AND_THEN$1,
+  first: self,
+  second: that
+}));
+/** @internal */
+const patch$2 = /*#__PURE__*/dual(3, (self, fiberId, oldValue) => {
+  let fiberRefs = oldValue;
+  let patches = of$2(self);
+  while (isNonEmptyReadonlyArray(patches)) {
+    const head = headNonEmpty$1(patches);
+    const tail = tailNonEmpty$1(patches);
+    switch (head._tag) {
+      case OP_EMPTY$1:
+        {
+          patches = tail;
+          break;
+        }
+      case OP_ADD:
+        {
+          fiberRefs = updateAs(fiberRefs, {
+            fiberId,
+            fiberRef: head.fiberRef,
+            value: head.value
+          });
+          patches = tail;
+          break;
+        }
+      case OP_REMOVE:
+        {
+          fiberRefs = delete_(fiberRefs, head.fiberRef);
+          patches = tail;
+          break;
+        }
+      case OP_UPDATE:
+        {
+          const value = getOrDefault$1(fiberRefs, head.fiberRef);
+          fiberRefs = updateAs(fiberRefs, {
+            fiberId,
+            fiberRef: head.fiberRef,
+            value: head.fiberRef.patch(head.patch)(value)
+          });
+          patches = tail;
+          break;
+        }
+      case OP_AND_THEN$1:
+        {
+          patches = prepend$2(head.first)(prepend$2(head.second)(tail));
+          break;
+        }
+    }
+  }
+  return fiberRefs;
+});
+
+/**
+ * Constructs a patch that describes the changes between the specified
+ * collections of `FiberRef`
+ *
+ * @since 2.0.0
+ * @category constructors
+ */
+const diff$1 = diff$2;
+/**
+ * Applies the changes described by this patch to the specified collection
+ * of `FiberRef` values.
+ *
+ * @since 2.0.0
+ * @category destructors
+ */
+const patch$1 = patch$2;
+
+const FiberStatusSymbolKey = "effect/FiberStatus";
+/** @internal */
+const FiberStatusTypeId = /*#__PURE__*/Symbol.for(FiberStatusSymbolKey);
+/** @internal */
+const OP_DONE$1 = "Done";
+/** @internal */
+const OP_RUNNING = "Running";
+/** @internal */
+const OP_SUSPENDED = "Suspended";
+const DoneHash = /*#__PURE__*/string$1(`${FiberStatusSymbolKey}-${OP_DONE$1}`);
+/** @internal */
+class Done {
+  [FiberStatusTypeId] = FiberStatusTypeId;
+  _tag = OP_DONE$1;
+  [symbol$1]() {
+    return DoneHash;
+  }
+  [symbol](that) {
+    return isFiberStatus(that) && that._tag === OP_DONE$1;
+  }
+}
+/** @internal */
+class Running {
+  runtimeFlags;
+  [FiberStatusTypeId] = FiberStatusTypeId;
+  _tag = OP_RUNNING;
+  constructor(runtimeFlags) {
+    this.runtimeFlags = runtimeFlags;
+  }
+  [symbol$1]() {
+    return pipe(hash(FiberStatusSymbolKey), combine$7(hash(this._tag)), combine$7(hash(this.runtimeFlags)), cached(this));
+  }
+  [symbol](that) {
+    return isFiberStatus(that) && that._tag === OP_RUNNING && this.runtimeFlags === that.runtimeFlags;
+  }
+}
+/** @internal */
+class Suspended {
+  runtimeFlags;
+  blockingOn;
+  [FiberStatusTypeId] = FiberStatusTypeId;
+  _tag = OP_SUSPENDED;
+  constructor(runtimeFlags, blockingOn) {
+    this.runtimeFlags = runtimeFlags;
+    this.blockingOn = blockingOn;
+  }
+  [symbol$1]() {
+    return pipe(hash(FiberStatusSymbolKey), combine$7(hash(this._tag)), combine$7(hash(this.runtimeFlags)), combine$7(hash(this.blockingOn)), cached(this));
+  }
+  [symbol](that) {
+    return isFiberStatus(that) && that._tag === OP_SUSPENDED && this.runtimeFlags === that.runtimeFlags && equals$1(this.blockingOn, that.blockingOn);
+  }
+}
+/** @internal */
+const done$3 = /*#__PURE__*/new Done();
+/** @internal */
+const running$1 = runtimeFlags => new Running(runtimeFlags);
+/** @internal */
+const suspended$1 = (runtimeFlags, blockingOn) => new Suspended(runtimeFlags, blockingOn);
+/** @internal */
+const isFiberStatus = u => hasProperty(u, FiberStatusTypeId);
+/** @internal */
+const isDone$3 = self => self._tag === OP_DONE$1;
+
+/**
+ * @since 2.0.0
+ * @category constructors
+ */
+const done$2 = done$3;
+/**
+ * @since 2.0.0
+ * @category constructors
+ */
+const running = running$1;
+/**
+ * @since 2.0.0
+ * @category constructors
+ */
+const suspended = suspended$1;
+/**
+ * Returns `true` if the specified `FiberStatus` is `Done`, `false` otherwise.
+ *
+ * @since 2.0.0
+ * @category refinements
+ */
+const isDone$2 = isDone$3;
+
+/**
+ * @since 2.0.0
+ * @category constructors
+ */
+const All = logLevelAll;
+/**
+ * @since 2.0.0
+ * @category constructors
+ */
+const Fatal = logLevelFatal;
+/**
+ * @since 2.0.0
+ * @category constructors
+ */
+const Error$2 = logLevelError;
+/**
+ * @since 2.0.0
+ * @category constructors
+ */
+const Warning = logLevelWarning;
+/**
+ * @since 2.0.0
+ * @category constructors
+ */
+const Info = logLevelInfo;
+/**
+ * @since 2.0.0
+ * @category constructors
+ */
+const Debug = logLevelDebug;
+/**
+ * @since 2.0.0
+ * @category constructors
+ */
+const Trace = logLevelTrace;
+/**
+ * @since 2.0.0
+ * @category constructors
+ */
+const None = logLevelNone;
+/**
+ * @since 2.0.0
+ * @category instances
+ */
+const Order = /*#__PURE__*/pipe(Order$1, /*#__PURE__*/mapInput(level => level.ordinal));
+/**
+ * @since 2.0.0
+ * @category ordering
+ */
+const greaterThan = /*#__PURE__*/greaterThan$1(Order);
+/**
+ * @since 2.0.0
+ * @category conversions
+ */
+const fromLiteral = literal => {
+  switch (literal) {
+    case "All":
+      return All;
+    case "Debug":
+      return Debug;
+    case "Error":
+      return Error$2;
+    case "Fatal":
+      return Fatal;
+    case "Info":
+      return Info;
+    case "Trace":
+      return Trace;
+    case "None":
+      return None;
+    case "Warning":
+      return Warning;
+  }
+};
+
+/**
+ * A lightweight alternative to the `Effect` data type, with a subset of the functionality.
+ *
+ * @since 3.4.0
+ * @experimental
+ */
+/**
+ * @since 3.4.0
+ * @experimental
+ * @category type ids
+ */
+const TypeId$3 = /*#__PURE__*/Symbol.for("effect/Micro");
+/**
+ * @since 3.4.0
+ * @experimental
+ * @category MicroExit
+ */
+const MicroExitTypeId = /*#__PURE__*/Symbol.for("effect/Micro/MicroExit");
+// ----------------------------------------------------------------------------
+// MicroCause
+// ----------------------------------------------------------------------------
+/**
+ * @since 3.4.6
+ * @experimental
+ * @category MicroCause
+ */
+const MicroCauseTypeId = /*#__PURE__*/Symbol.for("effect/Micro/MicroCause");
+const microCauseVariance = {
+  _E: identity
+};
+class MicroCauseImpl extends globalThis.Error {
+  _tag;
+  traces;
+  [MicroCauseTypeId];
+  constructor(_tag, originalError, traces) {
+    const causeName = `MicroCause.${_tag}`;
+    let name;
+    let message;
+    let stack;
+    if (originalError instanceof globalThis.Error) {
+      name = `(${causeName}) ${originalError.name}`;
+      message = originalError.message;
+      const messageLines = message.split("\n").length;
+      stack = originalError.stack ? `(${causeName}) ${originalError.stack.split("\n").slice(0, messageLines + 3).join("\n")}` : `${name}: ${message}`;
+    } else {
+      name = causeName;
+      message = toStringUnknown(originalError, 0);
+      stack = `${name}: ${message}`;
+    }
+    if (traces.length > 0) {
+      stack += `\n    ${traces.join("\n    ")}`;
+    }
+    super(message);
+    this._tag = _tag;
+    this.traces = traces;
+    this[MicroCauseTypeId] = microCauseVariance;
+    this.name = name;
+    this.stack = stack;
+  }
+  pipe() {
+    return pipeArguments(this, arguments);
+  }
+  toString() {
+    return this.stack;
+  }
+  [NodeInspectSymbol]() {
+    return this.stack;
+  }
+}
+class Die extends MicroCauseImpl {
+  defect;
+  constructor(defect, traces = []) {
+    super("Die", defect, traces);
+    this.defect = defect;
+  }
+}
+/**
+ * @since 3.4.6
+ * @experimental
+ * @category MicroCause
+ */
+const causeDie = (defect, traces = []) => new Die(defect, traces);
+class Interrupt extends MicroCauseImpl {
+  constructor(traces = []) {
+    super("Interrupt", "interrupted", traces);
+  }
+}
+/**
+ * @since 3.4.6
+ * @experimental
+ * @category MicroCause
+ */
+const causeInterrupt = (traces = []) => new Interrupt(traces);
+/**
+ * @since 3.4.6
+ * @experimental
+ * @category MicroCause
+ */
+const causeIsInterrupt = self => self._tag === "Interrupt";
+// ----------------------------------------------------------------------------
+// MicroFiber
+// ----------------------------------------------------------------------------
+/**
+ * @since 3.11.0
+ * @experimental
+ * @category MicroFiber
+ */
+const MicroFiberTypeId = /*#__PURE__*/Symbol.for("effect/Micro/MicroFiber");
+const fiberVariance$1 = {
+  _A: identity,
+  _E: identity
+};
+class MicroFiberImpl {
+  context;
+  interruptible;
+  [MicroFiberTypeId];
+  _stack = [];
+  _observers = [];
+  _exit;
+  _children;
+  currentOpCount = 0;
+  constructor(context, interruptible = true) {
+    this.context = context;
+    this.interruptible = interruptible;
+    this[MicroFiberTypeId] = fiberVariance$1;
+  }
+  getRef(ref) {
+    return unsafeGetReference(this.context, ref);
+  }
+  addObserver(cb) {
+    if (this._exit) {
+      cb(this._exit);
+      return constVoid;
+    }
+    this._observers.push(cb);
+    return () => {
+      const index = this._observers.indexOf(cb);
+      if (index >= 0) {
+        this._observers.splice(index, 1);
+      }
+    };
+  }
+  _interrupted = false;
+  unsafeInterrupt() {
+    if (this._exit) {
+      return;
+    }
+    this._interrupted = true;
+    if (this.interruptible) {
+      this.evaluate(exitInterrupt);
+    }
+  }
+  unsafePoll() {
+    return this._exit;
+  }
+  evaluate(effect) {
+    if (this._exit) {
+      return;
+    } else if (this._yielded !== undefined) {
+      const yielded = this._yielded;
+      this._yielded = undefined;
+      yielded();
+    }
+    const exit = this.runLoop(effect);
+    if (exit === Yield) {
+      return;
+    }
+    // the interruptChildren middlware is added in Micro.fork, so it can be
+    // tree-shaken if not used
+    const interruptChildren = fiberMiddleware.interruptChildren && fiberMiddleware.interruptChildren(this);
+    if (interruptChildren !== undefined) {
+      return this.evaluate(flatMap(interruptChildren, () => exit));
+    }
+    this._exit = exit;
+    for (let i = 0; i < this._observers.length; i++) {
+      this._observers[i](exit);
+    }
+    this._observers.length = 0;
+  }
+  runLoop(effect) {
+    let yielding = false;
+    let current = effect;
+    this.currentOpCount = 0;
+    try {
+      while (true) {
+        this.currentOpCount++;
+        if (!yielding && this.getRef(CurrentScheduler).shouldYield(this)) {
+          yielding = true;
+          const prev = current;
+          current = flatMap(yieldNow$1, () => prev);
+        }
+        current = current[evaluate](this);
+        if (current === Yield) {
+          const yielded = this._yielded;
+          if (MicroExitTypeId in yielded) {
+            this._yielded = undefined;
+            return yielded;
+          }
+          return Yield;
+        }
+      }
+    } catch (error) {
+      if (!hasProperty(current, evaluate)) {
+        return exitDie(`MicroFiber.runLoop: Not a valid effect: ${String(current)}`);
+      }
+      return exitDie(error);
+    }
+  }
+  getCont(symbol) {
+    while (true) {
+      const op = this._stack.pop();
+      if (!op) return undefined;
+      const cont = op[ensureCont] && op[ensureCont](this);
+      if (cont) return {
+        [symbol]: cont
+      };
+      if (op[symbol]) return op;
+    }
+  }
+  // cancel the yielded operation, or for the yielded exit value
+  _yielded = undefined;
+  yieldWith(value) {
+    this._yielded = value;
+    return Yield;
+  }
+  children() {
+    return this._children ??= new Set();
+  }
+}
+const fiberMiddleware = /*#__PURE__*/globalValue("effect/Micro/fiberMiddleware", () => ({
+  interruptChildren: undefined
+}));
+const identifier = /*#__PURE__*/Symbol.for("effect/Micro/identifier");
+const args = /*#__PURE__*/Symbol.for("effect/Micro/args");
+const evaluate = /*#__PURE__*/Symbol.for("effect/Micro/evaluate");
+const successCont = /*#__PURE__*/Symbol.for("effect/Micro/successCont");
+const failureCont = /*#__PURE__*/Symbol.for("effect/Micro/failureCont");
+const ensureCont = /*#__PURE__*/Symbol.for("effect/Micro/ensureCont");
+const Yield = /*#__PURE__*/Symbol.for("effect/Micro/Yield");
+const microVariance = {
+  _A: identity,
+  _E: identity,
+  _R: identity
+};
+const MicroProto = {
+  ...EffectPrototype,
+  _op: "Micro",
+  [TypeId$3]: microVariance,
+  pipe() {
+    return pipeArguments(this, arguments);
+  },
+  [Symbol.iterator]() {
+    return new SingleShotGen$1(new YieldWrap(this));
+  },
+  toJSON() {
+    return {
+      _id: "Micro",
+      op: this[identifier],
+      ...(args in this ? {
+        args: this[args]
+      } : undefined)
+    };
+  },
+  toString() {
+    return format$2(this);
+  },
+  [NodeInspectSymbol]() {
+    return format$2(this);
+  }
+};
+function defaultEvaluate(_fiber) {
+  return exitDie(`Micro.evaluate: Not implemented`);
+}
+const makePrimitiveProto = options => ({
+  ...MicroProto,
+  [identifier]: options.op,
+  [evaluate]: options.eval ?? defaultEvaluate,
+  [successCont]: options.contA,
+  [failureCont]: options.contE,
+  [ensureCont]: options.ensure
+});
+const makePrimitive = options => {
+  const Proto = makePrimitiveProto(options);
+  return function () {
+    const self = Object.create(Proto);
+    self[args] = options.single === false ? arguments : arguments[0];
+    return self;
+  };
+};
+const makeExit = options => {
+  const Proto = {
+    ...makePrimitiveProto(options),
+    [MicroExitTypeId]: MicroExitTypeId,
+    _tag: options.op,
+    get [options.prop]() {
+      return this[args];
+    },
+    toJSON() {
+      return {
+        _id: "MicroExit",
+        _tag: options.op,
+        [options.prop]: this[args]
+      };
+    },
+    [symbol](that) {
+      return isMicroExit(that) && that._tag === options.op && equals$1(this[args], that[args]);
+    },
+    [symbol$1]() {
+      return cached(this, combine$7(string$1(options.op))(hash(this[args])));
+    }
+  };
+  return function (value) {
+    const self = Object.create(Proto);
+    self[args] = value;
+    self[successCont] = undefined;
+    self[failureCont] = undefined;
+    self[ensureCont] = undefined;
+    return self;
+  };
+};
+/**
+ * Creates a `Micro` effect that will succeed with the specified constant value.
+ *
+ * @since 3.4.0
+ * @experimental
+ * @category constructors
+ */
+const succeed$2 = /*#__PURE__*/makeExit({
+  op: "Success",
+  prop: "value",
+  eval(fiber) {
+    const cont = fiber.getCont(successCont);
+    return cont ? cont[successCont](this[args], fiber) : fiber.yieldWith(this);
+  }
+});
+/**
+ * Creates a `Micro` effect that will fail with the specified `MicroCause`.
+ *
+ * @since 3.4.6
+ * @experimental
+ * @category constructors
+ */
+const failCause = /*#__PURE__*/makeExit({
+  op: "Failure",
+  prop: "cause",
+  eval(fiber) {
+    let cont = fiber.getCont(failureCont);
+    while (causeIsInterrupt(this[args]) && cont && fiber.interruptible) {
+      cont = fiber.getCont(failureCont);
+    }
+    return cont ? cont[failureCont](this[args], fiber) : fiber.yieldWith(this);
+  }
+});
+/**
+ * Pause the execution of the current `Micro` effect, and resume it on the next
+ * scheduler tick.
+ *
+ * @since 3.4.0
+ * @experimental
+ * @category constructors
+ */
+const yieldNowWith = /*#__PURE__*/makePrimitive({
+  op: "Yield",
+  eval(fiber) {
+    let resumed = false;
+    fiber.getRef(CurrentScheduler).scheduleTask(() => {
+      if (resumed) return;
+      fiber.evaluate(exitVoid);
+    }, this[args] ?? 0);
+    return fiber.yieldWith(() => {
+      resumed = true;
+    });
+  }
+});
+/**
+ * Pause the execution of the current `Micro` effect, and resume it on the next
+ * scheduler tick.
+ *
+ * @since 3.4.0
+ * @experimental
+ * @category constructors
+ */
+const yieldNow$1 = /*#__PURE__*/yieldNowWith(0);
+const void_ = /*#__PURE__*/succeed$2(void 0);
+/**
+ * Create a `Micro` effect using the current `MicroFiber`.
+ *
+ * @since 3.4.0
+ * @experimental
+ * @category constructors
+ */
+const withMicroFiber = /*#__PURE__*/makePrimitive({
+  op: "WithMicroFiber",
+  eval(fiber) {
+    return this[args](fiber);
+  }
+});
+/**
+ * Map the success value of this `Micro` effect to another `Micro` effect, then
+ * flatten the result.
+ *
+ * @since 3.4.0
+ * @experimental
+ * @category mapping & sequencing
+ */
+const flatMap = /*#__PURE__*/dual(2, (self, f) => {
+  const onSuccess = Object.create(OnSuccessProto);
+  onSuccess[args] = self;
+  onSuccess[successCont] = f;
+  return onSuccess;
+});
+const OnSuccessProto = /*#__PURE__*/makePrimitiveProto({
+  op: "OnSuccess",
+  eval(fiber) {
+    fiber._stack.push(this);
+    return this[args];
+  }
+});
+/**
+ * @since 3.4.6
+ * @experimental
+ * @category MicroExit
+ */
+const isMicroExit = u => hasProperty(u, MicroExitTypeId);
+/**
+ * @since 3.4.6
+ * @experimental
+ * @category MicroExit
+ */
+const exitSucceed = succeed$2;
+/**
+ * @since 3.4.6
+ * @experimental
+ * @category MicroExit
+ */
+const exitFailCause = failCause;
+/**
+ * @since 3.4.6
+ * @experimental
+ * @category MicroExit
+ */
+const exitInterrupt = /*#__PURE__*/exitFailCause(/*#__PURE__*/causeInterrupt());
+/**
+ * @since 3.4.6
+ * @experimental
+ * @category MicroExit
+ */
+const exitDie = defect => exitFailCause(causeDie(defect));
+/**
+ * @since 3.4.6
+ * @experimental
+ * @category MicroExit
+ */
+const exitVoid = /*#__PURE__*/exitSucceed(void 0);
+const setImmediate$1 = "setImmediate" in globalThis ? globalThis.setImmediate : f => setTimeout(f, 0);
+/**
+ * @since 3.5.9
+ * @experimental
+ * @category scheduler
+ */
+class MicroSchedulerDefault {
+  tasks = [];
+  running = false;
+  /**
+   * @since 3.5.9
+   */
+  scheduleTask(task, _priority) {
+    this.tasks.push(task);
+    if (!this.running) {
+      this.running = true;
+      setImmediate$1(this.afterScheduled);
+    }
+  }
+  /**
+   * @since 3.5.9
+   */
+  afterScheduled = () => {
+    this.running = false;
+    this.runTasks();
+  };
+  /**
+   * @since 3.5.9
+   */
+  runTasks() {
+    const tasks = this.tasks;
+    this.tasks = [];
+    for (let i = 0, len = tasks.length; i < len; i++) {
+      tasks[i]();
+    }
+  }
+  /**
+   * @since 3.5.9
+   */
+  shouldYield(fiber) {
+    return fiber.currentOpCount >= fiber.getRef(MaxOpsBeforeYield);
+  }
+  /**
+   * @since 3.5.9
+   */
+  flush() {
+    while (this.tasks.length > 0) {
+      this.runTasks();
+    }
+  }
+}
+/**
+ * Update the Context with the given mapping function.
+ *
+ * @since 3.11.0
+ * @experimental
+ * @category environment
+ */
+const updateContext = /*#__PURE__*/dual(2, (self, f) => withMicroFiber(fiber => {
+  const prev = fiber.context;
+  fiber.context = f(prev);
+  return onExit(self, () => {
+    fiber.context = prev;
+    return void_;
+  });
+}));
+/**
+ * Merge the given `Context` with the current context.
+ *
+ * @since 3.4.0
+ * @experimental
+ * @category environment
+ */
+const provideContext = /*#__PURE__*/dual(2, (self, provided) => updateContext(self, merge$3(provided)));
+// ========================================================================
+// References
+// ========================================================================
+/**
+ * @since 3.11.0
+ * @experimental
+ * @category references
+ */
+class MaxOpsBeforeYield extends /*#__PURE__*/Reference()("effect/Micro/currentMaxOpsBeforeYield", {
+  defaultValue: () => 2048
+}) {}
+/**
+ * @since 3.11.0
+ * @experimental
+ * @category environment refs
+ */
+class CurrentScheduler extends /*#__PURE__*/Reference()("effect/Micro/currentScheduler", {
+  defaultValue: () => new MicroSchedulerDefault()
+}) {}
+// ----------------------------------------------------------------------------
+// pattern matching
+// ----------------------------------------------------------------------------
+/**
+ * @since 3.4.6
+ * @experimental
+ * @category pattern matching
+ */
+const matchCauseEffect = /*#__PURE__*/dual(2, (self, options) => {
+  const primitive = Object.create(OnSuccessAndFailureProto);
+  primitive[args] = self;
+  primitive[successCont] = options.onSuccess;
+  primitive[failureCont] = options.onFailure;
+  return primitive;
+});
+const OnSuccessAndFailureProto = /*#__PURE__*/makePrimitiveProto({
+  op: "OnSuccessAndFailure",
+  eval(fiber) {
+    fiber._stack.push(this);
+    return this[args];
+  }
+});
+/**
+ * When the `Micro` effect is completed, run the given finalizer effect with the
+ * `MicroExit` of the executed effect.
+ *
+ * @since 3.4.6
+ * @experimental
+ * @category resources & finalization
+ */
+const onExit = /*#__PURE__*/dual(2, (self, f) => uninterruptibleMask(restore => matchCauseEffect(restore(self), {
+  onFailure: cause => flatMap(f(exitFailCause(cause)), () => failCause(cause)),
+  onSuccess: a => flatMap(f(exitSucceed(a)), () => succeed$2(a))
+})));
+const setInterruptible = /*#__PURE__*/makePrimitive({
+  op: "SetInterruptible",
+  ensure(fiber) {
+    fiber.interruptible = this[args];
+    if (fiber._interrupted && fiber.interruptible) {
+      return () => exitInterrupt;
+    }
+  }
+});
+/**
+ * Flag the effect as interruptible, which means that when the effect is
+ * interrupted, it will be interrupted immediately.
+ *
+ * @since 3.4.0
+ * @experimental
+ * @category flags
+ */
+const interruptible = self => withMicroFiber(fiber => {
+  if (fiber.interruptible) return self;
+  fiber.interruptible = true;
+  fiber._stack.push(setInterruptible(false));
+  if (fiber._interrupted) return exitInterrupt;
+  return self;
+});
+/**
+ * Wrap the given `Micro` effect in an uninterruptible region, preventing the
+ * effect from being aborted.
+ *
+ * You can use the `restore` function to restore a `Micro` effect to the
+ * interruptibility state before the `uninterruptibleMask` was applied.
+ *
+ * @example
+ * ```ts
+ * import * as Micro from "effect/Micro"
+ *
+ * Micro.uninterruptibleMask((restore) =>
+ *   Micro.sleep(1000).pipe( // uninterruptible
+ *     Micro.andThen(restore(Micro.sleep(1000))) // interruptible
+ *   )
+ * )
+ * ```
+ *
+ * @since 3.4.0
+ * @experimental
+ * @category interruption
+ */
+const uninterruptibleMask = f => withMicroFiber(fiber => {
+  if (!fiber.interruptible) return f(identity);
+  fiber.interruptible = false;
+  fiber._stack.push(setInterruptible(true));
+  return f(interruptible);
+});
+// ----------------------------------------------------------------------------
+// execution
+// ----------------------------------------------------------------------------
+/**
+ * Execute the `Micro` effect and return a `MicroFiber` that can be awaited, joined,
+ * or aborted.
+ *
+ * You can listen for the result by adding an observer using the handle's
+ * `addObserver` method.
+ *
+ * @example
+ * ```ts
+ * import * as Micro from "effect/Micro"
+ *
+ * const handle = Micro.succeed(42).pipe(
+ *   Micro.delay(1000),
+ *   Micro.runFork
+ * )
+ *
+ * handle.addObserver((exit) => {
+ *   console.log(exit)
+ * })
+ * ```
+ *
+ * @since 3.4.0
+ * @experimental
+ * @category execution
+ */
+const runFork = (effect, options) => {
+  const fiber = new MicroFiberImpl(CurrentScheduler.context(new MicroSchedulerDefault()));
+  fiber.evaluate(effect);
+  return fiber;
+};
+
+/**
+ * @since 2.0.0
+ * @category type ids
+ */
+const TypeId$2 = /*#__PURE__*/Symbol.for("effect/Readable");
+
+/** @internal */
+const RefTypeId = /*#__PURE__*/Symbol.for("effect/Ref");
+/** @internal */
+const refVariance = {
+  /* c8 ignore next */
+  _A: _ => _
+};
+class RefImpl extends Class {
+  ref;
+  commit() {
+    return this.get;
+  }
+  [RefTypeId] = refVariance;
+  [TypeId$2] = TypeId$2;
+  constructor(ref) {
+    super();
+    this.ref = ref;
+    this.get = sync$2(() => get$4(this.ref));
+  }
+  get;
+  modify(f) {
+    return sync$2(() => {
+      const current = get$4(this.ref);
+      const [b, a] = f(current);
+      if (current !== a) {
+        set$3(a)(this.ref);
+      }
+      return b;
+    });
+  }
+}
+/** @internal */
+const unsafeMake$2 = value => new RefImpl(make$j(value));
+/** @internal */
+const make$b = value => sync$2(() => unsafeMake$2(value));
+/** @internal */
+const get$1 = self => self.get;
+/** @internal */
+const set$1 = /*#__PURE__*/dual(2, (self, value) => self.modify(() => [void 0, value]));
+/** @internal */
+const modify = /*#__PURE__*/dual(2, (self, f) => self.modify(f));
+/** @internal */
+const update$1 = /*#__PURE__*/dual(2, (self, f) => self.modify(a => [void 0, f(a)]));
+
+/**
+ * @since 2.0.0
+ */
+/**
+ * @since 2.0.0
+ * @category utils
+ */
+class PriorityBuckets {
+  /**
+   * @since 2.0.0
+   */
+  buckets = [];
+  /**
+   * @since 2.0.0
+   */
+  scheduleTask(task, priority) {
+    const length = this.buckets.length;
+    let bucket = undefined;
+    let index = 0;
+    for (; index < length; index++) {
+      if (this.buckets[index][0] <= priority) {
+        bucket = this.buckets[index];
+      } else {
+        break;
+      }
+    }
+    if (bucket && bucket[0] === priority) {
+      bucket[1].push(task);
+    } else if (index === length) {
+      this.buckets.push([priority, [task]]);
+    } else {
+      this.buckets.splice(index, 0, [priority, [task]]);
+    }
+  }
+}
+/**
+ * @since 2.0.0
+ * @category constructors
+ */
+class MixedScheduler {
+  maxNextTickBeforeTimer;
+  /**
+   * @since 2.0.0
+   */
+  running = false;
+  /**
+   * @since 2.0.0
+   */
+  tasks = /*#__PURE__*/new PriorityBuckets();
+  constructor(
+  /**
+   * @since 2.0.0
+   */
+  maxNextTickBeforeTimer) {
+    this.maxNextTickBeforeTimer = maxNextTickBeforeTimer;
+  }
+  /**
+   * @since 2.0.0
+   */
+  starveInternal(depth) {
+    const tasks = this.tasks.buckets;
+    this.tasks.buckets = [];
+    for (const [_, toRun] of tasks) {
+      for (let i = 0; i < toRun.length; i++) {
+        toRun[i]();
+      }
+    }
+    if (this.tasks.buckets.length === 0) {
+      this.running = false;
+    } else {
+      this.starve(depth);
+    }
+  }
+  /**
+   * @since 2.0.0
+   */
+  starve(depth = 0) {
+    if (depth >= this.maxNextTickBeforeTimer) {
+      setTimeout(() => this.starveInternal(0), 0);
+    } else {
+      Promise.resolve(void 0).then(() => this.starveInternal(depth + 1));
+    }
+  }
+  /**
+   * @since 2.0.0
+   */
+  shouldYield(fiber) {
+    return fiber.currentOpCount > fiber.getFiberRef(currentMaxOpsBeforeYield) ? fiber.getFiberRef(currentSchedulingPriority) : false;
+  }
+  /**
+   * @since 2.0.0
+   */
+  scheduleTask(task, priority) {
+    this.tasks.scheduleTask(task, priority);
+    if (!this.running) {
+      this.running = true;
+      this.starve();
+    }
+  }
+}
+/**
+ * @since 2.0.0
+ * @category schedulers
+ */
+const defaultScheduler = /*#__PURE__*/globalValue(/*#__PURE__*/Symbol.for("effect/Scheduler/defaultScheduler"), () => new MixedScheduler(2048));
+/** @internal */
+const currentScheduler = /*#__PURE__*/globalValue(/*#__PURE__*/Symbol.for("effect/FiberRef/currentScheduler"), () => fiberRefUnsafeMake(defaultScheduler));
+
+/** @internal */
+const currentRequestMap = /*#__PURE__*/globalValue(/*#__PURE__*/Symbol.for("effect/FiberRef/currentRequestMap"), () => fiberRefUnsafeMake(new Map()));
+
+/** @internal */
+const match = (concurrency, sequential, unbounded, bounded) => {
+  switch (concurrency) {
+    case undefined:
+      return sequential();
+    case "unbounded":
+      return unbounded();
+    case "inherit":
+      return fiberRefGetWith(currentConcurrency, concurrency => concurrency === "unbounded" ? unbounded() : concurrency > 1 ? bounded(concurrency) : sequential());
+    default:
+      return concurrency > 1 ? bounded(concurrency) : sequential();
+  }
+};
+
+/**
+ * @since 2.0.0
+ * @category constructors
+ */
+const sleep$1 = sleep$2;
+/**
+ * @since 2.0.0
+ * @category constructors
+ */
+const currentTimeMillis = currentTimeMillis$1;
+
+/** @internal */
+/**
+ * Sanitize a given string by replacing spaces, equal signs, and double quotes with underscores.
+ *
+ * @internal
+ */
+const formatLabel = key => key.replace(/[\s="]/g, "_");
+/** @internal */
+const render = now => self => {
+  const label = formatLabel(self.label);
+  return `${label}=${now - self.startTime}ms`;
+};
+
+/** @internal */
+const MetricLabelSymbolKey = "effect/MetricLabel";
+/** @internal */
+const MetricLabelTypeId = /*#__PURE__*/Symbol.for(MetricLabelSymbolKey);
+/** @internal */
+class MetricLabelImpl {
+  key;
+  value;
+  [MetricLabelTypeId] = MetricLabelTypeId;
+  _hash;
+  constructor(key, value) {
+    this.key = key;
+    this.value = value;
+    this._hash = string$1(MetricLabelSymbolKey + this.key + this.value);
+  }
+  [symbol$1]() {
+    return this._hash;
+  }
+  [symbol](that) {
+    return isMetricLabel(that) && this.key === that.key && this.value === that.value;
+  }
+  pipe() {
+    return pipeArguments(this, arguments);
+  }
+}
+/** @internal */
+const make$a = (key, value) => {
+  return new MetricLabelImpl(key, value);
+};
+/** @internal */
+const isMetricLabel = u => hasProperty(u, MetricLabelTypeId);
+
+/* @internal */
+const asSome = self => map$3(self, some);
+/* @internal */
+const catchTag$1 = /*#__PURE__*/dual(args => isEffect(args[0]), (self, ...args) => {
+  const f = args[args.length - 1];
+  let predicate;
+  if (args.length === 2) {
+    predicate = isTagged(args[0]);
+  } else {
+    predicate = e => {
+      const tag = hasProperty(e, "_tag") ? e["_tag"] : undefined;
+      if (!tag) return false;
+      for (let i = 0; i < args.length - 1; i++) {
+        if (args[i] === tag) return true;
+      }
+      return false;
+    };
+  }
+  return catchIf(self, predicate, f);
+});
+/* @internal */
+const diffFiberRefs = self => summarized(self, fiberRefs, diff$2);
+/* @internal */
+const fiberRefs = /*#__PURE__*/withFiberRuntime(state => succeed$3(state.getFiberRefs()));
+/* @internal */
+const negate = self => map$3(self, b => !b);
+/* @internal */
+const patchFiberRefs = patch => updateFiberRefs((fiberId, fiberRefs) => pipe(patch, patch$2(fiberId, fiberRefs)));
+/* @internal */
+const promise$1 = evaluate => evaluate.length >= 1 ? async_((resolve, signal) => {
+  try {
+    evaluate(signal).then(a => resolve(succeed$3(a)), e => resolve(die(e)));
+  } catch (e) {
+    resolve(die(e));
+  }
+}) : async_(resolve => {
+  try {
+    ;
+    evaluate().then(a => resolve(succeed$3(a)), e => resolve(die(e)));
+  } catch (e) {
+    resolve(die(e));
+  }
+});
+/* @internal */
+const provideService = /*#__PURE__*/dual(3, (self, tag, service) => contextWithEffect(env => provideContext$1(self, add$1(env, tag, service))));
+/* @internal */
+const provideServiceEffect = /*#__PURE__*/dual(3, (self, tag, effect) => contextWithEffect(env => flatMap$1(effect, service => provideContext$1(self, pipe(env, add$1(tag, service))))));
+/* @internal */
+const sleep = sleep$1;
+/* @internal */
+const succeedNone = /*#__PURE__*/succeed$3(/*#__PURE__*/none$4());
+/* @internal */
+const summarized = /*#__PURE__*/dual(3, (self, summary, f) => flatMap$1(summary, start => flatMap$1(self, value => map$3(summary, end => [f(start, end), value]))));
+/* @internal */
+const tapError$1 = /*#__PURE__*/dual(2, (self, f) => matchCauseEffect$1(self, {
+  onFailure: cause => {
+    const either = failureOrCause(cause);
+    switch (either._tag) {
+      case "Left":
+        return zipRight(f(either.left), failCause$1(cause));
+      case "Right":
+        return failCause$1(cause);
+    }
+  },
+  onSuccess: succeed$3
+}));
+/* @internal */
+const tapErrorTag$1 = /*#__PURE__*/dual(3, (self, k, f) => tapError$1(self, e => {
+  if (isTagged(e, k)) {
+    return f(e);
+  }
+  return void_$1;
+}));
+/* @internal */
+const updateFiberRefs = f => withFiberRuntime(state => {
+  state.setFiberRefs(f(state.id(), state.getFiberRefs()));
+  return void_$1;
+});
+
+/** @internal */
+const OP_INTERRUPT_SIGNAL = "InterruptSignal";
+/** @internal */
+const OP_STATEFUL = "Stateful";
+/** @internal */
+const OP_RESUME = "Resume";
+/** @internal */
+const OP_YIELD_NOW = "YieldNow";
+/** @internal */
+const interruptSignal = cause => ({
+  _tag: OP_INTERRUPT_SIGNAL,
+  cause
+});
+/** @internal */
+const stateful = onFiber => ({
+  _tag: OP_STATEFUL,
+  onFiber
+});
+/** @internal */
+const resume = effect => ({
+  _tag: OP_RESUME,
+  effect
+});
+/** @internal */
+const yieldNow = () => ({
+  _tag: OP_YIELD_NOW
+});
+
+/** @internal */
+const FiberScopeSymbolKey = "effect/FiberScope";
+/** @internal */
+const FiberScopeTypeId = /*#__PURE__*/Symbol.for(FiberScopeSymbolKey);
+/** @internal */
+class Global {
+  [FiberScopeTypeId] = FiberScopeTypeId;
+  fiberId = none$2;
+  roots = /*#__PURE__*/new Set();
+  add(_runtimeFlags, child) {
+    this.roots.add(child);
+    child.addObserver(() => {
+      this.roots.delete(child);
+    });
+  }
+}
+/** @internal */
+class Local {
+  fiberId;
+  parent;
+  [FiberScopeTypeId] = FiberScopeTypeId;
+  constructor(fiberId, parent) {
+    this.fiberId = fiberId;
+    this.parent = parent;
+  }
+  add(_runtimeFlags, child) {
+    this.parent.tell(stateful(parentFiber => {
+      parentFiber.addChild(child);
+      child.addObserver(() => {
+        parentFiber.removeChild(child);
+      });
+    }));
+  }
+}
+/** @internal */
+const unsafeMake$1 = fiber => {
+  return new Local(fiber.id(), fiber);
+};
+/** @internal */
+const globalScope = /*#__PURE__*/globalValue(/*#__PURE__*/Symbol.for("effect/FiberScope/Global"), () => new Global());
+
+/** @internal */
+const FiberSymbolKey = "effect/Fiber";
+/** @internal */
+const FiberTypeId = /*#__PURE__*/Symbol.for(FiberSymbolKey);
+/** @internal */
+const fiberVariance = {
+  /* c8 ignore next */
+  _E: _ => _,
+  /* c8 ignore next */
+  _A: _ => _
+};
+/** @internal */
+const RuntimeFiberSymbolKey = "effect/Fiber";
+/** @internal */
+const RuntimeFiberTypeId = /*#__PURE__*/Symbol.for(RuntimeFiberSymbolKey);
+/** @internal */
+const join = self => zipLeft(flatten(self.await), self.inheritAll);
+/** @internal */
+({
+  ...CommitPrototype$1});
+/** @internal */
+const currentFiberURI = "effect/FiberCurrent";
+
+/** @internal */
+const LoggerSymbolKey = "effect/Logger";
+/** @internal */
+const LoggerTypeId = /*#__PURE__*/Symbol.for(LoggerSymbolKey);
+const loggerVariance = {
+  /* c8 ignore next */
+  _Message: _ => _,
+  /* c8 ignore next */
+  _Output: _ => _
+};
+/** @internal */
+const makeLogger = log => ({
+  [LoggerTypeId]: loggerVariance,
+  log,
+  pipe() {
+    return pipeArguments(this, arguments);
+  }
+});
+/**
+ * Match strings that do not contain any whitespace characters, double quotes,
+ * or equal signs.
+ *
+ * @internal
+ */
+const textOnly = /^[^\s"=]*$/;
+/**
+ * Used by both {@link stringLogger} and {@link logfmtLogger} to render a log
+ * message.
+ *
+ * @internal
+ */
+const format = (quoteValue, whitespace) => ({
+  annotations,
+  cause,
+  date,
+  fiberId,
+  logLevel,
+  message,
+  spans
+}) => {
+  const formatValue = value => value.match(textOnly) ? value : quoteValue(value);
+  const format = (label, value) => `${formatLabel(label)}=${formatValue(value)}`;
+  const append = (label, value) => " " + format(label, value);
+  let out = format("timestamp", date.toISOString());
+  out += append("level", logLevel.label);
+  out += append("fiber", threadName$1(fiberId));
+  const messages = ensure(message);
+  for (let i = 0; i < messages.length; i++) {
+    out += append("message", toStringUnknown(messages[i], whitespace));
+  }
+  if (!isEmptyType(cause)) {
+    out += append("cause", pretty(cause, {
+      renderErrorCause: true
+    }));
+  }
+  for (const span of spans) {
+    out += " " + render(date.getTime())(span);
+  }
+  for (const [label, value] of annotations) {
+    out += append(label, toStringUnknown(value, whitespace));
+  }
+  return out;
+};
+/** @internal */
+const escapeDoubleQuotes = s => `"${s.replace(/\\([\s\S])|(")/g, "\\$1$2")}"`;
+/** @internal */
+const stringLogger = /*#__PURE__*/makeLogger(/*#__PURE__*/format(escapeDoubleQuotes));
+const hasProcessStdout = typeof process === "object" && process !== null && typeof process.stdout === "object" && process.stdout !== null;
+hasProcessStdout && process.stdout.isTTY === true;
+
+/** @internal */
+const MetricBoundariesSymbolKey = "effect/MetricBoundaries";
+/** @internal */
+const MetricBoundariesTypeId = /*#__PURE__*/Symbol.for(MetricBoundariesSymbolKey);
+/** @internal */
+class MetricBoundariesImpl {
+  values;
+  [MetricBoundariesTypeId] = MetricBoundariesTypeId;
+  constructor(values) {
+    this.values = values;
+    this._hash = pipe(string$1(MetricBoundariesSymbolKey), combine$7(array(this.values)));
+  }
+  _hash;
+  [symbol$1]() {
+    return this._hash;
+  }
+  [symbol](u) {
+    return isMetricBoundaries(u) && equals$1(this.values, u.values);
+  }
+  pipe() {
+    return pipeArguments(this, arguments);
+  }
+}
+/** @internal */
+const isMetricBoundaries = u => hasProperty(u, MetricBoundariesTypeId);
+/** @internal */
+const fromIterable = iterable => {
+  const values = pipe(iterable, appendAll$2(of$1(Number.POSITIVE_INFINITY)), dedupe);
+  return new MetricBoundariesImpl(values);
+};
+/** @internal */
+const exponential = options => pipe(makeBy(options.count - 1, i => options.start * Math.pow(options.factor, i)), unsafeFromArray, fromIterable);
+
+/** @internal */
+const MetricKeyTypeSymbolKey = "effect/MetricKeyType";
+/** @internal */
+const MetricKeyTypeTypeId = /*#__PURE__*/Symbol.for(MetricKeyTypeSymbolKey);
+/** @internal */
+const CounterKeyTypeSymbolKey = "effect/MetricKeyType/Counter";
+/** @internal */
+const CounterKeyTypeTypeId = /*#__PURE__*/Symbol.for(CounterKeyTypeSymbolKey);
+/** @internal */
+const FrequencyKeyTypeSymbolKey = "effect/MetricKeyType/Frequency";
+/** @internal */
+const FrequencyKeyTypeTypeId = /*#__PURE__*/Symbol.for(FrequencyKeyTypeSymbolKey);
+/** @internal */
+const GaugeKeyTypeSymbolKey = "effect/MetricKeyType/Gauge";
+/** @internal */
+const GaugeKeyTypeTypeId = /*#__PURE__*/Symbol.for(GaugeKeyTypeSymbolKey);
+/** @internal */
+const HistogramKeyTypeSymbolKey = "effect/MetricKeyType/Histogram";
+/** @internal */
+const HistogramKeyTypeTypeId = /*#__PURE__*/Symbol.for(HistogramKeyTypeSymbolKey);
+/** @internal */
+const SummaryKeyTypeSymbolKey = "effect/MetricKeyType/Summary";
+/** @internal */
+const SummaryKeyTypeTypeId = /*#__PURE__*/Symbol.for(SummaryKeyTypeSymbolKey);
+const metricKeyTypeVariance = {
+  /* c8 ignore next */
+  _In: _ => _,
+  /* c8 ignore next */
+  _Out: _ => _
+};
+/** @internal */
+class CounterKeyType {
+  incremental;
+  bigint;
+  [MetricKeyTypeTypeId] = metricKeyTypeVariance;
+  [CounterKeyTypeTypeId] = CounterKeyTypeTypeId;
+  constructor(incremental, bigint) {
+    this.incremental = incremental;
+    this.bigint = bigint;
+    this._hash = string$1(CounterKeyTypeSymbolKey);
+  }
+  _hash;
+  [symbol$1]() {
+    return this._hash;
+  }
+  [symbol](that) {
+    return isCounterKey(that);
+  }
+  pipe() {
+    return pipeArguments(this, arguments);
+  }
+}
+/** @internal */
+class HistogramKeyType {
+  boundaries;
+  [MetricKeyTypeTypeId] = metricKeyTypeVariance;
+  [HistogramKeyTypeTypeId] = HistogramKeyTypeTypeId;
+  constructor(boundaries) {
+    this.boundaries = boundaries;
+    this._hash = pipe(string$1(HistogramKeyTypeSymbolKey), combine$7(hash(this.boundaries)));
+  }
+  _hash;
+  [symbol$1]() {
+    return this._hash;
+  }
+  [symbol](that) {
+    return isHistogramKey(that) && equals$1(this.boundaries, that.boundaries);
+  }
+  pipe() {
+    return pipeArguments(this, arguments);
+  }
+}
+/** @internal */
+const counter$4 = options => new CounterKeyType(options?.incremental ?? false, options?.bigint ?? false);
+/** @internal */
+const histogram$4 = boundaries => {
+  return new HistogramKeyType(boundaries);
+};
+/** @internal */
+const isCounterKey = u => hasProperty(u, CounterKeyTypeTypeId);
+/** @internal */
+const isFrequencyKey = u => hasProperty(u, FrequencyKeyTypeTypeId);
+/** @internal */
+const isGaugeKey = u => hasProperty(u, GaugeKeyTypeTypeId);
+/** @internal */
+const isHistogramKey = u => hasProperty(u, HistogramKeyTypeTypeId);
+/** @internal */
+const isSummaryKey = u => hasProperty(u, SummaryKeyTypeTypeId);
+
+/** @internal */
+const MetricKeySymbolKey = "effect/MetricKey";
+/** @internal */
+const MetricKeyTypeId = /*#__PURE__*/Symbol.for(MetricKeySymbolKey);
+const metricKeyVariance = {
+  /* c8 ignore next */
+  _Type: _ => _
+};
+const arrayEquivilence = /*#__PURE__*/getEquivalence$2(equals$1);
+/** @internal */
+class MetricKeyImpl {
+  name;
+  keyType;
+  description;
+  tags;
+  [MetricKeyTypeId] = metricKeyVariance;
+  constructor(name, keyType, description, tags = []) {
+    this.name = name;
+    this.keyType = keyType;
+    this.description = description;
+    this.tags = tags;
+    this._hash = pipe(string$1(this.name + this.description), combine$7(hash(this.keyType)), combine$7(array(this.tags)));
+  }
+  _hash;
+  [symbol$1]() {
+    return this._hash;
+  }
+  [symbol](u) {
+    return isMetricKey(u) && this.name === u.name && equals$1(this.keyType, u.keyType) && equals$1(this.description, u.description) && arrayEquivilence(this.tags, u.tags);
+  }
+  pipe() {
+    return pipeArguments(this, arguments);
+  }
+}
+/** @internal */
+const isMetricKey = u => hasProperty(u, MetricKeyTypeId);
+/** @internal */
+const counter$3 = (name, options) => new MetricKeyImpl(name, counter$4(options), fromNullable(options?.description));
+/** @internal */
+const histogram$3 = (name, boundaries, description) => new MetricKeyImpl(name, histogram$4(boundaries), fromNullable(description));
+/** @internal */
+const taggedWithLabels$1 = /*#__PURE__*/dual(2, (self, extraTags) => extraTags.length === 0 ? self : new MetricKeyImpl(self.name, self.keyType, self.description, union$2(self.tags, extraTags)));
+
+const TypeId$1 = /*#__PURE__*/Symbol.for("effect/MutableHashMap");
+const MutableHashMapProto = {
+  [TypeId$1]: TypeId$1,
+  [Symbol.iterator]() {
+    return new MutableHashMapIterator(this);
+  },
+  toString() {
+    return format$2(this.toJSON());
+  },
+  toJSON() {
+    return {
+      _id: "MutableHashMap",
+      values: Array.from(this).map(toJSON)
+    };
+  },
+  [NodeInspectSymbol]() {
+    return this.toJSON();
+  },
+  pipe() {
+    return pipeArguments(this, arguments);
+  }
+};
+class MutableHashMapIterator {
+  self;
+  referentialIterator;
+  bucketIterator;
+  constructor(self) {
+    this.self = self;
+    this.referentialIterator = self.referential[Symbol.iterator]();
+  }
+  next() {
+    if (this.bucketIterator !== undefined) {
+      return this.bucketIterator.next();
+    }
+    const result = this.referentialIterator.next();
+    if (result.done) {
+      this.bucketIterator = new BucketIterator(this.self.buckets.values());
+      return this.next();
+    }
+    return result;
+  }
+  [Symbol.iterator]() {
+    return new MutableHashMapIterator(this.self);
+  }
+}
+class BucketIterator {
+  backing;
+  constructor(backing) {
+    this.backing = backing;
+  }
+  currentBucket;
+  next() {
+    if (this.currentBucket === undefined) {
+      const result = this.backing.next();
+      if (result.done) {
+        return result;
+      }
+      this.currentBucket = result.value[Symbol.iterator]();
+    }
+    const result = this.currentBucket.next();
+    if (result.done) {
+      this.currentBucket = undefined;
+      return this.next();
+    }
+    return result;
+  }
+}
+/**
+ * @since 2.0.0
+ * @category constructors
+ */
+const empty$3 = () => {
+  const self = Object.create(MutableHashMapProto);
+  self.referential = new Map();
+  self.buckets = new Map();
+  self.bucketsSize = 0;
+  return self;
+};
+/**
+ * @since 2.0.0
+ * @category elements
+ */
+const get = /*#__PURE__*/dual(2, (self, key) => {
+  if (isEqual(key) === false) {
+    return self.referential.has(key) ? some(self.referential.get(key)) : none$4();
+  }
+  const hash = key[symbol$1]();
+  const bucket = self.buckets.get(hash);
+  if (bucket === undefined) {
+    return none$4();
+  }
+  return getFromBucket(self, bucket, key);
+});
+const getFromBucket = (self, bucket, key, remove = false) => {
+  for (let i = 0, len = bucket.length; i < len; i++) {
+    if (key[symbol](bucket[i][0])) {
+      const value = bucket[i][1];
+      if (remove) {
+        bucket.splice(i, 1);
+        self.bucketsSize--;
+      }
+      return some(value);
+    }
+  }
+  return none$4();
+};
+/**
+ * @since 2.0.0
+ * @category elements
+ */
+const has = /*#__PURE__*/dual(2, (self, key) => isSome(get(self, key)));
+/**
+ * @since 2.0.0
+ */
+const set = /*#__PURE__*/dual(3, (self, key, value) => {
+  if (isEqual(key) === false) {
+    self.referential.set(key, value);
+    return self;
+  }
+  const hash = key[symbol$1]();
+  const bucket = self.buckets.get(hash);
+  if (bucket === undefined) {
+    self.buckets.set(hash, [[key, value]]);
+    self.bucketsSize++;
+    return self;
+  }
+  removeFromBucket(self, bucket, key);
+  bucket.push([key, value]);
+  self.bucketsSize++;
+  return self;
+});
+const removeFromBucket = (self, bucket, key) => {
+  for (let i = 0, len = bucket.length; i < len; i++) {
+    if (key[symbol](bucket[i][0])) {
+      bucket.splice(i, 1);
+      self.bucketsSize--;
+      return;
+    }
+  }
+};
+
+/** @internal */
+const MetricStateSymbolKey = "effect/MetricState";
+/** @internal */
+const MetricStateTypeId = /*#__PURE__*/Symbol.for(MetricStateSymbolKey);
+/** @internal */
+const CounterStateSymbolKey = "effect/MetricState/Counter";
+/** @internal */
+const CounterStateTypeId = /*#__PURE__*/Symbol.for(CounterStateSymbolKey);
+/** @internal */
+const FrequencyStateSymbolKey = "effect/MetricState/Frequency";
+/** @internal */
+const FrequencyStateTypeId = /*#__PURE__*/Symbol.for(FrequencyStateSymbolKey);
+/** @internal */
+const GaugeStateSymbolKey = "effect/MetricState/Gauge";
+/** @internal */
+const GaugeStateTypeId = /*#__PURE__*/Symbol.for(GaugeStateSymbolKey);
+/** @internal */
+const HistogramStateSymbolKey = "effect/MetricState/Histogram";
+/** @internal */
+const HistogramStateTypeId = /*#__PURE__*/Symbol.for(HistogramStateSymbolKey);
+/** @internal */
+const SummaryStateSymbolKey = "effect/MetricState/Summary";
+/** @internal */
+const SummaryStateTypeId = /*#__PURE__*/Symbol.for(SummaryStateSymbolKey);
+const metricStateVariance = {
+  /* c8 ignore next */
+  _A: _ => _
+};
+/** @internal */
+class CounterState {
+  count;
+  [MetricStateTypeId] = metricStateVariance;
+  [CounterStateTypeId] = CounterStateTypeId;
+  constructor(count) {
+    this.count = count;
+  }
+  [symbol$1]() {
+    return pipe(hash(CounterStateSymbolKey), combine$7(hash(this.count)), cached(this));
+  }
+  [symbol](that) {
+    return isCounterState(that) && this.count === that.count;
+  }
+  pipe() {
+    return pipeArguments(this, arguments);
+  }
+}
+const arrayEquals = /*#__PURE__*/getEquivalence$2(equals$1);
+/** @internal */
+class FrequencyState {
+  occurrences;
+  [MetricStateTypeId] = metricStateVariance;
+  [FrequencyStateTypeId] = FrequencyStateTypeId;
+  constructor(occurrences) {
+    this.occurrences = occurrences;
+  }
+  _hash;
+  [symbol$1]() {
+    return pipe(string$1(FrequencyStateSymbolKey), combine$7(array(fromIterable$6(this.occurrences.entries()))), cached(this));
+  }
+  [symbol](that) {
+    return isFrequencyState(that) && arrayEquals(fromIterable$6(this.occurrences.entries()), fromIterable$6(that.occurrences.entries()));
+  }
+  pipe() {
+    return pipeArguments(this, arguments);
+  }
+}
+/** @internal */
+class GaugeState {
+  value;
+  [MetricStateTypeId] = metricStateVariance;
+  [GaugeStateTypeId] = GaugeStateTypeId;
+  constructor(value) {
+    this.value = value;
+  }
+  [symbol$1]() {
+    return pipe(hash(GaugeStateSymbolKey), combine$7(hash(this.value)), cached(this));
+  }
+  [symbol](u) {
+    return isGaugeState(u) && this.value === u.value;
+  }
+  pipe() {
+    return pipeArguments(this, arguments);
+  }
+}
+/** @internal */
+class HistogramState {
+  buckets;
+  count;
+  min;
+  max;
+  sum;
+  [MetricStateTypeId] = metricStateVariance;
+  [HistogramStateTypeId] = HistogramStateTypeId;
+  constructor(buckets, count, min, max, sum) {
+    this.buckets = buckets;
+    this.count = count;
+    this.min = min;
+    this.max = max;
+    this.sum = sum;
+  }
+  [symbol$1]() {
+    return pipe(hash(HistogramStateSymbolKey), combine$7(hash(this.buckets)), combine$7(hash(this.count)), combine$7(hash(this.min)), combine$7(hash(this.max)), combine$7(hash(this.sum)), cached(this));
+  }
+  [symbol](that) {
+    return isHistogramState(that) && equals$1(this.buckets, that.buckets) && this.count === that.count && this.min === that.min && this.max === that.max && this.sum === that.sum;
+  }
+  pipe() {
+    return pipeArguments(this, arguments);
+  }
+}
+/** @internal */
+class SummaryState {
+  error;
+  quantiles;
+  count;
+  min;
+  max;
+  sum;
+  [MetricStateTypeId] = metricStateVariance;
+  [SummaryStateTypeId] = SummaryStateTypeId;
+  constructor(error, quantiles, count, min, max, sum) {
+    this.error = error;
+    this.quantiles = quantiles;
+    this.count = count;
+    this.min = min;
+    this.max = max;
+    this.sum = sum;
+  }
+  [symbol$1]() {
+    return pipe(hash(SummaryStateSymbolKey), combine$7(hash(this.error)), combine$7(hash(this.quantiles)), combine$7(hash(this.count)), combine$7(hash(this.min)), combine$7(hash(this.max)), combine$7(hash(this.sum)), cached(this));
+  }
+  [symbol](that) {
+    return isSummaryState(that) && this.error === that.error && equals$1(this.quantiles, that.quantiles) && this.count === that.count && this.min === that.min && this.max === that.max && this.sum === that.sum;
+  }
+  pipe() {
+    return pipeArguments(this, arguments);
+  }
+}
+/** @internal */
+const counter$2 = count => new CounterState(count);
+/** @internal */
+const frequency$1 = occurrences => {
+  return new FrequencyState(occurrences);
+};
+/** @internal */
+const gauge$1 = count => new GaugeState(count);
+/** @internal */
+const histogram$2 = options => new HistogramState(options.buckets, options.count, options.min, options.max, options.sum);
+/** @internal */
+const summary$2 = options => new SummaryState(options.error, options.quantiles, options.count, options.min, options.max, options.sum);
+/** @internal */
+const isCounterState = u => hasProperty(u, CounterStateTypeId);
+/**
+ * @since 2.0.0
+ * @category refinements
+ */
+const isFrequencyState = u => hasProperty(u, FrequencyStateTypeId);
+/**
+ * @since 2.0.0
+ * @category refinements
+ */
+const isGaugeState = u => hasProperty(u, GaugeStateTypeId);
+/**
+ * @since 2.0.0
+ * @category refinements
+ */
+const isHistogramState = u => hasProperty(u, HistogramStateTypeId);
+/**
+ * @since 2.0.0
+ * @category refinements
+ */
+const isSummaryState = u => hasProperty(u, SummaryStateTypeId);
+
+/** @internal */
+const MetricHookSymbolKey = "effect/MetricHook";
+/** @internal */
+const MetricHookTypeId = /*#__PURE__*/Symbol.for(MetricHookSymbolKey);
+const metricHookVariance = {
+  /* c8 ignore next */
+  _In: _ => _,
+  /* c8 ignore next */
+  _Out: _ => _
+};
+/** @internal */
+const make$9 = options => ({
+  [MetricHookTypeId]: metricHookVariance,
+  pipe() {
+    return pipeArguments(this, arguments);
+  },
+  ...options
+});
+const bigint0 = /*#__PURE__*/BigInt(0);
+/** @internal */
+const counter$1 = key => {
+  let sum = key.keyType.bigint ? bigint0 : 0;
+  const canUpdate = key.keyType.incremental ? key.keyType.bigint ? value => value >= bigint0 : value => value >= 0 : _value => true;
+  const update = value => {
+    if (canUpdate(value)) {
+      sum = sum + value;
+    }
+  };
+  return make$9({
+    get: () => counter$2(sum),
+    update,
+    modify: update
+  });
+};
+/** @internal */
+const frequency = key => {
+  const values = new Map();
+  for (const word of key.keyType.preregisteredWords) {
+    values.set(word, 0);
+  }
+  const update = word => {
+    const slotCount = values.get(word) ?? 0;
+    values.set(word, slotCount + 1);
+  };
+  return make$9({
+    get: () => frequency$1(values),
+    update,
+    modify: update
+  });
+};
+/** @internal */
+const gauge = (_key, startAt) => {
+  let value = startAt;
+  return make$9({
+    get: () => gauge$1(value),
+    update: v => {
+      value = v;
+    },
+    modify: v => {
+      value = value + v;
+    }
+  });
+};
+/** @internal */
+const histogram$1 = key => {
+  const bounds = key.keyType.boundaries.values;
+  const size = bounds.length;
+  const values = new Uint32Array(size + 1);
+  // NOTE: while 64-bit floating point precision shoule be enough for any
+  // practical histogram boundary values, there is still a small chance that
+  // precision will be lost with very large / very small numbers. If we find
+  // that is the case, a more complex approach storing the histogram boundary
+  // values as a tuple of `[original: string, numeric: number]` may be warranted
+  const boundaries = new Float64Array(size);
+  let count = 0;
+  let sum = 0;
+  let min = Number.MAX_VALUE;
+  let max = Number.MIN_VALUE;
+  pipe(bounds, sort(Order$1), map$6((n, i) => {
+    boundaries[i] = n;
+  }));
+  // Insert the value into the right bucket with a binary search
+  const update = value => {
+    let from = 0;
+    let to = size;
+    while (from !== to) {
+      const mid = Math.floor(from + (to - from) / 2);
+      const boundary = boundaries[mid];
+      if (value <= boundary) {
+        to = mid;
+      } else {
+        from = mid;
+      }
+      // The special case when to / from have a distance of one
+      if (to === from + 1) {
+        if (value <= boundaries[from]) {
+          to = from;
+        } else {
+          from = to;
+        }
+      }
+    }
+    values[from] = values[from] + 1;
+    count = count + 1;
+    sum = sum + value;
+    if (value < min) {
+      min = value;
+    }
+    if (value > max) {
+      max = value;
+    }
+  };
+  const getBuckets = () => {
+    const builder = allocate(size);
+    let cumulated = 0;
+    for (let i = 0; i < size; i++) {
+      const boundary = boundaries[i];
+      const value = values[i];
+      cumulated = cumulated + value;
+      builder[i] = [boundary, cumulated];
+    }
+    return builder;
+  };
+  return make$9({
+    get: () => histogram$2({
+      buckets: getBuckets(),
+      count,
+      min,
+      max,
+      sum
+    }),
+    update,
+    modify: update
+  });
+};
+/** @internal */
+const summary$1 = key => {
+  const {
+    error,
+    maxAge,
+    maxSize,
+    quantiles
+  } = key.keyType;
+  const sortedQuantiles = pipe(quantiles, sort(Order$1));
+  const values = allocate(maxSize);
+  let head = 0;
+  let count = 0;
+  let sum = 0;
+  let min = 0;
+  let max = 0;
+  // Just before the snapshot we filter out all values older than maxAge
+  const snapshot = now => {
+    const builder = [];
+    // If the buffer is not full yet it contains valid items at the 0..last
+    // indices and null values at the rest of the positions.
+    //
+    // If the buffer is already full then all elements contains a valid
+    // measurement with timestamp.
+    //
+    // At any given point in time we can enumerate all the non-null elements in
+    // the buffer and filter them by timestamp to get a valid view of a time
+    // window.
+    //
+    // The order does not matter because it gets sorted before passing to
+    // `calculateQuantiles`.
+    let i = 0;
+    while (i !== maxSize - 1) {
+      const item = values[i];
+      if (item != null) {
+        const [t, v] = item;
+        const age = millis(now - t);
+        if (greaterThanOrEqualTo(age, zero) && lessThanOrEqualTo(age, maxAge)) {
+          builder.push(v);
+        }
+      }
+      i = i + 1;
+    }
+    return calculateQuantiles(error, sortedQuantiles, sort(builder, Order$1));
+  };
+  const observe = (value, timestamp) => {
+    if (maxSize > 0) {
+      head = head + 1;
+      const target = head % maxSize;
+      values[target] = [timestamp, value];
+    }
+    min = count === 0 ? value : Math.min(min, value);
+    max = count === 0 ? value : Math.max(max, value);
+    count = count + 1;
+    sum = sum + value;
+  };
+  return make$9({
+    get: () => summary$2({
+      error,
+      quantiles: snapshot(Date.now()),
+      count,
+      min,
+      max,
+      sum
+    }),
+    update: ([value, timestamp]) => observe(value, timestamp),
+    modify: ([value, timestamp]) => observe(value, timestamp)
+  });
+};
+/** @internal */
+const calculateQuantiles = (error, sortedQuantiles, sortedSamples) => {
+  // The number of samples examined
+  const sampleCount = sortedSamples.length;
+  if (!isNonEmptyReadonlyArray(sortedQuantiles)) {
+    return empty$l();
+  }
+  const head = sortedQuantiles[0];
+  const tail = sortedQuantiles.slice(1);
+  const resolvedHead = resolveQuantile(error, sampleCount, none$4(), 0, head, sortedSamples);
+  const resolved = of$2(resolvedHead);
+  tail.forEach(quantile => {
+    resolved.push(resolveQuantile(error, sampleCount, resolvedHead.value, resolvedHead.consumed, quantile, resolvedHead.rest));
+  });
+  return map$6(resolved, rq => [rq.quantile, rq.value]);
+};
+/** @internal */
+const resolveQuantile = (error, sampleCount, current, consumed, quantile, rest) => {
+  let error_1 = error;
+  let sampleCount_1 = sampleCount;
+  let current_1 = current;
+  let consumed_1 = consumed;
+  let quantile_1 = quantile;
+  let rest_1 = rest;
+  let error_2 = error;
+  let sampleCount_2 = sampleCount;
+  let current_2 = current;
+  let consumed_2 = consumed;
+  let quantile_2 = quantile;
+  let rest_2 = rest;
+  // eslint-disable-next-line no-constant-condition
+  while (1) {
+    // If the remaining list of samples is empty, there is nothing more to resolve
+    if (!isNonEmptyReadonlyArray(rest_1)) {
+      return {
+        quantile: quantile_1,
+        value: none$4(),
+        consumed: consumed_1,
+        rest: []
+      };
+    }
+    // If the quantile is the 100% quantile, we can take the maximum of all the
+    // remaining values as the result
+    if (quantile_1 === 1) {
+      return {
+        quantile: quantile_1,
+        value: some(lastNonEmpty(rest_1)),
+        consumed: consumed_1 + rest_1.length,
+        rest: []
+      };
+    }
+    // Split into two chunks - the first chunk contains all elements of the same
+    // value as the chunk head
+    const headValue = headNonEmpty$1(rest_1); // Get head value since rest_1 is non-empty
+    const sameHead = span(rest_1, n => n === headValue);
+    // How many elements do we want to accept for this quantile
+    const desired = quantile_1 * sampleCount_1;
+    // The error margin
+    const allowedError = error_1 / 2 * desired;
+    // Taking into account the elements consumed from the samples so far and the
+    // number of same elements at the beginning of the chunk, calculate the number
+    // of elements we would have if we selected the current head as result
+    const candConsumed = consumed_1 + sameHead[0].length;
+    const candError = Math.abs(candConsumed - desired);
+    // If we haven't got enough elements yet, recurse
+    if (candConsumed < desired - allowedError) {
+      error_2 = error_1;
+      sampleCount_2 = sampleCount_1;
+      current_2 = head$1(rest_1);
+      consumed_2 = candConsumed;
+      quantile_2 = quantile_1;
+      rest_2 = sameHead[1];
+      error_1 = error_2;
+      sampleCount_1 = sampleCount_2;
+      current_1 = current_2;
+      consumed_1 = consumed_2;
+      quantile_1 = quantile_2;
+      rest_1 = rest_2;
+      continue;
+    }
+    // If consuming this chunk leads to too many elements (rank is too high)
+    if (candConsumed > desired + allowedError) {
+      const valueToReturn = isNone(current_1) ? some(headValue) : current_1;
+      return {
+        quantile: quantile_1,
+        value: valueToReturn,
+        consumed: consumed_1,
+        rest: rest_1
+      };
+    }
+    // If we are in the target interval, select the current head and hand back the leftover after dropping all elements
+    // from the sample chunk that are equal to the current head
+    switch (current_1._tag) {
+      case "None":
+        {
+          error_2 = error_1;
+          sampleCount_2 = sampleCount_1;
+          current_2 = head$1(rest_1);
+          consumed_2 = candConsumed;
+          quantile_2 = quantile_1;
+          rest_2 = sameHead[1];
+          error_1 = error_2;
+          sampleCount_1 = sampleCount_2;
+          current_1 = current_2;
+          consumed_1 = consumed_2;
+          quantile_1 = quantile_2;
+          rest_1 = rest_2;
+          continue;
+        }
+      case "Some":
+        {
+          const prevError = Math.abs(desired - current_1.value);
+          if (candError < prevError) {
+            error_2 = error_1;
+            sampleCount_2 = sampleCount_1;
+            current_2 = head$1(rest_1);
+            consumed_2 = candConsumed;
+            quantile_2 = quantile_1;
+            rest_2 = sameHead[1];
+            error_1 = error_2;
+            sampleCount_1 = sampleCount_2;
+            current_1 = current_2;
+            consumed_1 = consumed_2;
+            quantile_1 = quantile_2;
+            rest_1 = rest_2;
+            continue;
+          }
+          return {
+            quantile: quantile_1,
+            value: some(current_1.value),
+            consumed: consumed_1,
+            rest: rest_1
+          };
+        }
+    }
+  }
+  throw new Error("BUG: MetricHook.resolveQuantiles - please report an issue at https://github.com/Effect-TS/effect/issues");
+};
+
+/** @internal */
+const MetricPairSymbolKey = "effect/MetricPair";
+/** @internal */
+const MetricPairTypeId = /*#__PURE__*/Symbol.for(MetricPairSymbolKey);
+const metricPairVariance = {
+  /* c8 ignore next */
+  _Type: _ => _
+};
+/** @internal */
+const unsafeMake = (metricKey, metricState) => {
+  return {
+    [MetricPairTypeId]: metricPairVariance,
+    metricKey,
+    metricState,
+    pipe() {
+      return pipeArguments(this, arguments);
+    }
+  };
+};
+
+/** @internal */
+const MetricRegistrySymbolKey = "effect/MetricRegistry";
+/** @internal */
+const MetricRegistryTypeId = /*#__PURE__*/Symbol.for(MetricRegistrySymbolKey);
+/** @internal */
+class MetricRegistryImpl {
+  [MetricRegistryTypeId] = MetricRegistryTypeId;
+  map = /*#__PURE__*/empty$3();
+  snapshot() {
+    const result = [];
+    for (const [key, hook] of this.map) {
+      result.push(unsafeMake(key, hook.get()));
+    }
+    return result;
+  }
+  get(key) {
+    const hook = pipe(this.map, get(key), getOrUndefined);
+    if (hook == null) {
+      if (isCounterKey(key.keyType)) {
+        return this.getCounter(key);
+      }
+      if (isGaugeKey(key.keyType)) {
+        return this.getGauge(key);
+      }
+      if (isFrequencyKey(key.keyType)) {
+        return this.getFrequency(key);
+      }
+      if (isHistogramKey(key.keyType)) {
+        return this.getHistogram(key);
+      }
+      if (isSummaryKey(key.keyType)) {
+        return this.getSummary(key);
+      }
+      throw new Error("BUG: MetricRegistry.get - unknown MetricKeyType - please report an issue at https://github.com/Effect-TS/effect/issues");
+    } else {
+      return hook;
+    }
+  }
+  getCounter(key) {
+    let value = pipe(this.map, get(key), getOrUndefined);
+    if (value == null) {
+      const counter = counter$1(key);
+      if (!pipe(this.map, has(key))) {
+        pipe(this.map, set(key, counter));
+      }
+      value = counter;
+    }
+    return value;
+  }
+  getFrequency(key) {
+    let value = pipe(this.map, get(key), getOrUndefined);
+    if (value == null) {
+      const frequency$1 = frequency(key);
+      if (!pipe(this.map, has(key))) {
+        pipe(this.map, set(key, frequency$1));
+      }
+      value = frequency$1;
+    }
+    return value;
+  }
+  getGauge(key) {
+    let value = pipe(this.map, get(key), getOrUndefined);
+    if (value == null) {
+      const gauge$1 = gauge(key, key.keyType.bigint ? BigInt(0) : 0);
+      if (!pipe(this.map, has(key))) {
+        pipe(this.map, set(key, gauge$1));
+      }
+      value = gauge$1;
+    }
+    return value;
+  }
+  getHistogram(key) {
+    let value = pipe(this.map, get(key), getOrUndefined);
+    if (value == null) {
+      const histogram = histogram$1(key);
+      if (!pipe(this.map, has(key))) {
+        pipe(this.map, set(key, histogram));
+      }
+      value = histogram;
+    }
+    return value;
+  }
+  getSummary(key) {
+    let value = pipe(this.map, get(key), getOrUndefined);
+    if (value == null) {
+      const summary = summary$1(key);
+      if (!pipe(this.map, has(key))) {
+        pipe(this.map, set(key, summary));
+      }
+      value = summary;
+    }
+    return value;
+  }
+}
+/** @internal */
+const make$8 = () => {
+  return new MetricRegistryImpl();
+};
+
+/** @internal */
+const MetricSymbolKey = "effect/Metric";
+/** @internal */
+const MetricTypeId = /*#__PURE__*/Symbol.for(MetricSymbolKey);
+const metricVariance = {
+  /* c8 ignore next */
+  _Type: _ => _,
+  /* c8 ignore next */
+  _In: _ => _,
+  /* c8 ignore next */
+  _Out: _ => _
+};
+/** @internal */
+const globalMetricRegistry = /*#__PURE__*/globalValue(/*#__PURE__*/Symbol.for("effect/Metric/globalMetricRegistry"), () => make$8());
+/** @internal */
+const make$7 = function (keyType, unsafeUpdate, unsafeValue, unsafeModify) {
+  const metric = Object.assign(effect => tap$1(effect, a => update(metric, a)), {
+    [MetricTypeId]: metricVariance,
+    keyType,
+    unsafeUpdate,
+    unsafeValue,
+    unsafeModify,
+    register() {
+      this.unsafeValue([]);
+      return this;
+    },
+    pipe() {
+      return pipeArguments(this, arguments);
+    }
+  });
+  return metric;
+};
+/** @internal */
+const counter = (name, options) => fromMetricKey(counter$3(name, options));
+/** @internal */
+const fromMetricKey = key => {
+  let untaggedHook;
+  const hookCache = new WeakMap();
+  const hook = extraTags => {
+    if (extraTags.length === 0) {
+      if (untaggedHook !== undefined) {
+        return untaggedHook;
+      }
+      untaggedHook = globalMetricRegistry.get(key);
+      return untaggedHook;
+    }
+    let hook = hookCache.get(extraTags);
+    if (hook !== undefined) {
+      return hook;
+    }
+    hook = globalMetricRegistry.get(taggedWithLabels$1(key, extraTags));
+    hookCache.set(extraTags, hook);
+    return hook;
+  };
+  return make$7(key.keyType, (input, extraTags) => hook(extraTags).update(input), extraTags => hook(extraTags).get(), (input, extraTags) => hook(extraTags).modify(input));
+};
+/** @internal */
+const histogram = (name, boundaries, description) => fromMetricKey(histogram$3(name, boundaries, description));
+/** @internal */
+const tagged = /*#__PURE__*/dual(3, (self, key, value) => taggedWithLabels(self, [make$a(key, value)]));
+/** @internal */
+const taggedWithLabels = /*#__PURE__*/dual(2, (self, extraTags) => {
+  return make$7(self.keyType, (input, extraTags1) => self.unsafeUpdate(input, union$2(extraTags, extraTags1)), extraTags1 => self.unsafeValue(union$2(extraTags, extraTags1)), (input, extraTags1) => self.unsafeModify(input, union$2(extraTags, extraTags1)));
+});
+/* @internal */
+const update = /*#__PURE__*/dual(2, (self, input) => fiberRefGetWith(currentMetricLabels, tags => sync$2(() => self.unsafeUpdate(input, tags))));
+
+({
+  ...StructuralPrototype});
+/** @internal */
+const complete = /*#__PURE__*/dual(2, (self, result) => fiberRefGetWith(currentRequestMap, map => sync$2(() => {
+  if (map.has(self)) {
+    const entry = map.get(self);
+    if (!entry.state.completed) {
+      entry.state.completed = true;
+      deferredUnsafeDone(entry.result, result);
+    }
+  }
+})));
+
+/** @internal */
+const SupervisorSymbolKey = "effect/Supervisor";
+/** @internal */
+const SupervisorTypeId = /*#__PURE__*/Symbol.for(SupervisorSymbolKey);
+/** @internal */
+const supervisorVariance = {
+  /* c8 ignore next */
+  _T: _ => _
+};
+/** @internal */
+class ProxySupervisor {
+  underlying;
+  value0;
+  [SupervisorTypeId] = supervisorVariance;
+  constructor(underlying, value0) {
+    this.underlying = underlying;
+    this.value0 = value0;
+  }
+  get value() {
+    return this.value0;
+  }
+  onStart(context, effect, parent, fiber) {
+    this.underlying.onStart(context, effect, parent, fiber);
+  }
+  onEnd(value, fiber) {
+    this.underlying.onEnd(value, fiber);
+  }
+  onEffect(fiber, effect) {
+    this.underlying.onEffect(fiber, effect);
+  }
+  onSuspend(fiber) {
+    this.underlying.onSuspend(fiber);
+  }
+  onResume(fiber) {
+    this.underlying.onResume(fiber);
+  }
+  map(f) {
+    return new ProxySupervisor(this, pipe(this.value, map$3(f)));
+  }
+  zip(right) {
+    return new Zip(this, right);
+  }
+}
+/** @internal */
+class Zip {
+  left;
+  right;
+  _tag = "Zip";
+  [SupervisorTypeId] = supervisorVariance;
+  constructor(left, right) {
+    this.left = left;
+    this.right = right;
+  }
+  get value() {
+    return zip(this.left.value, this.right.value);
+  }
+  onStart(context, effect, parent, fiber) {
+    this.left.onStart(context, effect, parent, fiber);
+    this.right.onStart(context, effect, parent, fiber);
+  }
+  onEnd(value, fiber) {
+    this.left.onEnd(value, fiber);
+    this.right.onEnd(value, fiber);
+  }
+  onEffect(fiber, effect) {
+    this.left.onEffect(fiber, effect);
+    this.right.onEffect(fiber, effect);
+  }
+  onSuspend(fiber) {
+    this.left.onSuspend(fiber);
+    this.right.onSuspend(fiber);
+  }
+  onResume(fiber) {
+    this.left.onResume(fiber);
+    this.right.onResume(fiber);
+  }
+  map(f) {
+    return new ProxySupervisor(this, pipe(this.value, map$3(f)));
+  }
+  zip(right) {
+    return new Zip(this, right);
+  }
+}
+/** @internal */
+const isZip = self => hasProperty(self, SupervisorTypeId) && isTagged(self, "Zip");
+/** @internal */
+class Const {
+  effect;
+  [SupervisorTypeId] = supervisorVariance;
+  constructor(effect) {
+    this.effect = effect;
+  }
+  get value() {
+    return this.effect;
+  }
+  onStart(_context, _effect, _parent, _fiber) {
+    //
+  }
+  onEnd(_value, _fiber) {
+    //
+  }
+  onEffect(_fiber, _effect) {
+    //
+  }
+  onSuspend(_fiber) {
+    //
+  }
+  onResume(_fiber) {
+    //
+  }
+  map(f) {
+    return new ProxySupervisor(this, pipe(this.value, map$3(f)));
+  }
+  zip(right) {
+    return new Zip(this, right);
+  }
+  onRun(execution, _fiber) {
+    return execution();
+  }
+}
+/** @internal */
+const fromEffect$1 = effect => {
+  return new Const(effect);
+};
+/** @internal */
+const none = /*#__PURE__*/globalValue("effect/Supervisor/none", () => fromEffect$1(void_$1));
+
+/**
+ * Constructs a new `Differ`.
+ *
+ * @since 2.0.0
+ * @category constructors
+ */
+const make$6 = make$i;
+
+/** @internal */
+const OP_EMPTY = "Empty";
+/** @internal */
+const OP_ADD_SUPERVISOR = "AddSupervisor";
+/** @internal */
+const OP_REMOVE_SUPERVISOR = "RemoveSupervisor";
+/** @internal */
+const OP_AND_THEN = "AndThen";
+/**
+ * The empty `SupervisorPatch`.
+ *
+ * @internal
+ */
+const empty$2 = {
+  _tag: OP_EMPTY
+};
+/**
+ * Combines two patches to produce a new patch that describes applying the
+ * updates from this patch and then the updates from the specified patch.
+ *
+ * @internal
+ */
+const combine = (self, that) => {
+  return {
+    _tag: OP_AND_THEN,
+    first: self,
+    second: that
+  };
+};
+/**
+ * Applies a `SupervisorPatch` to a `Supervisor` to produce a new `Supervisor`.
+ *
+ * @internal
+ */
+const patch = (self, supervisor) => {
+  return patchLoop(supervisor, of$1(self));
+};
+/** @internal */
+const patchLoop = (_supervisor, _patches) => {
+  let supervisor = _supervisor;
+  let patches = _patches;
+  while (isNonEmpty$2(patches)) {
+    const head = headNonEmpty(patches);
+    switch (head._tag) {
+      case OP_EMPTY:
+        {
+          patches = tailNonEmpty(patches);
+          break;
+        }
+      case OP_ADD_SUPERVISOR:
+        {
+          supervisor = supervisor.zip(head.supervisor);
+          patches = tailNonEmpty(patches);
+          break;
+        }
+      case OP_REMOVE_SUPERVISOR:
+        {
+          supervisor = removeSupervisor(supervisor, head.supervisor);
+          patches = tailNonEmpty(patches);
+          break;
+        }
+      case OP_AND_THEN:
+        {
+          patches = prepend$1(head.first)(prepend$1(head.second)(tailNonEmpty(patches)));
+          break;
+        }
+    }
+  }
+  return supervisor;
+};
+/** @internal */
+const removeSupervisor = (self, that) => {
+  if (equals$1(self, that)) {
+    return none;
+  } else {
+    if (isZip(self)) {
+      return removeSupervisor(self.left, that).zip(removeSupervisor(self.right, that));
+    } else {
+      return self;
+    }
+  }
+};
+/** @internal */
+const toSet = self => {
+  if (equals$1(self, none)) {
+    return empty$h();
+  } else {
+    if (isZip(self)) {
+      return pipe(toSet(self.left), union(toSet(self.right)));
+    } else {
+      return make$n(self);
+    }
+  }
+};
+/** @internal */
+const diff = (oldValue, newValue) => {
+  if (equals$1(oldValue, newValue)) {
+    return empty$2;
+  }
+  const oldSupervisors = toSet(oldValue);
+  const newSupervisors = toSet(newValue);
+  const added = pipe(newSupervisors, difference(oldSupervisors), reduce$3(empty$2, (patch, supervisor) => combine(patch, {
+    _tag: OP_ADD_SUPERVISOR,
+    supervisor
+  })));
+  const removed = pipe(oldSupervisors, difference(newSupervisors), reduce$3(empty$2, (patch, supervisor) => combine(patch, {
+    _tag: OP_REMOVE_SUPERVISOR,
+    supervisor
+  })));
+  return combine(added, removed);
+};
+/** @internal */
+const differ = /*#__PURE__*/make$6({
+  empty: empty$2,
+  patch,
+  combine,
+  diff
+});
+
+/** @internal */
+const fiberStarted = /*#__PURE__*/counter("effect_fiber_started", {
+  incremental: true
+});
+/** @internal */
+const fiberActive = /*#__PURE__*/counter("effect_fiber_active");
+/** @internal */
+const fiberSuccesses = /*#__PURE__*/counter("effect_fiber_successes", {
+  incremental: true
+});
+/** @internal */
+const fiberFailures = /*#__PURE__*/counter("effect_fiber_failures", {
+  incremental: true
+});
+/** @internal */
+const fiberLifetimes = /*#__PURE__*/tagged(/*#__PURE__*/histogram("effect_fiber_lifetimes", /*#__PURE__*/exponential({
+  start: 0.5,
+  factor: 2,
+  count: 35
+})), "time_unit", "milliseconds");
+/** @internal */
+const EvaluationSignalContinue = "Continue";
+/** @internal */
+const EvaluationSignalDone = "Done";
+/** @internal */
+const EvaluationSignalYieldNow = "Yield";
+const runtimeFiberVariance = {
+  /* c8 ignore next */
+  _E: _ => _,
+  /* c8 ignore next */
+  _A: _ => _
+};
+const absurd = _ => {
+  throw new Error(`BUG: FiberRuntime - ${toStringUnknown(_)} - please report an issue at https://github.com/Effect-TS/effect/issues`);
+};
+const YieldedOp = /*#__PURE__*/Symbol.for("effect/internal/fiberRuntime/YieldedOp");
+const yieldedOpChannel = /*#__PURE__*/globalValue("effect/internal/fiberRuntime/yieldedOpChannel", () => ({
+  currentOp: null
+}));
+const contOpSuccess = {
+  [OP_ON_SUCCESS]: (_, cont, value) => {
+    return internalCall(() => cont.effect_instruction_i1(value));
+  },
+  ["OnStep"]: (_, _cont, value) => {
+    return exitSucceed$1(exitSucceed$1(value));
+  },
+  [OP_ON_SUCCESS_AND_FAILURE]: (_, cont, value) => {
+    return internalCall(() => cont.effect_instruction_i2(value));
+  },
+  [OP_REVERT_FLAGS]: (self, cont, value) => {
+    self.patchRuntimeFlags(self.currentRuntimeFlags, cont.patch);
+    if (interruptible$2(self.currentRuntimeFlags) && self.isInterrupted()) {
+      return exitFailCause$1(self.getInterruptedCause());
+    } else {
+      return exitSucceed$1(value);
+    }
+  },
+  [OP_WHILE]: (self, cont, value) => {
+    internalCall(() => cont.effect_instruction_i2(value));
+    if (internalCall(() => cont.effect_instruction_i0())) {
+      self.pushStack(cont);
+      return internalCall(() => cont.effect_instruction_i1());
+    } else {
+      return void_$1;
+    }
+  },
+  [OP_ITERATOR]: (self, cont, value) => {
+    const state = internalCall(() => cont.effect_instruction_i0.next(value));
+    if (state.done) return exitSucceed$1(state.value);
+    self.pushStack(cont);
+    return yieldWrapGet(state.value);
+  }
+};
+const drainQueueWhileRunningTable = {
+  [OP_INTERRUPT_SIGNAL]: (self, runtimeFlags, cur, message) => {
+    self.processNewInterruptSignal(message.cause);
+    return interruptible$2(runtimeFlags) ? exitFailCause$1(message.cause) : cur;
+  },
+  [OP_RESUME]: (_self, _runtimeFlags, _cur, _message) => {
+    throw new Error("It is illegal to have multiple concurrent run loops in a single fiber");
+  },
+  [OP_STATEFUL]: (self, runtimeFlags, cur, message) => {
+    message.onFiber(self, running(runtimeFlags));
+    return cur;
+  },
+  [OP_YIELD_NOW]: (_self, _runtimeFlags, cur, _message) => {
+    return flatMap$1(yieldNow$2(), () => cur);
+  }
+};
+/**
+ * Executes all requests, submitting requests to each data source in parallel.
+ */
+const runBlockedRequests = self => forEachSequentialDiscard(flatten$1(self), requestsByRequestResolver => forEachConcurrentDiscard(sequentialCollectionToChunk(requestsByRequestResolver), ([dataSource, sequential]) => {
+  const map = new Map();
+  const arr = [];
+  for (const block of sequential) {
+    arr.push(toReadonlyArray(block));
+    for (const entry of block) {
+      map.set(entry.request, entry);
+    }
+  }
+  const flat = arr.flat();
+  return fiberRefLocally(invokeWithInterrupt(dataSource.runAll(arr), flat, () => flat.forEach(entry => {
+    entry.listeners.interrupted = true;
+  })), currentRequestMap, map);
+}, false, false));
+const _version = /*#__PURE__*/getCurrentVersion();
+/** @internal */
+class FiberRuntime extends Class {
+  [FiberTypeId] = fiberVariance;
+  [RuntimeFiberTypeId] = runtimeFiberVariance;
+  _fiberRefs;
+  _fiberId;
+  _queue = /*#__PURE__*/new Array();
+  _children = null;
+  _observers = /*#__PURE__*/new Array();
+  _running = false;
+  _stack = [];
+  _asyncInterruptor = null;
+  _asyncBlockingOn = null;
+  _exitValue = null;
+  _steps = [];
+  _isYielding = false;
+  currentRuntimeFlags;
+  currentOpCount = 0;
+  currentSupervisor;
+  currentScheduler;
+  currentTracer;
+  currentSpan;
+  currentContext;
+  currentDefaultServices;
+  constructor(fiberId, fiberRefs0, runtimeFlags0) {
+    super();
+    this.currentRuntimeFlags = runtimeFlags0;
+    this._fiberId = fiberId;
+    this._fiberRefs = fiberRefs0;
+    if (runtimeMetrics(runtimeFlags0)) {
+      const tags = this.getFiberRef(currentMetricLabels);
+      fiberStarted.unsafeUpdate(1, tags);
+      fiberActive.unsafeUpdate(1, tags);
+    }
+    this.refreshRefCache();
+  }
+  commit() {
+    return join(this);
+  }
+  /**
+   * The identity of the fiber.
+   */
+  id() {
+    return this._fiberId;
+  }
+  /**
+   * Begins execution of the effect associated with this fiber on in the
+   * background. This can be called to "kick off" execution of a fiber after
+   * it has been created.
+   */
+  resume(effect) {
+    this.tell(resume(effect));
+  }
+  /**
+   * The status of the fiber.
+   */
+  get status() {
+    return this.ask((_, status) => status);
+  }
+  /**
+   * Gets the fiber runtime flags.
+   */
+  get runtimeFlags() {
+    return this.ask((state, status) => {
+      if (isDone$2(status)) {
+        return state.currentRuntimeFlags;
+      }
+      return status.runtimeFlags;
+    });
+  }
+  /**
+   * Returns the current `FiberScope` for the fiber.
+   */
+  scope() {
+    return unsafeMake$1(this);
+  }
+  /**
+   * Retrieves the immediate children of the fiber.
+   */
+  get children() {
+    return this.ask(fiber => Array.from(fiber.getChildren()));
+  }
+  /**
+   * Gets the fiber's set of children.
+   */
+  getChildren() {
+    if (this._children === null) {
+      this._children = new Set();
+    }
+    return this._children;
+  }
+  /**
+   * Retrieves the interrupted cause of the fiber, which will be `Cause.empty`
+   * if the fiber has not been interrupted.
+   *
+   * **NOTE**: This method is safe to invoke on any fiber, but if not invoked
+   * on this fiber, then values derived from the fiber's state (including the
+   * log annotations and log level) may not be up-to-date.
+   */
+  getInterruptedCause() {
+    return this.getFiberRef(currentInterruptedCause);
+  }
+  /**
+   * Retrieves the whole set of fiber refs.
+   */
+  fiberRefs() {
+    return this.ask(fiber => fiber.getFiberRefs());
+  }
+  /**
+   * Returns an effect that will contain information computed from the fiber
+   * state and status while running on the fiber.
+   *
+   * This allows the outside world to interact safely with mutable fiber state
+   * without locks or immutable data.
+   */
+  ask(f) {
+    return suspend$2(() => {
+      const deferred = deferredUnsafeMake(this._fiberId);
+      this.tell(stateful((fiber, status) => {
+        deferredUnsafeDone(deferred, sync$2(() => f(fiber, status)));
+      }));
+      return deferredAwait(deferred);
+    });
+  }
+  /**
+   * Adds a message to be processed by the fiber on the fiber.
+   */
+  tell(message) {
+    this._queue.push(message);
+    if (!this._running) {
+      this._running = true;
+      this.drainQueueLaterOnExecutor();
+    }
+  }
+  get await() {
+    return async_(resume => {
+      const cb = exit => resume(succeed$3(exit));
+      this.tell(stateful((fiber, _) => {
+        if (fiber._exitValue !== null) {
+          cb(this._exitValue);
+        } else {
+          fiber.addObserver(cb);
+        }
+      }));
+      return sync$2(() => this.tell(stateful((fiber, _) => {
+        fiber.removeObserver(cb);
+      })));
+    }, this.id());
+  }
+  get inheritAll() {
+    return withFiberRuntime((parentFiber, parentStatus) => {
+      const parentFiberId = parentFiber.id();
+      const parentFiberRefs = parentFiber.getFiberRefs();
+      const parentRuntimeFlags = parentStatus.runtimeFlags;
+      const childFiberRefs = this.getFiberRefs();
+      const updatedFiberRefs = joinAs(parentFiberRefs, parentFiberId, childFiberRefs);
+      parentFiber.setFiberRefs(updatedFiberRefs);
+      const updatedRuntimeFlags = parentFiber.getFiberRef(currentRuntimeFlags);
+      const patch = pipe(diff$3(parentRuntimeFlags, updatedRuntimeFlags),
+      // Do not inherit WindDown or Interruption!
+      exclude(Interruption), exclude(WindDown));
+      return updateRuntimeFlags(patch);
+    });
+  }
+  /**
+   * Tentatively observes the fiber, but returns immediately if it is not
+   * already done.
+   */
+  get poll() {
+    return sync$2(() => fromNullable(this._exitValue));
+  }
+  /**
+   * Unsafely observes the fiber, but returns immediately if it is not
+   * already done.
+   */
+  unsafePoll() {
+    return this._exitValue;
+  }
+  /**
+   * In the background, interrupts the fiber as if interrupted from the specified fiber.
+   */
+  interruptAsFork(fiberId) {
+    return sync$2(() => this.tell(interruptSignal(interrupt(fiberId))));
+  }
+  /**
+   * In the background, interrupts the fiber as if interrupted from the specified fiber.
+   */
+  unsafeInterruptAsFork(fiberId) {
+    this.tell(interruptSignal(interrupt(fiberId)));
+  }
+  /**
+   * Adds an observer to the list of observers.
+   *
+   * **NOTE**: This method must be invoked by the fiber itself.
+   */
+  addObserver(observer) {
+    if (this._exitValue !== null) {
+      observer(this._exitValue);
+    } else {
+      this._observers.push(observer);
+    }
+  }
+  /**
+   * Removes the specified observer from the list of observers that will be
+   * notified when the fiber exits.
+   *
+   * **NOTE**: This method must be invoked by the fiber itself.
+   */
+  removeObserver(observer) {
+    this._observers = this._observers.filter(o => o !== observer);
+  }
+  /**
+   * Retrieves all fiber refs of the fiber.
+   *
+   * **NOTE**: This method is safe to invoke on any fiber, but if not invoked
+   * on this fiber, then values derived from the fiber's state (including the
+   * log annotations and log level) may not be up-to-date.
+   */
+  getFiberRefs() {
+    this.setFiberRef(currentRuntimeFlags, this.currentRuntimeFlags);
+    return this._fiberRefs;
+  }
+  /**
+   * Deletes the specified fiber ref.
+   *
+   * **NOTE**: This method must be invoked by the fiber itself.
+   */
+  unsafeDeleteFiberRef(fiberRef) {
+    this._fiberRefs = delete_(this._fiberRefs, fiberRef);
+  }
+  /**
+   * Retrieves the state of the fiber ref, or else its initial value.
+   *
+   * **NOTE**: This method is safe to invoke on any fiber, but if not invoked
+   * on this fiber, then values derived from the fiber's state (including the
+   * log annotations and log level) may not be up-to-date.
+   */
+  getFiberRef(fiberRef) {
+    if (this._fiberRefs.locals.has(fiberRef)) {
+      return this._fiberRefs.locals.get(fiberRef)[0][1];
+    }
+    return fiberRef.initial;
+  }
+  /**
+   * Sets the fiber ref to the specified value.
+   *
+   * **NOTE**: This method must be invoked by the fiber itself.
+   */
+  setFiberRef(fiberRef, value) {
+    this._fiberRefs = updateAs(this._fiberRefs, {
+      fiberId: this._fiberId,
+      fiberRef,
+      value
+    });
+    this.refreshRefCache();
+  }
+  refreshRefCache() {
+    this.currentDefaultServices = this.getFiberRef(currentServices);
+    this.currentTracer = this.currentDefaultServices.unsafeMap.get(tracerTag.key);
+    this.currentSupervisor = this.getFiberRef(currentSupervisor);
+    this.currentScheduler = this.getFiberRef(currentScheduler);
+    this.currentContext = this.getFiberRef(currentContext);
+    this.currentSpan = this.currentContext.unsafeMap.get(spanTag.key);
+  }
+  /**
+   * Wholesale replaces all fiber refs of this fiber.
+   *
+   * **NOTE**: This method must be invoked by the fiber itself.
+   */
+  setFiberRefs(fiberRefs) {
+    this._fiberRefs = fiberRefs;
+    this.refreshRefCache();
+  }
+  /**
+   * Adds a reference to the specified fiber inside the children set.
+   *
+   * **NOTE**: This method must be invoked by the fiber itself.
+   */
+  addChild(child) {
+    this.getChildren().add(child);
+  }
+  /**
+   * Removes a reference to the specified fiber inside the children set.
+   *
+   * **NOTE**: This method must be invoked by the fiber itself.
+   */
+  removeChild(child) {
+    this.getChildren().delete(child);
+  }
+  /**
+   * Transfers all children of this fiber that are currently running to the
+   * specified fiber scope.
+   *
+   * **NOTE**: This method must be invoked by the fiber itself after it has
+   * evaluated the effects but prior to exiting.
+   */
+  transferChildren(scope) {
+    const children = this._children;
+    // Clear the children of the current fiber
+    this._children = null;
+    if (children !== null && children.size > 0) {
+      for (const child of children) {
+        // If the child is still running, add it to the scope
+        if (child._exitValue === null) {
+          scope.add(this.currentRuntimeFlags, child);
+        }
+      }
+    }
+  }
+  /**
+   * On the current thread, executes all messages in the fiber's inbox. This
+   * method may return before all work is done, in the event the fiber executes
+   * an asynchronous operation.
+   *
+   * **NOTE**: This method must be invoked by the fiber itself.
+   */
+  drainQueueOnCurrentThread() {
+    let recurse = true;
+    while (recurse) {
+      let evaluationSignal = EvaluationSignalContinue;
+      const prev = globalThis[currentFiberURI];
+      globalThis[currentFiberURI] = this;
+      try {
+        while (evaluationSignal === EvaluationSignalContinue) {
+          evaluationSignal = this._queue.length === 0 ? EvaluationSignalDone : this.evaluateMessageWhileSuspended(this._queue.splice(0, 1)[0]);
+        }
+      } finally {
+        this._running = false;
+        globalThis[currentFiberURI] = prev;
+      }
+      // Maybe someone added something to the queue between us checking, and us
+      // giving up the drain. If so, we need to restart the draining, but only
+      // if we beat everyone else to the restart:
+      if (this._queue.length > 0 && !this._running) {
+        this._running = true;
+        if (evaluationSignal === EvaluationSignalYieldNow) {
+          this.drainQueueLaterOnExecutor();
+          recurse = false;
+        } else {
+          recurse = true;
+        }
+      } else {
+        recurse = false;
+      }
+    }
+  }
+  /**
+   * Schedules the execution of all messages in the fiber's inbox.
+   *
+   * This method will return immediately after the scheduling
+   * operation is completed, but potentially before such messages have been
+   * executed.
+   *
+   * **NOTE**: This method must be invoked by the fiber itself.
+   */
+  drainQueueLaterOnExecutor() {
+    this.currentScheduler.scheduleTask(this.run, this.getFiberRef(currentSchedulingPriority));
+  }
+  /**
+   * Drains the fiber's message queue while the fiber is actively running,
+   * returning the next effect to execute, which may be the input effect if no
+   * additional effect needs to be executed.
+   *
+   * **NOTE**: This method must be invoked by the fiber itself.
+   */
+  drainQueueWhileRunning(runtimeFlags, cur0) {
+    let cur = cur0;
+    while (this._queue.length > 0) {
+      const message = this._queue.splice(0, 1)[0];
+      // @ts-expect-error
+      cur = drainQueueWhileRunningTable[message._tag](this, runtimeFlags, cur, message);
+    }
+    return cur;
+  }
+  /**
+   * Determines if the fiber is interrupted.
+   *
+   * **NOTE**: This method is safe to invoke on any fiber, but if not invoked
+   * on this fiber, then values derived from the fiber's state (including the
+   * log annotations and log level) may not be up-to-date.
+   */
+  isInterrupted() {
+    return !isEmpty$3(this.getFiberRef(currentInterruptedCause));
+  }
+  /**
+   * Adds an interruptor to the set of interruptors that are interrupting this
+   * fiber.
+   *
+   * **NOTE**: This method must be invoked by the fiber itself.
+   */
+  addInterruptedCause(cause) {
+    const oldSC = this.getFiberRef(currentInterruptedCause);
+    this.setFiberRef(currentInterruptedCause, sequential$2(oldSC, cause));
+  }
+  /**
+   * Processes a new incoming interrupt signal.
+   *
+   * **NOTE**: This method must be invoked by the fiber itself.
+   */
+  processNewInterruptSignal(cause) {
+    this.addInterruptedCause(cause);
+    this.sendInterruptSignalToAllChildren();
+  }
+  /**
+   * Interrupts all children of the current fiber, returning an effect that will
+   * await the exit of the children. This method will return null if the fiber
+   * has no children.
+   *
+   * **NOTE**: This method must be invoked by the fiber itself.
+   */
+  sendInterruptSignalToAllChildren() {
+    if (this._children === null || this._children.size === 0) {
+      return false;
+    }
+    let told = false;
+    for (const child of this._children) {
+      child.tell(interruptSignal(interrupt(this.id())));
+      told = true;
+    }
+    return told;
+  }
+  /**
+   * Interrupts all children of the current fiber, returning an effect that will
+   * await the exit of the children. This method will return null if the fiber
+   * has no children.
+   *
+   * **NOTE**: This method must be invoked by the fiber itself.
+   */
+  interruptAllChildren() {
+    if (this.sendInterruptSignalToAllChildren()) {
+      const it = this._children.values();
+      this._children = null;
+      let isDone = false;
+      const body = () => {
+        const next = it.next();
+        if (!next.done) {
+          return asVoid(next.value.await);
+        } else {
+          return sync$2(() => {
+            isDone = true;
+          });
+        }
+      };
+      return whileLoop({
+        while: () => !isDone,
+        body,
+        step: () => {
+          //
+        }
+      });
+    }
+    return null;
+  }
+  reportExitValue(exit) {
+    if (runtimeMetrics(this.currentRuntimeFlags)) {
+      const tags = this.getFiberRef(currentMetricLabels);
+      const startTimeMillis = this.id().startTimeMillis;
+      const endTimeMillis = Date.now();
+      fiberLifetimes.unsafeUpdate(endTimeMillis - startTimeMillis, tags);
+      fiberActive.unsafeUpdate(-1, tags);
+      switch (exit._tag) {
+        case OP_SUCCESS:
+          {
+            fiberSuccesses.unsafeUpdate(1, tags);
+            break;
+          }
+        case OP_FAILURE:
+          {
+            fiberFailures.unsafeUpdate(1, tags);
+            break;
+          }
+      }
+    }
+    if (exit._tag === "Failure") {
+      const level = this.getFiberRef(currentUnhandledErrorLogLevel);
+      if (!isInterruptedOnly(exit.cause) && level._tag === "Some") {
+        this.log("Fiber terminated with an unhandled error", exit.cause, level);
+      }
+    }
+  }
+  setExitValue(exit) {
+    this._exitValue = exit;
+    this.reportExitValue(exit);
+    for (let i = this._observers.length - 1; i >= 0; i--) {
+      this._observers[i](exit);
+    }
+    this._observers = [];
+  }
+  getLoggers() {
+    return this.getFiberRef(currentLoggers);
+  }
+  log(message, cause, overrideLogLevel) {
+    const logLevel = isSome(overrideLogLevel) ? overrideLogLevel.value : this.getFiberRef(currentLogLevel);
+    const minimumLogLevel = this.getFiberRef(currentMinimumLogLevel);
+    if (greaterThan(minimumLogLevel, logLevel)) {
+      return;
+    }
+    const spans = this.getFiberRef(currentLogSpan);
+    const annotations = this.getFiberRef(currentLogAnnotations);
+    const loggers = this.getLoggers();
+    const contextMap = this.getFiberRefs();
+    if (size(loggers) > 0) {
+      const clockService = get$5(this.getFiberRef(currentServices), clockTag);
+      const date = new Date(clockService.unsafeCurrentTimeMillis());
+      withRedactableContext(contextMap, () => {
+        for (const logger of loggers) {
+          logger.log({
+            fiberId: this.id(),
+            logLevel,
+            message,
+            cause,
+            context: contextMap,
+            spans,
+            annotations,
+            date
+          });
+        }
+      });
+    }
+  }
+  /**
+   * Evaluates a single message on the current thread, while the fiber is
+   * suspended. This method should only be called while evaluation of the
+   * fiber's effect is suspended due to an asynchronous operation.
+   *
+   * **NOTE**: This method must be invoked by the fiber itself.
+   */
+  evaluateMessageWhileSuspended(message) {
+    switch (message._tag) {
+      case OP_YIELD_NOW:
+        {
+          return EvaluationSignalYieldNow;
+        }
+      case OP_INTERRUPT_SIGNAL:
+        {
+          this.processNewInterruptSignal(message.cause);
+          if (this._asyncInterruptor !== null) {
+            this._asyncInterruptor(exitFailCause$1(message.cause));
+            this._asyncInterruptor = null;
+          }
+          return EvaluationSignalContinue;
+        }
+      case OP_RESUME:
+        {
+          this._asyncInterruptor = null;
+          this._asyncBlockingOn = null;
+          this.evaluateEffect(message.effect);
+          return EvaluationSignalContinue;
+        }
+      case OP_STATEFUL:
+        {
+          message.onFiber(this, this._exitValue !== null ? done$2 : suspended(this.currentRuntimeFlags, this._asyncBlockingOn));
+          return EvaluationSignalContinue;
+        }
+      default:
+        {
+          return absurd(message);
+        }
+    }
+  }
+  /**
+   * Evaluates an effect until completion, potentially asynchronously.
+   *
+   * **NOTE**: This method must be invoked by the fiber itself.
+   */
+  evaluateEffect(effect0) {
+    this.currentSupervisor.onResume(this);
+    try {
+      let effect = interruptible$2(this.currentRuntimeFlags) && this.isInterrupted() ? exitFailCause$1(this.getInterruptedCause()) : effect0;
+      while (effect !== null) {
+        const eff = effect;
+        const exit = this.runLoop(eff);
+        if (exit === YieldedOp) {
+          const op = yieldedOpChannel.currentOp;
+          yieldedOpChannel.currentOp = null;
+          if (op._op === OP_YIELD) {
+            if (cooperativeYielding(this.currentRuntimeFlags)) {
+              this.tell(yieldNow());
+              this.tell(resume(exitVoid$1));
+              effect = null;
+            } else {
+              effect = exitVoid$1;
+            }
+          } else if (op._op === OP_ASYNC) {
+            // Terminate this evaluation, async resumption will continue evaluation:
+            effect = null;
+          }
+        } else {
+          this.currentRuntimeFlags = pipe(this.currentRuntimeFlags, enable$1(WindDown));
+          const interruption = this.interruptAllChildren();
+          if (interruption !== null) {
+            effect = flatMap$1(interruption, () => exit);
+          } else {
+            if (this._queue.length === 0) {
+              // No more messages to process, so we will allow the fiber to end life:
+              this.setExitValue(exit);
+            } else {
+              // There are messages, possibly added by the final op executed by
+              // the fiber. To be safe, we should execute those now before we
+              // allow the fiber to end life:
+              this.tell(resume(exit));
+            }
+            effect = null;
+          }
+        }
+      }
+    } finally {
+      this.currentSupervisor.onSuspend(this);
+    }
+  }
+  /**
+   * Begins execution of the effect associated with this fiber on the current
+   * thread. This can be called to "kick off" execution of a fiber after it has
+   * been created, in hopes that the effect can be executed synchronously.
+   *
+   * This is not the normal way of starting a fiber, but it is useful when the
+   * express goal of executing the fiber is to synchronously produce its exit.
+   */
+  start(effect) {
+    if (!this._running) {
+      this._running = true;
+      const prev = globalThis[currentFiberURI];
+      globalThis[currentFiberURI] = this;
+      try {
+        this.evaluateEffect(effect);
+      } finally {
+        this._running = false;
+        globalThis[currentFiberURI] = prev;
+        // Because we're special casing `start`, we have to be responsible
+        // for spinning up the fiber if there were new messages added to
+        // the queue between the completion of the effect and the transition
+        // to the not running state.
+        if (this._queue.length > 0) {
+          this.drainQueueLaterOnExecutor();
+        }
+      }
+    } else {
+      this.tell(resume(effect));
+    }
+  }
+  /**
+   * Begins execution of the effect associated with this fiber on in the
+   * background, and on the correct thread pool. This can be called to "kick
+   * off" execution of a fiber after it has been created, in hopes that the
+   * effect can be executed synchronously.
+   */
+  startFork(effect) {
+    this.tell(resume(effect));
+  }
+  /**
+   * Takes the current runtime flags, patches them to return the new runtime
+   * flags, and then makes any changes necessary to fiber state based on the
+   * specified patch.
+   *
+   * **NOTE**: This method must be invoked by the fiber itself.
+   */
+  patchRuntimeFlags(oldRuntimeFlags, patch) {
+    const newRuntimeFlags = patch$4(oldRuntimeFlags, patch);
+    globalThis[currentFiberURI] = this;
+    this.currentRuntimeFlags = newRuntimeFlags;
+    return newRuntimeFlags;
+  }
+  /**
+   * Initiates an asynchronous operation, by building a callback that will
+   * resume execution, and then feeding that callback to the registration
+   * function, handling error cases and repeated resumptions appropriately.
+   *
+   * **NOTE**: This method must be invoked by the fiber itself.
+   */
+  initiateAsync(runtimeFlags, asyncRegister) {
+    let alreadyCalled = false;
+    const callback = effect => {
+      if (!alreadyCalled) {
+        alreadyCalled = true;
+        this.tell(resume(effect));
+      }
+    };
+    if (interruptible$2(runtimeFlags)) {
+      this._asyncInterruptor = callback;
+    }
+    try {
+      asyncRegister(callback);
+    } catch (e) {
+      callback(failCause$1(die$1(e)));
+    }
+  }
+  pushStack(cont) {
+    this._stack.push(cont);
+    if (cont._op === "OnStep") {
+      this._steps.push({
+        refs: this.getFiberRefs(),
+        flags: this.currentRuntimeFlags
+      });
+    }
+  }
+  popStack() {
+    const item = this._stack.pop();
+    if (item) {
+      if (item._op === "OnStep") {
+        this._steps.pop();
+      }
+      return item;
+    }
+    return;
+  }
+  getNextSuccessCont() {
+    let frame = this.popStack();
+    while (frame) {
+      if (frame._op !== OP_ON_FAILURE) {
+        return frame;
+      }
+      frame = this.popStack();
+    }
+  }
+  getNextFailCont() {
+    let frame = this.popStack();
+    while (frame) {
+      if (frame._op !== OP_ON_SUCCESS && frame._op !== OP_WHILE && frame._op !== OP_ITERATOR) {
+        return frame;
+      }
+      frame = this.popStack();
+    }
+  }
+  [OP_TAG](op) {
+    return sync$2(() => unsafeGet(this.currentContext, op));
+  }
+  ["Left"](op) {
+    return fail(op.left);
+  }
+  ["None"](_) {
+    return fail(new NoSuchElementException());
+  }
+  ["Right"](op) {
+    return exitSucceed$1(op.right);
+  }
+  ["Some"](op) {
+    return exitSucceed$1(op.value);
+  }
+  ["Micro"](op) {
+    return unsafeAsync(microResume => {
+      let resume = microResume;
+      const fiber = runFork(provideContext(op, this.currentContext));
+      fiber.addObserver(exit => {
+        if (exit._tag === "Success") {
+          return resume(exitSucceed$1(exit.value));
+        }
+        switch (exit.cause._tag) {
+          case "Interrupt":
+            {
+              return resume(exitFailCause$1(interrupt(none$2)));
+            }
+          case "Fail":
+            {
+              return resume(fail(exit.cause.error));
+            }
+          case "Die":
+            {
+              return resume(die(exit.cause.defect));
+            }
+        }
+      });
+      return unsafeAsync(abortResume => {
+        resume = _ => {
+          abortResume(void_$1);
+        };
+        fiber.unsafeInterrupt();
+      });
+    });
+  }
+  [OP_SYNC](op) {
+    const value = internalCall(() => op.effect_instruction_i0());
+    const cont = this.getNextSuccessCont();
+    if (cont !== undefined) {
+      if (!(cont._op in contOpSuccess)) {
+        // @ts-expect-error
+        absurd(cont);
+      }
+      // @ts-expect-error
+      return contOpSuccess[cont._op](this, cont, value);
+    } else {
+      yieldedOpChannel.currentOp = exitSucceed$1(value);
+      return YieldedOp;
+    }
+  }
+  [OP_SUCCESS](op) {
+    const oldCur = op;
+    const cont = this.getNextSuccessCont();
+    if (cont !== undefined) {
+      if (!(cont._op in contOpSuccess)) {
+        // @ts-expect-error
+        absurd(cont);
+      }
+      // @ts-expect-error
+      return contOpSuccess[cont._op](this, cont, oldCur.effect_instruction_i0);
+    } else {
+      yieldedOpChannel.currentOp = oldCur;
+      return YieldedOp;
+    }
+  }
+  [OP_FAILURE](op) {
+    const cause = op.effect_instruction_i0;
+    const cont = this.getNextFailCont();
+    if (cont !== undefined) {
+      switch (cont._op) {
+        case OP_ON_FAILURE:
+        case OP_ON_SUCCESS_AND_FAILURE:
+          {
+            if (!(interruptible$2(this.currentRuntimeFlags) && this.isInterrupted())) {
+              return internalCall(() => cont.effect_instruction_i1(cause));
+            } else {
+              return exitFailCause$1(stripFailures(cause));
+            }
+          }
+        case "OnStep":
+          {
+            if (!(interruptible$2(this.currentRuntimeFlags) && this.isInterrupted())) {
+              return exitSucceed$1(exitFailCause$1(cause));
+            } else {
+              return exitFailCause$1(stripFailures(cause));
+            }
+          }
+        case OP_REVERT_FLAGS:
+          {
+            this.patchRuntimeFlags(this.currentRuntimeFlags, cont.patch);
+            if (interruptible$2(this.currentRuntimeFlags) && this.isInterrupted()) {
+              return exitFailCause$1(sequential$2(cause, this.getInterruptedCause()));
+            } else {
+              return exitFailCause$1(cause);
+            }
+          }
+        default:
+          {
+            absurd(cont);
+          }
+      }
+    } else {
+      yieldedOpChannel.currentOp = exitFailCause$1(cause);
+      return YieldedOp;
+    }
+  }
+  [OP_WITH_RUNTIME](op) {
+    return internalCall(() => op.effect_instruction_i0(this, running(this.currentRuntimeFlags)));
+  }
+  ["Blocked"](op) {
+    const refs = this.getFiberRefs();
+    const flags = this.currentRuntimeFlags;
+    if (this._steps.length > 0) {
+      const frames = [];
+      const snap = this._steps[this._steps.length - 1];
+      let frame = this.popStack();
+      while (frame && frame._op !== "OnStep") {
+        frames.push(frame);
+        frame = this.popStack();
+      }
+      this.setFiberRefs(snap.refs);
+      this.currentRuntimeFlags = snap.flags;
+      const patchRefs = diff$1(snap.refs, refs);
+      const patchFlags = diff$3(snap.flags, flags);
+      return exitSucceed$1(blocked(op.effect_instruction_i0, withFiberRuntime(newFiber => {
+        while (frames.length > 0) {
+          newFiber.pushStack(frames.pop());
+        }
+        newFiber.setFiberRefs(patch$1(newFiber.id(), newFiber.getFiberRefs())(patchRefs));
+        newFiber.currentRuntimeFlags = patch$4(patchFlags)(newFiber.currentRuntimeFlags);
+        return op.effect_instruction_i1;
+      })));
+    }
+    return uninterruptibleMask$1(restore => flatMap$1(forkDaemon(runRequestBlock(op.effect_instruction_i0)), () => restore(op.effect_instruction_i1)));
+  }
+  ["RunBlocked"](op) {
+    return runBlockedRequests(op.effect_instruction_i0);
+  }
+  [OP_UPDATE_RUNTIME_FLAGS](op) {
+    const updateFlags = op.effect_instruction_i0;
+    const oldRuntimeFlags = this.currentRuntimeFlags;
+    const newRuntimeFlags = patch$4(oldRuntimeFlags, updateFlags);
+    // One more chance to short circuit: if we're immediately going
+    // to interrupt. Interruption will cause immediate reversion of
+    // the flag, so as long as we "peek ahead", there's no need to
+    // set them to begin with.
+    if (interruptible$2(newRuntimeFlags) && this.isInterrupted()) {
+      return exitFailCause$1(this.getInterruptedCause());
+    } else {
+      // Impossible to short circuit, so record the changes
+      this.patchRuntimeFlags(this.currentRuntimeFlags, updateFlags);
+      if (op.effect_instruction_i1) {
+        // Since we updated the flags, we need to revert them
+        const revertFlags = diff$3(newRuntimeFlags, oldRuntimeFlags);
+        this.pushStack(new RevertFlags(revertFlags, op));
+        return internalCall(() => op.effect_instruction_i1(oldRuntimeFlags));
+      } else {
+        return exitVoid$1;
+      }
+    }
+  }
+  [OP_ON_SUCCESS](op) {
+    this.pushStack(op);
+    return op.effect_instruction_i0;
+  }
+  ["OnStep"](op) {
+    this.pushStack(op);
+    return op.effect_instruction_i0;
+  }
+  [OP_ON_FAILURE](op) {
+    this.pushStack(op);
+    return op.effect_instruction_i0;
+  }
+  [OP_ON_SUCCESS_AND_FAILURE](op) {
+    this.pushStack(op);
+    return op.effect_instruction_i0;
+  }
+  [OP_ASYNC](op) {
+    this._asyncBlockingOn = op.effect_instruction_i1;
+    this.initiateAsync(this.currentRuntimeFlags, op.effect_instruction_i0);
+    yieldedOpChannel.currentOp = op;
+    return YieldedOp;
+  }
+  [OP_YIELD](op) {
+    this._isYielding = false;
+    yieldedOpChannel.currentOp = op;
+    return YieldedOp;
+  }
+  [OP_WHILE](op) {
+    const check = op.effect_instruction_i0;
+    const body = op.effect_instruction_i1;
+    if (check()) {
+      this.pushStack(op);
+      return body();
+    } else {
+      return exitVoid$1;
+    }
+  }
+  [OP_ITERATOR](op) {
+    return contOpSuccess[OP_ITERATOR](this, op, undefined);
+  }
+  [OP_COMMIT](op) {
+    return internalCall(() => op.commit());
+  }
+  /**
+   * The main run-loop for evaluating effects.
+   *
+   * **NOTE**: This method must be invoked by the fiber itself.
+   */
+  runLoop(effect0) {
+    let cur = effect0;
+    this.currentOpCount = 0;
+    while (true) {
+      if ((this.currentRuntimeFlags & OpSupervision) !== 0) {
+        this.currentSupervisor.onEffect(this, cur);
+      }
+      if (this._queue.length > 0) {
+        cur = this.drainQueueWhileRunning(this.currentRuntimeFlags, cur);
+      }
+      if (!this._isYielding) {
+        this.currentOpCount += 1;
+        const shouldYield = this.currentScheduler.shouldYield(this);
+        if (shouldYield !== false) {
+          this._isYielding = true;
+          this.currentOpCount = 0;
+          const oldCur = cur;
+          cur = flatMap$1(yieldNow$2({
+            priority: shouldYield
+          }), () => oldCur);
+        }
+      }
+      try {
+        // @ts-expect-error
+        cur = this.currentTracer.context(() => {
+          if (_version !== cur[EffectTypeId]._V) {
+            const level = this.getFiberRef(currentVersionMismatchErrorLogLevel);
+            if (level._tag === "Some") {
+              const effectVersion = cur[EffectTypeId]._V;
+              this.log(`Executing an Effect versioned ${effectVersion} with a Runtime of version ${getCurrentVersion()}, you may want to dedupe the effect dependencies, you can use the language service plugin to detect this at compile time: https://github.com/Effect-TS/language-service`, empty$g, level);
+            }
+          }
+          // @ts-expect-error
+          return this[cur._op](cur);
+        }, this);
+        if (cur === YieldedOp) {
+          const op = yieldedOpChannel.currentOp;
+          if (op._op === OP_YIELD || op._op === OP_ASYNC) {
+            return YieldedOp;
+          }
+          yieldedOpChannel.currentOp = null;
+          return op._op === OP_SUCCESS || op._op === OP_FAILURE ? op : exitFailCause$1(die$1(op));
+        }
+      } catch (e) {
+        if (cur !== YieldedOp && !hasProperty(cur, "_op") || !(cur._op in this)) {
+          cur = dieMessage(`Not a valid effect: ${toStringUnknown(cur)}`);
+        } else if (isInterruptedException(e)) {
+          cur = exitFailCause$1(sequential$2(die$1(e), interrupt(none$2)));
+        } else {
+          cur = die(e);
+        }
+      }
+    }
+  }
+  run = () => {
+    this.drainQueueOnCurrentThread();
+  };
+}
+// circular with Logger
+/** @internal */
+const currentMinimumLogLevel = /*#__PURE__*/globalValue("effect/FiberRef/currentMinimumLogLevel", () => fiberRefUnsafeMake(fromLiteral("Info")));
+/** @internal */
+const loggerWithConsoleLog = self => makeLogger(opts => {
+  const services = getOrDefault(opts.context, currentServices);
+  get$5(services, consoleTag).unsafe.log(self.log(opts));
+});
+/** @internal */
+const defaultLogger = /*#__PURE__*/globalValue(/*#__PURE__*/Symbol.for("effect/Logger/defaultLogger"), () => loggerWithConsoleLog(stringLogger));
+/** @internal */
+const tracerLogger = /*#__PURE__*/globalValue(/*#__PURE__*/Symbol.for("effect/Logger/tracerLogger"), () => makeLogger(({
+  annotations,
+  cause,
+  context,
+  fiberId,
+  logLevel,
+  message
+}) => {
+  const span = getOption(getOrDefault$1(context, currentContext), spanTag);
+  if (span._tag === "None" || span.value._tag === "ExternalSpan") {
+    return;
+  }
+  const clockService = unsafeGet(getOrDefault$1(context, currentServices), clockTag);
+  const attributes = {};
+  for (const [key, value] of annotations) {
+    attributes[key] = value;
+  }
+  attributes["effect.fiberId"] = threadName(fiberId);
+  attributes["effect.logLevel"] = logLevel.label;
+  if (cause !== null && cause._tag !== "Empty") {
+    attributes["effect.cause"] = pretty(cause, {
+      renderErrorCause: true
+    });
+  }
+  span.value.event(toStringUnknown(Array.isArray(message) && message.length === 1 ? message[0] : message), clockService.unsafeCurrentTimeNanos(), attributes);
+}));
+/** @internal */
+const currentLoggers = /*#__PURE__*/globalValue(/*#__PURE__*/Symbol.for("effect/FiberRef/currentLoggers"), () => fiberRefUnsafeMakeHashSet(make$n(defaultLogger, tracerLogger)));
+// === all
+const allResolveInput = input => {
+  if (Array.isArray(input) || isIterable(input)) {
+    return [input, none$4()];
+  }
+  const keys = Object.keys(input);
+  const size = keys.length;
+  return [keys.map(k => input[k]), some(values => {
+    const res = {};
+    for (let i = 0; i < size; i++) {
+      res[keys[i]] = values[i];
+    }
+    return res;
+  })];
+};
+const allValidate = (effects, reconcile, options) => {
+  const eitherEffects = [];
+  for (const effect of effects) {
+    eitherEffects.push(either(effect));
+  }
+  return flatMap$1(forEach(eitherEffects, identity, {
+    concurrency: options?.concurrency,
+    batching: options?.batching,
+    concurrentFinalizers: options?.concurrentFinalizers
+  }), eithers => {
+    const none = none$4();
+    const size = eithers.length;
+    const errors = new Array(size);
+    const successes = new Array(size);
+    let errored = false;
+    for (let i = 0; i < size; i++) {
+      const either = eithers[i];
+      if (either._tag === "Left") {
+        errors[i] = some(either.left);
+        errored = true;
+      } else {
+        successes[i] = either.right;
+        errors[i] = none;
+      }
+    }
+    if (errored) {
+      return reconcile._tag === "Some" ? fail(reconcile.value(errors)) : fail(errors);
+    } else if (options?.discard) {
+      return void_$1;
+    }
+    return reconcile._tag === "Some" ? succeed$3(reconcile.value(successes)) : succeed$3(successes);
+  });
+};
+const allEither = (effects, reconcile, options) => {
+  const eitherEffects = [];
+  for (const effect of effects) {
+    eitherEffects.push(either(effect));
+  }
+  if (options?.discard) {
+    return forEach(eitherEffects, identity, {
+      concurrency: options?.concurrency,
+      batching: options?.batching,
+      discard: true,
+      concurrentFinalizers: options?.concurrentFinalizers
+    });
+  }
+  return map$3(forEach(eitherEffects, identity, {
+    concurrency: options?.concurrency,
+    batching: options?.batching,
+    concurrentFinalizers: options?.concurrentFinalizers
+  }), eithers => reconcile._tag === "Some" ? reconcile.value(eithers) : eithers);
+};
+/* @internal */
+const all = (arg, options) => {
+  const [effects, reconcile] = allResolveInput(arg);
+  if (options?.mode === "validate") {
+    return allValidate(effects, reconcile, options);
+  } else if (options?.mode === "either") {
+    return allEither(effects, reconcile, options);
+  }
+  return options?.discard !== true && reconcile._tag === "Some" ? map$3(forEach(effects, identity, options), reconcile.value) : forEach(effects, identity, options);
+};
+/* @internal */
+const forEach = /*#__PURE__*/dual(args => isIterable(args[0]), (self, f, options) => withFiberRuntime(r => {
+  const isRequestBatchingEnabled = options?.batching === true || options?.batching === "inherit" && r.getFiberRef(currentRequestBatching);
+  if (options?.discard) {
+    return match(options.concurrency, () => finalizersMaskInternal(sequential, options?.concurrentFinalizers)(restore => isRequestBatchingEnabled ? forEachConcurrentDiscard(self, (a, i) => restore(f(a, i)), true, false, 1) : forEachSequentialDiscard(self, (a, i) => restore(f(a, i)))), () => finalizersMaskInternal(parallel, options?.concurrentFinalizers)(restore => forEachConcurrentDiscard(self, (a, i) => restore(f(a, i)), isRequestBatchingEnabled, false)), n => finalizersMaskInternal(parallelN(n), options?.concurrentFinalizers)(restore => forEachConcurrentDiscard(self, (a, i) => restore(f(a, i)), isRequestBatchingEnabled, false, n)));
+  }
+  return match(options?.concurrency, () => finalizersMaskInternal(sequential, options?.concurrentFinalizers)(restore => isRequestBatchingEnabled ? forEachParN(self, 1, (a, i) => restore(f(a, i)), true) : forEachSequential(self, (a, i) => restore(f(a, i)))), () => finalizersMaskInternal(parallel, options?.concurrentFinalizers)(restore => forEachParUnbounded(self, (a, i) => restore(f(a, i)), isRequestBatchingEnabled)), n => finalizersMaskInternal(parallelN(n), options?.concurrentFinalizers)(restore => forEachParN(self, n, (a, i) => restore(f(a, i)), isRequestBatchingEnabled)));
+}));
+/* @internal */
+const forEachParUnbounded = (self, f, batching) => suspend$2(() => {
+  const as = fromIterable$6(self);
+  const array = new Array(as.length);
+  const fn = (a, i) => flatMap$1(f(a, i), b => sync$2(() => array[i] = b));
+  return zipRight(forEachConcurrentDiscard(as, fn, batching, false), succeed$3(array));
+});
+/** @internal */
+const forEachConcurrentDiscard = (self, f, batching, processAll, n) => uninterruptibleMask$1(restore => transplant(graft => withFiberRuntime(parent => {
+  let todos = Array.from(self).reverse();
+  let target = todos.length;
+  if (target === 0) {
+    return void_$1;
+  }
+  let counter = 0;
+  let interrupted = false;
+  const fibersCount = n ? Math.min(todos.length, n) : todos.length;
+  const fibers = new Set();
+  const results = new Array();
+  const interruptAll = () => fibers.forEach(fiber => {
+    fiber.currentScheduler.scheduleTask(() => {
+      fiber.unsafeInterruptAsFork(parent.id());
+    }, 0);
+  });
+  const startOrder = new Array();
+  const joinOrder = new Array();
+  const residual = new Array();
+  const collectExits = () => {
+    const exits = results.filter(({
+      exit
+    }) => exit._tag === "Failure").sort((a, b) => a.index < b.index ? -1 : a.index === b.index ? 0 : 1).map(({
+      exit
+    }) => exit);
+    if (exits.length === 0) {
+      exits.push(exitVoid$1);
+    }
+    return exits;
+  };
+  const runFiber = (eff, interruptImmediately = false) => {
+    const runnable = uninterruptible(graft(eff));
+    const fiber = unsafeForkUnstarted(runnable, parent, parent.currentRuntimeFlags, globalScope);
+    parent.currentScheduler.scheduleTask(() => {
+      if (interruptImmediately) {
+        fiber.unsafeInterruptAsFork(parent.id());
+      }
+      fiber.resume(runnable);
+    }, 0);
+    return fiber;
+  };
+  const onInterruptSignal = () => {
+    if (!processAll) {
+      target -= todos.length;
+      todos = [];
+    }
+    interrupted = true;
+    interruptAll();
+  };
+  const stepOrExit = batching ? step : exit$1;
+  const processingFiber = runFiber(async_(resume => {
+    const pushResult = (res, index) => {
+      if (res._op === "Blocked") {
+        residual.push(res);
+      } else {
+        results.push({
+          index,
+          exit: res
+        });
+        if (res._op === "Failure" && !interrupted) {
+          onInterruptSignal();
+        }
+      }
+    };
+    const next = () => {
+      if (todos.length > 0) {
+        const a = todos.pop();
+        let index = counter++;
+        const returnNextElement = () => {
+          const a = todos.pop();
+          index = counter++;
+          return flatMap$1(yieldNow$2(), () => flatMap$1(stepOrExit(restore(f(a, index))), onRes));
+        };
+        const onRes = res => {
+          if (todos.length > 0) {
+            pushResult(res, index);
+            if (todos.length > 0) {
+              return returnNextElement();
+            }
+          }
+          return succeed$3(res);
+        };
+        const todo = flatMap$1(stepOrExit(restore(f(a, index))), onRes);
+        const fiber = runFiber(todo);
+        startOrder.push(fiber);
+        fibers.add(fiber);
+        if (interrupted) {
+          fiber.currentScheduler.scheduleTask(() => {
+            fiber.unsafeInterruptAsFork(parent.id());
+          }, 0);
+        }
+        fiber.addObserver(wrapped => {
+          let exit;
+          if (wrapped._op === "Failure") {
+            exit = wrapped;
+          } else {
+            exit = wrapped.effect_instruction_i0;
+          }
+          joinOrder.push(fiber);
+          fibers.delete(fiber);
+          pushResult(exit, index);
+          if (results.length === target) {
+            resume(succeed$3(getOrElse(exitCollectAll(collectExits(), {
+              parallel: true
+            }), () => exitVoid$1)));
+          } else if (residual.length + results.length === target) {
+            const exits = collectExits();
+            const requests = residual.map(blocked => blocked.effect_instruction_i0).reduce(par);
+            resume(succeed$3(blocked(requests, forEachConcurrentDiscard([getOrElse(exitCollectAll(exits, {
+              parallel: true
+            }), () => exitVoid$1), ...residual.map(blocked => blocked.effect_instruction_i1)], i => i, batching, true, n))));
+          } else {
+            next();
+          }
+        });
+      }
+    };
+    for (let i = 0; i < fibersCount; i++) {
+      next();
+    }
+  }));
+  return asVoid(onExit$1(flatten(restore(join(processingFiber))), exitMatch({
+    onFailure: cause => {
+      onInterruptSignal();
+      const target = residual.length + 1;
+      const concurrency = Math.min(typeof n === "number" ? n : residual.length, residual.length);
+      const toPop = Array.from(residual);
+      return async_(cb => {
+        let count = 0;
+        let index = 0;
+        const check = (index, hitNext) => exit => {
+          count++;
+          if (count === target) {
+            cb(exitSucceed$1(exitFailCause$1(cause)));
+          }
+          if (toPop.length > 0 && hitNext) {
+            next();
+          }
+        };
+        const next = () => {
+          runFiber(toPop.pop(), true).addObserver(check(index, true));
+          index++;
+        };
+        processingFiber.addObserver(check(index, false));
+        index++;
+        for (let i = 0; i < concurrency; i++) {
+          next();
+        }
+      });
+    },
+    onSuccess: () => forEachSequential(joinOrder, f => f.inheritAll)
+  })));
+})));
+/* @internal */
+const forEachParN = (self, n, f, batching) => suspend$2(() => {
+  const as = fromIterable$6(self);
+  const array = new Array(as.length);
+  const fn = (a, i) => map$3(f(a, i), b => array[i] = b);
+  return zipRight(forEachConcurrentDiscard(as, fn, batching, false, n), succeed$3(array));
+});
+/* @internal */
+const forkDaemon = self => forkWithScopeOverride(self, globalScope);
+/** @internal */
+const unsafeFork$1 = (effect, parentFiber, parentRuntimeFlags, overrideScope = null) => {
+  const childFiber = unsafeMakeChildFiber(effect, parentFiber, parentRuntimeFlags, overrideScope);
+  childFiber.resume(effect);
+  return childFiber;
+};
+/** @internal */
+const unsafeForkUnstarted = (effect, parentFiber, parentRuntimeFlags, overrideScope = null) => {
+  const childFiber = unsafeMakeChildFiber(effect, parentFiber, parentRuntimeFlags, overrideScope);
+  return childFiber;
+};
+/** @internal */
+const unsafeMakeChildFiber = (effect, parentFiber, parentRuntimeFlags, overrideScope = null) => {
+  const childId = unsafeMake$4();
+  const parentFiberRefs = parentFiber.getFiberRefs();
+  const childFiberRefs = forkAs(parentFiberRefs, childId);
+  const childFiber = new FiberRuntime(childId, childFiberRefs, parentRuntimeFlags);
+  const childContext = getOrDefault$1(childFiberRefs, currentContext);
+  const supervisor = childFiber.currentSupervisor;
+  supervisor.onStart(childContext, effect, some(parentFiber), childFiber);
+  childFiber.addObserver(exit => supervisor.onEnd(exit, childFiber));
+  const parentScope = overrideScope !== null ? overrideScope : pipe(parentFiber.getFiberRef(currentForkScopeOverride), getOrElse(() => parentFiber.scope()));
+  parentScope.add(parentRuntimeFlags, childFiber);
+  return childFiber;
+};
+/* @internal */
+const forkWithScopeOverride = (self, scopeOverride) => withFiberRuntime((parentFiber, parentStatus) => succeed$3(unsafeFork$1(self, parentFiber, parentStatus.runtimeFlags, scopeOverride)));
+/* @internal */
+const parallelFinalizers = self => contextWithEffect(context => match$3(getOption(context, scopeTag), {
+  onNone: () => self,
+  onSome: scope => {
+    switch (scope.strategy._tag) {
+      case "Parallel":
+        return self;
+      case "Sequential":
+      case "ParallelN":
+        return flatMap$1(scopeFork(scope, parallel), inner => scopeExtend(self, inner));
+    }
+  }
+}));
+/* @internal */
+const parallelNFinalizers = parallelism => self => contextWithEffect(context => match$3(getOption(context, scopeTag), {
+  onNone: () => self,
+  onSome: scope => {
+    if (scope.strategy._tag === "ParallelN" && scope.strategy.parallelism === parallelism) {
+      return self;
+    }
+    return flatMap$1(scopeFork(scope, parallelN(parallelism)), inner => scopeExtend(self, inner));
+  }
+}));
+/* @internal */
+const finalizersMaskInternal = (strategy, concurrentFinalizers) => self => contextWithEffect(context => match$3(getOption(context, scopeTag), {
+  onNone: () => self(identity),
+  onSome: scope => {
+    if (concurrentFinalizers === true) {
+      const patch = strategy._tag === "Parallel" ? parallelFinalizers : strategy._tag === "Sequential" ? sequentialFinalizers : parallelNFinalizers(strategy.parallelism);
+      switch (scope.strategy._tag) {
+        case "Parallel":
+          return patch(self(parallelFinalizers));
+        case "Sequential":
+          return patch(self(sequentialFinalizers));
+        case "ParallelN":
+          return patch(self(parallelNFinalizers(scope.strategy.parallelism)));
+      }
+    } else {
+      return self(identity);
+    }
+  }
+}));
+/* @internal */
+const scopeWith = f => flatMap$1(scopeTag, f);
+/** @internal */
+const scopedWith = f => flatMap$1(scopeMake(), scope => onExit$1(f(scope), exit => scope.close(exit)));
+/* @internal */
+const sequentialFinalizers = self => contextWithEffect(context => match$3(getOption(context, scopeTag), {
+  onNone: () => self,
+  onSome: scope => {
+    switch (scope.strategy._tag) {
+      case "Sequential":
+        return self;
+      case "Parallel":
+      case "ParallelN":
+        return flatMap$1(scopeFork(scope, sequential), inner => scopeExtend(self, inner));
+    }
+  }
+}));
+/** @internal */
+const zipWithOptions = /*#__PURE__*/dual(args => isEffect(args[1]), (self, that, f, options) => map$3(all([self, that], {
+  concurrency: options?.concurrent ? 2 : 1,
+  batching: options?.batching,
+  concurrentFinalizers: options?.concurrentFinalizers
+}), ([a, a2]) => f(a, a2)));
+// circular with Scope
+/** @internal */
+const scopeTag = /*#__PURE__*/GenericTag("effect/Scope");
+const scopeUnsafeAddFinalizer = (scope, fin) => {
+  if (scope.state._tag === "Open") {
+    scope.state.finalizers.set({}, fin);
+  }
+};
+const ScopeImplProto = {
+  [ScopeTypeId]: ScopeTypeId,
+  [CloseableScopeTypeId]: CloseableScopeTypeId,
+  pipe() {
+    return pipeArguments(this, arguments);
+  },
+  fork(strategy) {
+    return sync$2(() => {
+      const newScope = scopeUnsafeMake(strategy);
+      if (this.state._tag === "Closed") {
+        newScope.state = this.state;
+        return newScope;
+      }
+      const key = {};
+      const fin = exit => newScope.close(exit);
+      this.state.finalizers.set(key, fin);
+      scopeUnsafeAddFinalizer(newScope, _ => sync$2(() => {
+        if (this.state._tag === "Open") {
+          this.state.finalizers.delete(key);
+        }
+      }));
+      return newScope;
+    });
+  },
+  close(exit) {
+    return suspend$2(() => {
+      if (this.state._tag === "Closed") {
+        return void_$1;
+      }
+      const finalizers = Array.from(this.state.finalizers.values()).reverse();
+      this.state = {
+        _tag: "Closed",
+        exit
+      };
+      if (finalizers.length === 0) {
+        return void_$1;
+      }
+      return isSequential(this.strategy) ? pipe(forEachSequential(finalizers, fin => exit$1(fin(exit))), flatMap$1(results => pipe(exitCollectAll(results), map$7(exitAsVoid), getOrElse(() => exitVoid$1)))) : isParallel(this.strategy) ? pipe(forEachParUnbounded(finalizers, fin => exit$1(fin(exit)), false), flatMap$1(results => pipe(exitCollectAll(results, {
+        parallel: true
+      }), map$7(exitAsVoid), getOrElse(() => exitVoid$1)))) : pipe(forEachParN(finalizers, this.strategy.parallelism, fin => exit$1(fin(exit)), false), flatMap$1(results => pipe(exitCollectAll(results, {
+        parallel: true
+      }), map$7(exitAsVoid), getOrElse(() => exitVoid$1))));
+    });
+  },
+  addFinalizer(fin) {
+    return suspend$2(() => {
+      if (this.state._tag === "Closed") {
+        return fin(this.state.exit);
+      }
+      this.state.finalizers.set({}, fin);
+      return void_$1;
+    });
+  }
+};
+const scopeUnsafeMake = (strategy = sequential$1) => {
+  const scope = Object.create(ScopeImplProto);
+  scope.strategy = strategy;
+  scope.state = {
+    _tag: "Open",
+    finalizers: new Map()
+  };
+  return scope;
+};
+/* @internal */
+const scopeMake = (strategy = sequential$1) => sync$2(() => scopeUnsafeMake(strategy));
+/* @internal */
+const scopeExtend = /*#__PURE__*/dual(2, (effect, scope) => mapInputContext(effect,
+// @ts-expect-error
+merge$3(make$l(scopeTag, scope))));
+// circular with Supervisor
+/** @internal */
+const fiberRefUnsafeMakeSupervisor = initial => fiberRefUnsafeMakePatch(initial, {
+  differ: differ,
+  fork: empty$2
+});
+/** @internal */
+const currentRuntimeFlags = /*#__PURE__*/fiberRefUnsafeMakeRuntimeFlags(none$1);
+/** @internal */
+const currentSupervisor = /*#__PURE__*/fiberRefUnsafeMakeSupervisor(none);
+/** @internal */
+const raceFibersWith = /*#__PURE__*/dual(3, (self, other, options) => withFiberRuntime((parentFiber, parentStatus) => {
+  const parentRuntimeFlags = parentStatus.runtimeFlags;
+  const raceIndicator = make$j(true);
+  const leftFiber = unsafeMakeChildFiber(self, parentFiber, parentRuntimeFlags, options.selfScope);
+  const rightFiber = unsafeMakeChildFiber(other, parentFiber, parentRuntimeFlags, options.otherScope);
+  return async_(cb => {
+    leftFiber.addObserver(() => completeRace(leftFiber, rightFiber, options.onSelfWin, raceIndicator, cb));
+    rightFiber.addObserver(() => completeRace(rightFiber, leftFiber, options.onOtherWin, raceIndicator, cb));
+    leftFiber.startFork(self);
+    rightFiber.startFork(other);
+  }, combine$5(leftFiber.id(), rightFiber.id()));
+}));
+const completeRace = (winner, loser, cont, ab, cb) => {
+  if (compareAndSet(true, false)(ab)) {
+    cb(cont(winner, loser));
+  }
+};
+/** @internal */
+const ensuring = /*#__PURE__*/dual(2, (self, finalizer) => uninterruptibleMask$1(restore => matchCauseEffect$1(restore(self), {
+  onFailure: cause1 => matchCauseEffect$1(finalizer, {
+    onFailure: cause2 => failCause$1(sequential$2(cause1, cause2)),
+    onSuccess: () => failCause$1(cause1)
+  }),
+  onSuccess: a => as(finalizer, a)
+})));
+/** @internal */
+const invokeWithInterrupt = (self, entries, onInterrupt) => fiberIdWith(id => flatMap$1(flatMap$1(forkDaemon(interruptible$1(self)), processing => async_(cb => {
+  const counts = entries.map(_ => _.listeners.count);
+  const checkDone = () => {
+    if (counts.every(count => count === 0)) {
+      if (entries.every(_ => {
+        if (_.result.state.current._tag === "Pending") {
+          return true;
+        } else if (_.result.state.current._tag === "Done" && exitIsExit(_.result.state.current.effect) && _.result.state.current.effect._tag === "Failure" && isInterrupted(_.result.state.current.effect.cause)) {
+          return true;
+        } else {
+          return false;
+        }
+      })) {
+        cleanup.forEach(f => f());
+        onInterrupt?.();
+        cb(interruptFiber(processing));
+      }
+    }
+  };
+  processing.addObserver(exit => {
+    cleanup.forEach(f => f());
+    cb(exit);
+  });
+  const cleanup = entries.map((r, i) => {
+    const observer = count => {
+      counts[i] = count;
+      checkDone();
+    };
+    r.listeners.addObserver(observer);
+    return () => r.listeners.removeObserver(observer);
+  });
+  checkDone();
+  return sync$2(() => {
+    cleanup.forEach(f => f());
+  });
+})), () => suspend$2(() => {
+  const residual = entries.flatMap(entry => {
+    if (!entry.state.completed) {
+      return [entry];
+    }
+    return [];
+  });
+  return forEachSequentialDiscard(residual, entry => complete(entry.request, exitInterrupt$1(id)));
+})));
+
+/** @internal */
+const IntervalSymbolKey = "effect/ScheduleInterval";
+/** @internal */
+const IntervalTypeId = /*#__PURE__*/Symbol.for(IntervalSymbolKey);
+/** @internal */
+const empty$1 = {
+  [IntervalTypeId]: IntervalTypeId,
+  startMillis: 0,
+  endMillis: 0
+};
+/** @internal */
+const make$5 = (startMillis, endMillis) => {
+  if (startMillis > endMillis) {
+    return empty$1;
+  }
+  return {
+    [IntervalTypeId]: IntervalTypeId,
+    startMillis,
+    endMillis
+  };
+};
+/** @internal */
+const lessThan$3 = /*#__PURE__*/dual(2, (self, that) => min(self, that) === self);
+/** @internal */
+const min = /*#__PURE__*/dual(2, (self, that) => {
+  if (self.endMillis <= that.startMillis) return self;
+  if (that.endMillis <= self.startMillis) return that;
+  if (self.startMillis < that.startMillis) return self;
+  if (that.startMillis < self.startMillis) return that;
+  if (self.endMillis <= that.endMillis) return self;
+  return that;
+});
+/** @internal */
+const isEmpty$1 = self => {
+  return self.startMillis >= self.endMillis;
+};
+/** @internal */
+const intersect$4 = /*#__PURE__*/dual(2, (self, that) => {
+  const start = Math.max(self.startMillis, that.startMillis);
+  const end = Math.min(self.endMillis, that.endMillis);
+  return make$5(start, end);
+});
+/** @internal */
+const after$1 = startMilliseconds => {
+  return make$5(startMilliseconds, Number.POSITIVE_INFINITY);
+};
+
+/**
+ * An `Interval` of zero-width.
+ *
+ * @since 2.0.0
+ * @category constructors
+ */
+const empty = empty$1;
+/**
+ * Returns `true` if this `Interval` is less than `that` interval, `false`
+ * otherwise.
+ *
+ * @since 2.0.0
+ * @category ordering
+ */
+const lessThan$2 = lessThan$3;
+/**
+ * Returns `true` if the specified `Interval` is empty, `false` otherwise.
+ *
+ * @since 2.0.0
+ * @category ordering
+ */
+const isEmpty = isEmpty$1;
+/**
+ * Computes a new `Interval` which is the intersection of this `Interval` and
+ * that `Interval`.
+ *
+ * @since 2.0.0
+ * @category ordering
+ */
+const intersect$3 = intersect$4;
+/**
+ * Construct an `Interval` that includes all time equal to and after the
+ * specified start time.
+ *
+ * @since 2.0.0
+ * @category constructors
+ */
+const after = after$1;
+
+/** @internal */
+const IntervalsSymbolKey = "effect/ScheduleIntervals";
+/** @internal */
+const IntervalsTypeId = /*#__PURE__*/Symbol.for(IntervalsSymbolKey);
+/** @internal */
+const make$4 = intervals => {
+  return {
+    [IntervalsTypeId]: IntervalsTypeId,
+    intervals
+  };
+};
+/** @internal */
+const intersect$2 = /*#__PURE__*/dual(2, (self, that) => intersectLoop(self.intervals, that.intervals, empty$k()));
+/** @internal */
+const intersectLoop = (_left, _right, _acc) => {
+  let left = _left;
+  let right = _right;
+  let acc = _acc;
+  while (isNonEmpty$2(left) && isNonEmpty$2(right)) {
+    const interval = pipe(headNonEmpty(left), intersect$3(headNonEmpty(right)));
+    const intervals = isEmpty(interval) ? acc : pipe(acc, prepend$1(interval));
+    if (pipe(headNonEmpty(left), lessThan$2(headNonEmpty(right)))) {
+      left = tailNonEmpty(left);
+    } else {
+      right = tailNonEmpty(right);
+    }
+    acc = intervals;
+  }
+  return make$4(reverse$1(acc));
+};
+/** @internal */
+const start$1 = self => {
+  return pipe(self.intervals, head, getOrElse(() => empty)).startMillis;
+};
+/** @internal */
+const end$1 = self => {
+  return pipe(self.intervals, head, getOrElse(() => empty)).endMillis;
+};
+/** @internal */
+const lessThan$1 = /*#__PURE__*/dual(2, (self, that) => start$1(self) < start$1(that));
+/** @internal */
+const isNonEmpty$1 = self => {
+  return isNonEmpty$2(self.intervals);
+};
+
+/**
+ * Creates a new `Intervals` from a `List` of `Interval`s.
+ *
+ * @since 2.0.0
+ * @category constructors
+ */
+const make$3 = make$4;
+/**
+ * Produces the intersection of this `Intervals` and that `Intervals`.
+ *
+ * @since 2.0.0
+ * @category utils
+ */
+const intersect$1 = intersect$2;
+/**
+ * The start of the earliest interval in the specified `Intervals`.
+ *
+ * @since 2.0.0
+ * @category getters
+ */
+const start = start$1;
+/**
+ * The end of the latest interval in the specified `Intervals`.
+ *
+ * @since 2.0.0
+ * @category getters
+ */
+const end = end$1;
+/**
+ * Returns `true` if the start of this `Intervals` is before the start of that
+ * `Intervals`, `false` otherwise.
+ *
+ * @since 2.0.0
+ * @category ordering
+ */
+const lessThan = lessThan$1;
+/**
+ * Returns `true` if this `Intervals` is non-empty, `false` otherwise.
+ *
+ * @since 2.0.0
+ * @category getters
+ */
+const isNonEmpty = isNonEmpty$1;
+
+/** @internal */
+const OP_CONTINUE = "Continue";
+/** @internal */
+const OP_DONE = "Done";
+/** @internal */
+const _continue$1 = intervals => {
+  return {
+    _tag: OP_CONTINUE,
+    intervals
+  };
+};
+/** @internal */
+const continueWith$1 = interval => {
+  return {
+    _tag: OP_CONTINUE,
+    intervals: make$3(of$1(interval))
+  };
+};
+/** @internal */
+const done$1 = {
+  _tag: OP_DONE
+};
+/** @internal */
+const isContinue$1 = self => {
+  return self._tag === OP_CONTINUE;
+};
+/** @internal */
+const isDone$1 = self => {
+  return self._tag === OP_DONE;
+};
+
+/**
+ * @since 2.0.0
+ */
+const _continue = _continue$1;
+/**
+ * @since 2.0.0
+ * @category constructors
+ */
+const continueWith = continueWith$1;
+/**
+ * @since 2.0.0
+ * @category constructors
+ */
+const done = done$1;
+/**
+ * @since 2.0.0
+ * @category refinements
+ */
+const isContinue = isContinue$1;
+/**
+ * @since 2.0.0
+ * @category refinements
+ */
+const isDone = isDone$1;
+
+/**
+ * @since 2.0.0
+ */
+/**
+ * Closes this scope with the specified exit value, running all finalizers that
+ * have been added to the scope.
+ *
+ * @since 2.0.0
+ * @category destructors
+ */
+const close = scopeClose;
+/**
+ * Forks a new child scope with the specified execution strategy. The child scope
+ * will automatically be closed when this scope is closed.
+ *
+ * @since 2.0.0
+ * @category utils
+ */
+const fork = scopeFork;
+
+/** @internal */
+class Semaphore {
+  permits;
+  waiters = /*#__PURE__*/new Set();
+  taken = 0;
+  constructor(permits) {
+    this.permits = permits;
+  }
+  get free() {
+    return this.permits - this.taken;
+  }
+  take = n => asyncInterrupt(resume => {
+    if (this.free < n) {
+      const observer = () => {
+        if (this.free < n) {
+          return;
+        }
+        this.waiters.delete(observer);
+        this.taken += n;
+        resume(succeed$3(n));
+      };
+      this.waiters.add(observer);
+      return sync$2(() => {
+        this.waiters.delete(observer);
+      });
+    }
+    this.taken += n;
+    return resume(succeed$3(n));
+  });
+  updateTakenUnsafe(fiber, f) {
+    this.taken = f(this.taken);
+    if (this.waiters.size > 0) {
+      fiber.getFiberRef(currentScheduler).scheduleTask(() => {
+        const iter = this.waiters.values();
+        let item = iter.next();
+        while (item.done === false && this.free > 0) {
+          item.value();
+          item = iter.next();
+        }
+      }, fiber.getFiberRef(currentSchedulingPriority));
+    }
+    return succeed$3(this.free);
+  }
+  updateTaken(f) {
+    return withFiberRuntime(fiber => this.updateTakenUnsafe(fiber, f));
+  }
+  resize = permits => asVoid(withFiberRuntime(fiber => {
+    this.permits = permits;
+    if (this.free < 0) {
+      return void_$1;
+    }
+    return this.updateTakenUnsafe(fiber, taken => taken);
+  }));
+  release = n => this.updateTaken(taken => taken - n);
+  releaseAll = /*#__PURE__*/this.updateTaken(_ => 0);
+  withPermits = n => self => uninterruptibleMask$1(restore => flatMap$1(restore(this.take(n)), permits => ensuring(restore(self), this.release(permits))));
+  withPermitsIfAvailable = n => self => uninterruptibleMask$1(restore => suspend$2(() => {
+    if (this.free < n) {
+      return succeedNone;
+    }
+    this.taken += n;
+    return ensuring(restore(asSome(self)), this.release(n));
+  }));
+}
+/** @internal */
+const unsafeMakeSemaphore = permits => new Semaphore(permits);
+/** @internal */
+const timeout$1 = /*#__PURE__*/dual(2, (self, duration) => timeoutFail(self, {
+  onTimeout: () => timeoutExceptionFromDuration(duration),
+  duration
+}));
+/** @internal */
+const timeoutFail = /*#__PURE__*/dual(2, (self, {
+  duration,
+  onTimeout
+}) => flatten(timeoutTo(self, {
+  onTimeout: () => failSync(onTimeout),
+  onSuccess: succeed$3,
+  duration
+})));
+/** @internal */
+const timeoutTo = /*#__PURE__*/dual(2, (self, {
+  duration,
+  onSuccess,
+  onTimeout
+}) => fiberIdWith(parentFiberId => uninterruptibleMask$1(restore => raceFibersWith(restore(self), interruptible$1(sleep(duration)), {
+  onSelfWin: (winner, loser) => flatMap$1(winner.await, exit => {
+    if (exit._tag === "Success") {
+      return flatMap$1(winner.inheritAll, () => as(interruptAsFiber(loser, parentFiberId), onSuccess(exit.value)));
+    } else {
+      return flatMap$1(interruptAsFiber(loser, parentFiberId), () => exitFailCause$1(exit.cause));
+    }
+  }),
+  onOtherWin: (winner, loser) => flatMap$1(winner.await, exit => {
+    if (exit._tag === "Success") {
+      return flatMap$1(winner.inheritAll, () => as(interruptAsFiber(loser, parentFiberId), onTimeout()));
+    } else {
+      return flatMap$1(interruptAsFiber(loser, parentFiberId), () => exitFailCause$1(exit.cause));
+    }
+  }),
+  otherScope: globalScope
+}))));
+// circular with Synchronized
+/** @internal */
+const SynchronizedSymbolKey = "effect/Ref/SynchronizedRef";
+/** @internal */
+const SynchronizedTypeId = /*#__PURE__*/Symbol.for(SynchronizedSymbolKey);
+/** @internal */
+const synchronizedVariance = {
+  /* c8 ignore next */
+  _A: _ => _
+};
+/** @internal */
+class SynchronizedImpl extends Class {
+  ref;
+  withLock;
+  [SynchronizedTypeId] = synchronizedVariance;
+  [RefTypeId] = refVariance;
+  [TypeId$2] = TypeId$2;
+  constructor(ref, withLock) {
+    super();
+    this.ref = ref;
+    this.withLock = withLock;
+    this.get = get$1(this.ref);
+  }
+  get;
+  commit() {
+    return this.get;
+  }
+  modify(f) {
+    return this.modifyEffect(a => succeed$3(f(a)));
+  }
+  modifyEffect(f) {
+    return this.withLock(pipe(flatMap$1(get$1(this.ref), f), flatMap$1(([b, a]) => as(set$1(this.ref, a), b))));
+  }
+}
+/** @internal */
+const makeSynchronized = value => sync$2(() => unsafeMakeSynchronized(value));
+/** @internal */
+const unsafeMakeSynchronized = value => {
+  const ref = unsafeMake$2(value);
+  const sem = unsafeMakeSemaphore(1);
+  return new SynchronizedImpl(ref, sem.withPermits(1));
+};
+
+// circular with Layer
+/** @internal */
+const TypeId = /*#__PURE__*/Symbol.for("effect/ManagedRuntime");
+
+/** @internal */
+/** @internal */
+const OP_FRESH = "Fresh";
+/** @internal */
+const OP_FROM_EFFECT = "FromEffect";
+/** @internal */
+const OP_SCOPED = "Scoped";
+/** @internal */
+const OP_SUSPEND = "Suspend";
+/** @internal */
+const OP_PROVIDE = "Provide";
+/** @internal */
+const OP_PROVIDE_MERGE = "ProvideMerge";
+/** @internal */
+const OP_ZIP_WITH = "ZipWith";
+
+const makeDual = f => function () {
+  if (arguments.length === 1) {
+    const runtime = arguments[0];
+    return (effect, ...args) => f(runtime, effect, ...args);
+  }
+  return f.apply(this, arguments);
+};
+/** @internal */
+const unsafeFork = /*#__PURE__*/makeDual((runtime, self, options) => {
+  const fiberId = unsafeMake$4();
+  const fiberRefUpdates = [[currentContext, [[fiberId, runtime.context]]]];
+  if (options?.scheduler) {
+    fiberRefUpdates.push([currentScheduler, [[fiberId, options.scheduler]]]);
+  }
+  let fiberRefs = updateManyAs(runtime.fiberRefs, {
+    entries: fiberRefUpdates,
+    forkAs: fiberId
+  });
+  if (options?.updateRefs) {
+    fiberRefs = options.updateRefs(fiberRefs, fiberId);
+  }
+  const fiberRuntime = new FiberRuntime(fiberId, fiberRefs, runtime.runtimeFlags);
+  let effect = self;
+  if (options?.scope) {
+    effect = flatMap$1(fork(options.scope, sequential$1), closeableScope => zipRight(scopeAddFinalizer(closeableScope, fiberIdWith(id => equals$1(id, fiberRuntime.id()) ? void_$1 : interruptAsFiber(fiberRuntime, id))), onExit$1(self, exit => close(closeableScope, exit))));
+  }
+  const supervisor = fiberRuntime.currentSupervisor;
+  // we can compare by reference here as _supervisor.none is wrapped with globalValue
+  if (supervisor !== none) {
+    supervisor.onStart(runtime.context, effect, none$4(), fiberRuntime);
+    fiberRuntime.addObserver(exit => supervisor.onEnd(exit, fiberRuntime));
+  }
+  globalScope.add(runtime.runtimeFlags, fiberRuntime);
+  // Only an explicit false will prevent immediate execution
+  if (options?.immediate === false) {
+    fiberRuntime.resume(effect);
+  } else {
+    fiberRuntime.start(effect);
+  }
+  return fiberRuntime;
+});
+const fastPath = effect => {
+  const op = effect;
+  switch (op._op) {
+    case "Failure":
+    case "Success":
+      {
+        // @ts-expect-error
+        return op;
+      }
+    case "Left":
+      {
+        return exitFail(op.left);
+      }
+    case "Right":
+      {
+        return exitSucceed$1(op.right);
+      }
+    case "Some":
+      {
+        return exitSucceed$1(op.value);
+      }
+    case "None":
+      {
+        // @ts-expect-error
+        return exitFail(NoSuchElementException());
+      }
+  }
+};
+/** @internal */
+const unsafeRunPromiseExit = /*#__PURE__*/makeDual((runtime, effect, options) => new Promise(resolve => {
+  const op = fastPath(effect);
+  if (op) {
+    resolve(op);
+  }
+  const fiber = unsafeFork(runtime)(effect);
+  fiber.addObserver(exit => {
+    resolve(exit);
+  });
+  if (options?.signal !== undefined) {
+    if (options.signal.aborted) {
+      fiber.unsafeInterruptAsFork(fiber.id());
+    } else {
+      options.signal.addEventListener("abort", () => {
+        fiber.unsafeInterruptAsFork(fiber.id());
+      }, {
+        once: true
+      });
+    }
+  }
+}));
+/** @internal */
+class RuntimeImpl {
+  context;
+  runtimeFlags;
+  fiberRefs;
+  constructor(context, runtimeFlags, fiberRefs) {
+    this.context = context;
+    this.runtimeFlags = runtimeFlags;
+    this.fiberRefs = fiberRefs;
+  }
+  pipe() {
+    return pipeArguments(this, arguments);
+  }
+}
+/** @internal */
+const make$2 = options => new RuntimeImpl(options.context, options.runtimeFlags, options.fiberRefs);
+/** @internal */
+const defaultRuntimeFlags = /*#__PURE__*/make$g(Interruption, CooperativeYielding, RuntimeMetrics);
+/** @internal */
+const defaultRuntime = /*#__PURE__*/make$2({
+  context: /*#__PURE__*/empty$e(),
+  runtimeFlags: defaultRuntimeFlags,
+  fiberRefs: /*#__PURE__*/empty$5()
+});
+/** @internal */
+const unsafeRunPromiseExitEffect = /*#__PURE__*/unsafeRunPromiseExit(defaultRuntime);
+
+/** @internal */
+const modifyEffect = /*#__PURE__*/dual(2, (self, f) => self.modifyEffect(f));
+
+/** @internal */
+const LayerSymbolKey = "effect/Layer";
+/** @internal */
+const LayerTypeId = /*#__PURE__*/Symbol.for(LayerSymbolKey);
+const layerVariance = {
+  /* c8 ignore next */
+  _RIn: _ => _,
+  /* c8 ignore next */
+  _E: _ => _,
+  /* c8 ignore next */
+  _ROut: _ => _
+};
+/** @internal */
+const proto$2 = {
+  [LayerTypeId]: layerVariance,
+  pipe() {
+    return pipeArguments(this, arguments);
+  }
+};
+/** @internal */
+const MemoMapTypeIdKey = "effect/Layer/MemoMap";
+/** @internal */
+const MemoMapTypeId = /*#__PURE__*/Symbol.for(MemoMapTypeIdKey);
+/** @internal */
+const CurrentMemoMap = /*#__PURE__*/Reference()("effect/Layer/CurrentMemoMap", {
+  defaultValue: () => unsafeMakeMemoMap()
+});
+/** @internal */
+const isLayer = u => hasProperty(u, LayerTypeId);
+/** @internal */
+const isFresh = self => {
+  return self._op_layer === OP_FRESH;
+};
+// -----------------------------------------------------------------------------
+// MemoMap
+// -----------------------------------------------------------------------------
+/** @internal */
+class MemoMapImpl {
+  ref;
+  [MemoMapTypeId];
+  constructor(ref) {
+    this.ref = ref;
+    this[MemoMapTypeId] = MemoMapTypeId;
+  }
+  /**
+   * Checks the memo map to see if a layer exists. If it is, immediately
+   * returns it. Otherwise, obtains the layer, stores it in the memo map,
+   * and adds a finalizer to the `Scope`.
+   */
+  getOrElseMemoize(layer, scope) {
+    return pipe(modifyEffect(this.ref, map => {
+      const inMap = map.get(layer);
+      if (inMap !== undefined) {
+        const [acquire, release] = inMap;
+        const cached = pipe(acquire, flatMap$1(([patch, b]) => pipe(patchFiberRefs(patch), as(b))), onExit$1(exitMatch({
+          onFailure: () => void_$1,
+          onSuccess: () => scopeAddFinalizerExit(scope, release)
+        })));
+        return succeed$3([cached, map]);
+      }
+      return pipe(make$b(0), flatMap$1(observers => pipe(deferredMake(), flatMap$1(deferred => pipe(make$b(() => void_$1), map$3(finalizerRef => {
+        const resource = uninterruptibleMask$1(restore => pipe(scopeMake(), flatMap$1(innerScope => pipe(restore(flatMap$1(makeBuilder(layer, innerScope, true), f => diffFiberRefs(f(this)))), exit$1, flatMap$1(exit => {
+          switch (exit._tag) {
+            case OP_FAILURE:
+              {
+                return pipe(deferredFailCause(deferred, exit.effect_instruction_i0), zipRight(scopeClose(innerScope, exit)), zipRight(failCause$1(exit.effect_instruction_i0)));
+              }
+            case OP_SUCCESS:
+              {
+                return pipe(set$1(finalizerRef, exit => pipe(scopeClose(innerScope, exit), whenEffect(modify(observers, n => [n === 1, n - 1])), asVoid)), zipRight(update$1(observers, n => n + 1)), zipRight(scopeAddFinalizerExit(scope, exit => pipe(sync$2(() => map.delete(layer)), zipRight(get$1(finalizerRef)), flatMap$1(finalizer => finalizer(exit))))), zipRight(deferredSucceed(deferred, exit.effect_instruction_i0)), as(exit.effect_instruction_i0[1]));
+              }
+          }
+        })))));
+        const memoized = [pipe(deferredAwait(deferred), onExit$1(exitMatchEffect({
+          onFailure: () => void_$1,
+          onSuccess: () => update$1(observers, n => n + 1)
+        }))), exit => pipe(get$1(finalizerRef), flatMap$1(finalizer => finalizer(exit)))];
+        return [resource, isFresh(layer) ? map : map.set(layer, memoized)];
+      }))))));
+    }), flatten);
+  }
+}
+/** @internal */
+const makeMemoMap = /*#__PURE__*/suspend$2(() => map$3(makeSynchronized(new Map()), ref => new MemoMapImpl(ref)));
+/** @internal */
+const unsafeMakeMemoMap = () => new MemoMapImpl(unsafeMakeSynchronized(new Map()));
+/** @internal */
+const buildWithScope = /*#__PURE__*/dual(2, (self, scope) => flatMap$1(makeMemoMap, memoMap => buildWithMemoMap(self, memoMap, scope)));
+/** @internal */
+const buildWithMemoMap = /*#__PURE__*/dual(3, (self, memoMap, scope) => flatMap$1(makeBuilder(self, scope), run => provideService(run(memoMap), CurrentMemoMap, memoMap)));
+const makeBuilder = (self, scope, inMemoMap = false) => {
+  const op = self;
+  switch (op._op_layer) {
+    case "Locally":
+      {
+        return sync$2(() => memoMap => op.f(memoMap.getOrElseMemoize(op.self, scope)));
+      }
+    case "ExtendScope":
+      {
+        return sync$2(() => memoMap => scopeWith(scope => memoMap.getOrElseMemoize(op.layer, scope)));
+      }
+    case "Fold":
+      {
+        return sync$2(() => memoMap => pipe(memoMap.getOrElseMemoize(op.layer, scope), matchCauseEffect$1({
+          onFailure: cause => memoMap.getOrElseMemoize(op.failureK(cause), scope),
+          onSuccess: value => memoMap.getOrElseMemoize(op.successK(value), scope)
+        })));
+      }
+    case "Fresh":
+      {
+        return sync$2(() => _ => pipe(op.layer, buildWithScope(scope)));
+      }
+    case "FromEffect":
+      {
+        return inMemoMap ? sync$2(() => _ => op.effect) : sync$2(() => memoMap => memoMap.getOrElseMemoize(self, scope));
+      }
+    case "Provide":
+      {
+        return sync$2(() => memoMap => pipe(memoMap.getOrElseMemoize(op.first, scope), flatMap$1(env => pipe(memoMap.getOrElseMemoize(op.second, scope), provideContext$1(env)))));
+      }
+    case "Scoped":
+      {
+        return inMemoMap ? sync$2(() => _ => scopeExtend(op.effect, scope)) : sync$2(() => memoMap => memoMap.getOrElseMemoize(self, scope));
+      }
+    case "Suspend":
+      {
+        return sync$2(() => memoMap => memoMap.getOrElseMemoize(op.evaluate(), scope));
+      }
+    case "ProvideMerge":
+      {
+        return sync$2(() => memoMap => pipe(memoMap.getOrElseMemoize(op.first, scope), zipWith$1(memoMap.getOrElseMemoize(op.second, scope), op.zipK)));
+      }
+    case "ZipWith":
+      {
+        return sync$2(() => memoMap => pipe(memoMap.getOrElseMemoize(op.first, scope), zipWithOptions(memoMap.getOrElseMemoize(op.second, scope), op.zipK, {
+          concurrent: true
+        })));
+      }
+  }
+};
+/** @internal */
+const context$1 = () => fromEffectContext(context$2());
+/** @internal */
+const fromEffect = /*#__PURE__*/dual(2, (a, b) => {
+  const tagFirst = isTag(a);
+  const tag = tagFirst ? a : b;
+  const effect = tagFirst ? b : a;
+  return fromEffectContext(map$3(effect, service => make$l(tag, service)));
+});
+/** @internal */
+function fromEffectContext(effect) {
+  const fromEffect = Object.create(proto$2);
+  fromEffect._op_layer = OP_FROM_EFFECT;
+  fromEffect.effect = effect;
+  return fromEffect;
+}
+/** @internal */
+const merge$1 = /*#__PURE__*/dual(2, (self, that) => zipWith(self, that, (a, b) => merge$3(a, b)));
+/** @internal */
+const mergeAll = (...layers) => {
+  let final = layers[0];
+  for (let i = 1; i < layers.length; i++) {
+    final = merge$1(final, layers[i]);
+  }
+  return final;
+};
+/** @internal */
+const scoped = /*#__PURE__*/dual(2, (a, b) => {
+  const tagFirst = isTag(a);
+  const tag = tagFirst ? a : b;
+  const effect = tagFirst ? b : a;
+  return scopedContext(map$3(effect, service => make$l(tag, service)));
+});
+/** @internal */
+const scopedContext = effect => {
+  const scoped = Object.create(proto$2);
+  scoped._op_layer = OP_SCOPED;
+  scoped.effect = effect;
+  return scoped;
+};
+/** @internal */
+const succeed$1 = /*#__PURE__*/dual(2, (a, b) => {
+  const tagFirst = isTag(a);
+  const tag = tagFirst ? a : b;
+  const resource = tagFirst ? b : a;
+  return fromEffectContext(succeed$3(make$l(tag, resource)));
+});
+/** @internal */
+const suspend$1 = evaluate => {
+  const suspend = Object.create(proto$2);
+  suspend._op_layer = OP_SUSPEND;
+  suspend.evaluate = evaluate;
+  return suspend;
+};
+/** @internal */
+const sync$1 = /*#__PURE__*/dual(2, (a, b) => {
+  const tagFirst = isTag(a);
+  const tag = tagFirst ? a : b;
+  const evaluate = tagFirst ? b : a;
+  return fromEffectContext(sync$2(() => make$l(tag, evaluate())));
+});
+/** @internal */
+const provide$1 = /*#__PURE__*/dual(2, (self, that) => suspend$1(() => {
+  const provideTo = Object.create(proto$2);
+  provideTo._op_layer = OP_PROVIDE;
+  provideTo.first = Object.create(proto$2, {
+    _op_layer: {
+      value: OP_PROVIDE_MERGE,
+      enumerable: true
+    },
+    first: {
+      value: context$1(),
+      enumerable: true
+    },
+    second: {
+      value: Array.isArray(that) ? mergeAll(...that) : that
+    },
+    zipK: {
+      value: (a, b) => pipe(a, merge$3(b))
+    }
+  });
+  provideTo.second = self;
+  return provideTo;
+}));
+/** @internal */
+const zipWith = /*#__PURE__*/dual(3, (self, that, f) => suspend$1(() => {
+  const zipWith = Object.create(proto$2);
+  zipWith._op_layer = OP_ZIP_WITH;
+  zipWith.first = self;
+  zipWith.second = that;
+  zipWith.zipK = f;
+  return zipWith;
+}));
+// circular with Effect
+const provideSomeLayer = /*#__PURE__*/dual(2, (self, layer) => scopedWith(scope => flatMap$1(buildWithScope(layer, scope), context => provideSomeContext(self, context))));
+const provideSomeRuntime = /*#__PURE__*/dual(2, (self, rt) => {
+  const patchRefs = diff$1(defaultRuntime.fiberRefs, rt.fiberRefs);
+  const patchFlags = diff$3(defaultRuntime.runtimeFlags, rt.runtimeFlags);
+  return uninterruptibleMask$1(restore => withFiberRuntime(fiber => {
+    const oldContext = fiber.getFiberRef(currentContext);
+    const oldRefs = fiber.getFiberRefs();
+    const newRefs = patch$1(fiber.id(), oldRefs)(patchRefs);
+    const oldFlags = fiber.currentRuntimeFlags;
+    const newFlags = patch$4(patchFlags)(oldFlags);
+    const rollbackRefs = diff$1(newRefs, oldRefs);
+    const rollbackFlags = diff$3(newFlags, oldFlags);
+    fiber.setFiberRefs(newRefs);
+    fiber.currentRuntimeFlags = newFlags;
+    return ensuring(provideSomeContext(restore(self), merge$3(oldContext, rt.context)), withFiberRuntime(fiber => {
+      fiber.setFiberRefs(patch$1(fiber.id(), fiber.getFiberRefs())(rollbackRefs));
+      fiber.currentRuntimeFlags = patch$4(rollbackFlags)(fiber.currentRuntimeFlags);
+      return void_$1;
+    }));
+  }));
+});
+/** @internal */
+const effect_provide = /*#__PURE__*/dual(2, (self, source) => {
+  if (Array.isArray(source)) {
+    // @ts-expect-error
+    return provideSomeLayer(self, mergeAll(...source));
+  } else if (isLayer(source)) {
+    return provideSomeLayer(self, source);
+  } else if (isContext(source)) {
+    return provideSomeContext(self, source);
+  } else if (TypeId in source) {
+    return flatMap$1(source.runtimeEffect, rt => provideSomeRuntime(self, rt));
+  } else {
+    return provideSomeRuntime(self, source);
+  }
+});
+
+/**
+ * Provides a constructor for a Case Class.
+ *
+ * @since 2.0.0
+ * @category constructors
+ */
+const Error$1 = /*#__PURE__*/function () {
+  const plainArgsSymbol = /*#__PURE__*/Symbol.for("effect/Data/Error/plainArgs");
+  const O = {
+    BaseEffectError: class extends YieldableError {
+      constructor(args) {
+        super(args?.message, args?.cause ? {
+          cause: args.cause
+        } : undefined);
+        if (args) {
+          Object.assign(this, args);
+          // @effect-diagnostics-next-line floatingEffect:off
+          Object.defineProperty(this, plainArgsSymbol, {
+            value: args,
+            enumerable: false
+          });
+        }
+      }
+      toJSON() {
+        return {
+          ...this[plainArgsSymbol],
+          ...this
+        };
+      }
+    }
+  };
+  return O.BaseEffectError;
+}();
+/**
+ * @since 2.0.0
+ * @category constructors
+ */
+const TaggedError = tag => {
+  const O = {
+    BaseEffectError: class extends Error$1 {
+      _tag = tag;
+    }
+  };
+  O.BaseEffectError.prototype.name = tag;
+  return O.BaseEffectError;
+};
+
+/** @internal */
+const ScheduleSymbolKey = "effect/Schedule";
+/** @internal */
+const ScheduleTypeId = /*#__PURE__*/Symbol.for(ScheduleSymbolKey);
+/** @internal */
+const isSchedule = u => hasProperty(u, ScheduleTypeId);
+/** @internal */
+const ScheduleDriverSymbolKey = "effect/ScheduleDriver";
+/** @internal */
+const ScheduleDriverTypeId = /*#__PURE__*/Symbol.for(ScheduleDriverSymbolKey);
+/** @internal */
+const defaultIterationMetadata = {
+  start: 0,
+  now: 0,
+  input: undefined,
+  output: undefined,
+  elapsed: zero,
+  elapsedSincePrevious: zero,
+  recurrence: 0
+};
+/** @internal */
+const CurrentIterationMetadata = /*#__PURE__*/Reference()("effect/Schedule/CurrentIterationMetadata", {
+  defaultValue: () => defaultIterationMetadata
+});
+const scheduleVariance = {
+  /* c8 ignore next */
+  _Out: _ => _,
+  /* c8 ignore next */
+  _In: _ => _,
+  /* c8 ignore next */
+  _R: _ => _
+};
+const scheduleDriverVariance = {
+  /* c8 ignore next */
+  _Out: _ => _,
+  /* c8 ignore next */
+  _In: _ => _,
+  /* c8 ignore next */
+  _R: _ => _
+};
+/** @internal */
+class ScheduleImpl {
+  initial;
+  step;
+  [ScheduleTypeId] = scheduleVariance;
+  constructor(initial, step) {
+    this.initial = initial;
+    this.step = step;
+  }
+  pipe() {
+    return pipeArguments(this, arguments);
+  }
+}
+/** @internal */
+const updateInfo = (iterationMetaRef, now, input, output) => update$1(iterationMetaRef, prev => prev.recurrence === 0 ? {
+  now,
+  input,
+  output,
+  recurrence: prev.recurrence + 1,
+  elapsed: zero,
+  elapsedSincePrevious: zero,
+  start: now
+} : {
+  now,
+  input,
+  output,
+  recurrence: prev.recurrence + 1,
+  elapsed: millis(now - prev.start),
+  elapsedSincePrevious: millis(now - prev.now),
+  start: prev.start
+});
+/** @internal */
+class ScheduleDriverImpl {
+  schedule;
+  ref;
+  [ScheduleDriverTypeId] = scheduleDriverVariance;
+  constructor(schedule, ref) {
+    this.schedule = schedule;
+    this.ref = ref;
+  }
+  get state() {
+    return map$3(get$1(this.ref), tuple => tuple[1]);
+  }
+  get last() {
+    return flatMap$1(get$1(this.ref), ([element, _]) => {
+      switch (element._tag) {
+        case "None":
+          {
+            return failSync(() => new NoSuchElementException());
+          }
+        case "Some":
+          {
+            return succeed$3(element.value);
+          }
+      }
+    });
+  }
+  iterationMeta = /*#__PURE__*/unsafeMake$2(defaultIterationMetadata);
+  get reset() {
+    return set$1(this.ref, [none$4(), this.schedule.initial]).pipe(zipLeft(set$1(this.iterationMeta, defaultIterationMetadata)));
+  }
+  next(input) {
+    return pipe(map$3(get$1(this.ref), tuple => tuple[1]), flatMap$1(state => pipe(currentTimeMillis, flatMap$1(now => pipe(suspend$2(() => this.schedule.step(now, input, state)), flatMap$1(([state, out, decision]) => {
+      const setState = set$1(this.ref, [some(out), state]);
+      if (isDone(decision)) {
+        return setState.pipe(zipRight(fail(none$4())));
+      }
+      const millis$1 = start(decision.intervals) - now;
+      if (millis$1 <= 0) {
+        return setState.pipe(zipRight(updateInfo(this.iterationMeta, now, input, out)), as(out));
+      }
+      const duration = millis(millis$1);
+      return pipe(setState, zipRight(updateInfo(this.iterationMeta, now, input, out)), zipRight(sleep(duration)), as(out));
+    }))))));
+  }
+}
+/** @internal */
+const makeWithState = (initial, step) => new ScheduleImpl(initial, step);
+/** @internal */
+const check = /*#__PURE__*/dual(2, (self, test) => checkEffect(self, (input, out) => sync$2(() => test(input, out))));
+/** @internal */
+const checkEffect = /*#__PURE__*/dual(2, (self, test) => makeWithState(self.initial, (now, input, state) => flatMap$1(self.step(now, input, state), ([state, out, decision]) => {
+  if (isDone(decision)) {
+    return succeed$3([state, out, done]);
+  }
+  return map$3(test(input, out), cont => cont ? [state, out, decision] : [state, out, done]);
+})));
+/** @internal */
+const driver = self => pipe(make$b([none$4(), self.initial]), map$3(ref => new ScheduleDriverImpl(self, ref)));
+/** @internal */
+const fixed$1 = intervalInput => {
+  const interval = decode(intervalInput);
+  const intervalMillis = toMillis(interval);
+  return makeWithState([none$4(), 0], (now, _, [option, n]) => sync$2(() => {
+    switch (option._tag) {
+      case "None":
+        {
+          return [[some([now, now + intervalMillis]), n + 1], n, continueWith(after(now + intervalMillis))];
+        }
+      case "Some":
+        {
+          const [startMillis, lastRun] = option.value;
+          const runningBehind = now > lastRun + intervalMillis;
+          const boundary = equals$1(interval, zero) ? interval : millis(intervalMillis - (now - startMillis) % intervalMillis);
+          const sleepTime = equals$1(boundary, zero) ? interval : boundary;
+          const nextRun = runningBehind ? now : now + toMillis(sleepTime);
+          return [[some([startMillis, nextRun]), n + 1], n, continueWith(after(nextRun))];
+        }
+    }
+  }));
+};
+/** @internal */
+const intersect = /*#__PURE__*/dual(2, (self, that) => intersectWith(self, that, intersect$1));
+/** @internal */
+const intersectWith = /*#__PURE__*/dual(3, (self, that, f) => makeWithState([self.initial, that.initial], (now, input, state) => pipe(zipWith$1(self.step(now, input, state[0]), that.step(now, input, state[1]), (a, b) => [a, b]), flatMap$1(([[lState, out, lDecision], [rState, out2, rDecision]]) => {
+  if (isContinue(lDecision) && isContinue(rDecision)) {
+    return intersectWithLoop(self, that, input, lState, out, lDecision.intervals, rState, out2, rDecision.intervals, f);
+  }
+  return succeed$3([[lState, rState], [out, out2], done]);
+}))));
+/** @internal */
+const intersectWithLoop = (self, that, input, lState, out, lInterval, rState, out2, rInterval, f) => {
+  const combined = f(lInterval, rInterval);
+  if (isNonEmpty(combined)) {
+    return succeed$3([[lState, rState], [out, out2], _continue(combined)]);
+  }
+  if (pipe(lInterval, lessThan(rInterval))) {
+    return flatMap$1(self.step(end(lInterval), input, lState), ([lState, out, decision]) => {
+      if (isDone(decision)) {
+        return succeed$3([[lState, rState], [out, out2], done]);
+      }
+      return intersectWithLoop(self, that, input, lState, out, decision.intervals, rState, out2, rInterval, f);
+    });
+  }
+  return flatMap$1(that.step(end(rInterval), input, rState), ([rState, out2, decision]) => {
+    if (isDone(decision)) {
+      return succeed$3([[lState, rState], [out, out2], done]);
+    }
+    return intersectWithLoop(self, that, input, lState, out, lInterval, rState, out2, decision.intervals, f);
+  });
+};
+/** @internal */
+const recurs = n => whileOutput(forever, out => out < n);
+/** @internal */
+const unfold = (initial, f) => makeWithState(initial, (now, _, state) => sync$2(() => [f(state), state, continueWith(after(now))]));
+/** @internal */
+const untilInputEffect = /*#__PURE__*/dual(2, (self, f) => checkEffect(self, (input, _) => negate(f(input))));
+/** @internal */
+const whileInputEffect = /*#__PURE__*/dual(2, (self, f) => checkEffect(self, (input, _) => f(input)));
+/** @internal */
+const whileOutput = /*#__PURE__*/dual(2, (self, f) => check(self, (_, out) => f(out)));
+// circular with Effect
+const ScheduleDefectTypeId = /*#__PURE__*/Symbol.for("effect/Schedule/ScheduleDefect");
+class ScheduleDefect {
+  error;
+  [ScheduleDefectTypeId];
+  constructor(error) {
+    this.error = error;
+    this[ScheduleDefectTypeId] = ScheduleDefectTypeId;
+  }
+}
+const isScheduleDefect = u => hasProperty(u, ScheduleDefectTypeId);
+const scheduleDefectWrap = self => catchAll(self, e => die(new ScheduleDefect(e)));
+/** @internal */
+const scheduleDefectRefailCause = cause => match$3(find(cause, _ => isDieType(_) && isScheduleDefect(_.defect) ? some(_.defect) : none$4()), {
+  onNone: () => cause,
+  onSome: error => fail$1(error.error)
+});
+/** @internal */
+const scheduleDefectRefail = effect => catchAllCause(effect, cause => failCause$1(scheduleDefectRefailCause(cause)));
+/** @internal */
+const retry_Effect = /*#__PURE__*/dual(2, (self, policy) => retryOrElse_Effect(self, policy, (e, _) => fail(e)));
+/** @internal */
+const retry_combined = /*#__PURE__*/dual(2, (self, options) => {
+  if (isSchedule(options)) {
+    return retry_Effect(self, options);
+  }
+  return scheduleDefectRefail(retry_Effect(self, fromRetryOptions(options)));
+});
+/** @internal */
+const fromRetryOptions = options => {
+  const base = options.schedule ?? forever;
+  const withWhile = options.while ? whileInputEffect(base, e => {
+    const applied = options.while(e);
+    if (typeof applied === "boolean") {
+      return succeed$3(applied);
+    }
+    return scheduleDefectWrap(applied);
+  }) : base;
+  const withUntil = options.until ? untilInputEffect(withWhile, e => {
+    const applied = options.until(e);
+    if (typeof applied === "boolean") {
+      return succeed$3(applied);
+    }
+    return scheduleDefectWrap(applied);
+  }) : withWhile;
+  return options.times ? intersect(withUntil, recurs(options.times)) : withUntil;
+};
+/** @internal */
+const retryOrElse_Effect = /*#__PURE__*/dual(3, (self, policy, orElse) => flatMap$1(driver(policy), driver => retryOrElse_EffectLoop(provideServiceEffect(self, CurrentIterationMetadata, get$1(driver.iterationMeta)), driver, (e, out) => provideServiceEffect(orElse(e, out), CurrentIterationMetadata, get$1(driver.iterationMeta)))));
+/** @internal */
+const retryOrElse_EffectLoop = (self, driver, orElse) => {
+  return catchAll(self, e => matchEffect(driver.next(e), {
+    onFailure: () => pipe(driver.last, orDie, flatMap$1(out => orElse(e, out))),
+    onSuccess: () => retryOrElse_EffectLoop(self, driver, orElse)
+  }));
+};
+/** @internal */
+const forever = /*#__PURE__*/unfold(0, n => n + 1);
+
+/**
+ * Provides a way to write effectful code using generator functions, simplifying
+ * control flow and error handling.
+ *
+ * **When to Use**
+ *
+ * `Effect.gen` allows you to write code that looks and behaves like synchronous
+ * code, but it can handle asynchronous tasks, errors, and complex control flow
+ * (like loops and conditions). It helps make asynchronous code more readable
+ * and easier to manage.
+ *
+ * The generator functions work similarly to `async/await` but with more
+ * explicit control over the execution of effects. You can `yield*` values from
+ * effects and return the final result at the end.
+ *
+ * **Example**
+ *
+ * ```ts
+ * import { Effect } from "effect"
+ *
+ * const addServiceCharge = (amount: number) => amount + 1
+ *
+ * const applyDiscount = (
+ *   total: number,
+ *   discountRate: number
+ * ): Effect.Effect<number, Error> =>
+ *   discountRate === 0
+ *     ? Effect.fail(new Error("Discount rate cannot be zero"))
+ *     : Effect.succeed(total - (total * discountRate) / 100)
+ *
+ * const fetchTransactionAmount = Effect.promise(() => Promise.resolve(100))
+ *
+ * const fetchDiscountRate = Effect.promise(() => Promise.resolve(5))
+ *
+ * export const program = Effect.gen(function* () {
+ *   const transactionAmount = yield* fetchTransactionAmount
+ *   const discountRate = yield* fetchDiscountRate
+ *   const discountedAmount = yield* applyDiscount(
+ *     transactionAmount,
+ *     discountRate
+ *   )
+ *   const finalAmount = addServiceCharge(discountedAmount)
+ *   return `Final amount to charge: ${finalAmount}`
+ * })
+ * ```
+ *
+ * @since 2.0.0
+ * @category Creating Effects
+ */
+const gen = gen$1;
+/**
+ * Creates an `Effect` that represents an asynchronous computation guaranteed to
+ * succeed.
+ *
+ * **Details**
+ *
+ * The provided function (`thunk`) returns a `Promise` that should never reject; if it does, the error
+ * will be treated as a "defect".
+ *
+ * This defect is not a standard error but indicates a flaw in the logic that
+ * was expected to be error-free. You can think of it similar to an unexpected
+ * crash in the program, which can be further managed or logged using tools like
+ * {@link catchAllDefect}.
+ *
+ * **Interruptions**
+ *
+ * An optional `AbortSignal` can be provided to allow for interruption of the
+ * wrapped `Promise` API.
+ *
+ * **When to Use**
+ *
+ * Use this function when you are sure the operation will not reject.
+ *
+ * **Example** (Delayed Message)
+ *
+ * ```ts
+ * import { Effect } from "effect"
+ *
+ * const delay = (message: string) =>
+ *   Effect.promise<string>(
+ *     () =>
+ *       new Promise((resolve) => {
+ *         setTimeout(() => {
+ *           resolve(message)
+ *         }, 2000)
+ *       })
+ *   )
+ *
+ * //      ┌─── Effect<string, never, never>
+ * //      ▼
+ * const program = delay("Async operation completed successfully!")
+ * ```
+ *
+ * @see {@link tryPromise} for a version that can handle failures.
+ *
+ * @since 2.0.0
+ * @category Creating Effects
+ */
+const promise = promise$1;
+/**
+ * Creates an `Effect` that represents a synchronous side-effectful computation.
+ *
+ * **Details**
+ *
+ * The provided function (`thunk`) must not throw errors; if it does, the error
+ * will be treated as a "defect".
+ *
+ * This defect is not a standard error but indicates a flaw in the logic that
+ * was expected to be error-free. You can think of it similar to an unexpected
+ * crash in the program, which can be further managed or logged using tools like
+ * {@link catchAllDefect}.
+ *
+ * **When to Use**
+ *
+ * Use this function when you are sure the operation will not fail.
+ *
+ * **Example** (Logging a Message)
+ *
+ * ```ts
+ * import { Effect } from "effect"
+ *
+ * const log = (message: string) =>
+ *   Effect.sync(() => {
+ *     console.log(message) // side effect
+ *   })
+ *
+ * //      ┌─── Effect<void, never, never>
+ * //      ▼
+ * const program = log("Hello, World!")
+ * ```
+ *
+ * @see {@link try_ | try} for a version that can handle failures.
+ *
+ * @since 2.0.0
+ * @category Creating Effects
+ */
+const sync = sync$2;
+/**
+ * Catches and handles specific errors by their `_tag` field, which is used as a
+ * discriminator.
+ *
+ * **When to Use**
+ *
+ * `catchTag` is useful when your errors are tagged with a readonly `_tag` field
+ * that identifies the error type. You can use this function to handle specific
+ * error types by matching the `_tag` value. This allows for precise error
+ * handling, ensuring that only specific errors are caught and handled.
+ *
+ * The error type must have a readonly `_tag` field to use `catchTag`. This
+ * field is used to identify and match errors.
+ *
+ * **Example** (Handling Errors by Tag)
+ *
+ * ```ts
+ * import { Effect, Random } from "effect"
+ *
+ * class HttpError {
+ *   readonly _tag = "HttpError"
+ * }
+ *
+ * class ValidationError {
+ *   readonly _tag = "ValidationError"
+ * }
+ *
+ * //      ┌─── Effect<string, HttpError | ValidationError, never>
+ * //      ▼
+ * const program = Effect.gen(function* () {
+ *   const n1 = yield* Random.next
+ *   const n2 = yield* Random.next
+ *   if (n1 < 0.5) {
+ *     yield* Effect.fail(new HttpError())
+ *   }
+ *   if (n2 < 0.5) {
+ *     yield* Effect.fail(new ValidationError())
+ *   }
+ *   return "some result"
+ * })
+ *
+ * //      ┌─── Effect<string, ValidationError, never>
+ * //      ▼
+ * const recovered = program.pipe(
+ *   // Only handle HttpError errors
+ *   Effect.catchTag("HttpError", (_HttpError) =>
+ *     Effect.succeed("Recovering from HttpError")
+ *   )
+ * )
+ * ```
+ *
+ * @see {@link catchTags} for a version that allows you to handle multiple error
+ * types at once.
+ *
+ * @since 2.0.0
+ * @category Error handling
+ */
+const catchTag = catchTag$1;
+/**
+ * Retries a failing effect based on a defined retry policy.
+ *
+ * **Details**
+ *
+ * The `Effect.retry` function takes an effect and a {@link Schedule} policy,
+ * and will automatically retry the effect if it fails, following the rules of
+ * the policy.
+ *
+ * If the effect ultimately succeeds, the result will be returned.
+ *
+ * If the maximum retries are exhausted and the effect still fails, the failure
+ * is propagated.
+ *
+ * **When to Use**
+ *
+ * This can be useful when dealing with intermittent failures, such as network
+ * issues or temporary resource unavailability. By defining a retry policy, you
+ * can control the number of retries, the delay between them, and when to stop
+ * retrying.
+ *
+ * **Example** (Retrying with a Fixed Delay)
+ *
+ * ```ts
+ * import { Effect, Schedule } from "effect"
+ *
+ * let count = 0
+ *
+ * // Simulates an effect with possible failures
+ * const task = Effect.async<string, Error>((resume) => {
+ *   if (count <= 2) {
+ *     count++
+ *     console.log("failure")
+ *     resume(Effect.fail(new Error()))
+ *   } else {
+ *     console.log("success")
+ *     resume(Effect.succeed("yay!"))
+ *   }
+ * })
+ *
+ * // Define a repetition policy using a fixed delay between retries
+ * const policy = Schedule.fixed("100 millis")
+ *
+ * const repeated = Effect.retry(task, policy)
+ *
+ * Effect.runPromise(repeated).then(console.log)
+ * // Output:
+ * // failure
+ * // failure
+ * // failure
+ * // success
+ * // yay!
+ * ```
+ *
+ * **Example** (Retrying a Task up to 5 times)
+ *
+ * ```ts
+ * import { Effect } from "effect"
+ *
+ * let count = 0
+ *
+ * // Simulates an effect with possible failures
+ * const task = Effect.async<string, Error>((resume) => {
+ *   if (count <= 2) {
+ *     count++
+ *     console.log("failure")
+ *     resume(Effect.fail(new Error()))
+ *   } else {
+ *     console.log("success")
+ *     resume(Effect.succeed("yay!"))
+ *   }
+ * })
+ *
+ * // Retry the task up to 5 times
+ * Effect.runPromise(Effect.retry(task, { times: 5 })).then(console.log)
+ * // Output:
+ * // failure
+ * // failure
+ * // failure
+ * // success
+ * ```
+ *
+ * **Example** (Retrying Until a Specific Condition is Met)
+ *
+ * ```ts
+ * import { Effect } from "effect"
+ *
+ * let count = 0
+ *
+ * // Define an effect that simulates varying error on each invocation
+ * const action = Effect.failSync(() => {
+ *   console.log(`Action called ${++count} time(s)`)
+ *   return `Error ${count}`
+ * })
+ *
+ * // Retry the action until a specific condition is met
+ * const program = Effect.retry(action, {
+ *   until: (err) => err === "Error 3"
+ * })
+ *
+ * Effect.runPromiseExit(program).then(console.log)
+ * // Output:
+ * // Action called 1 time(s)
+ * // Action called 2 time(s)
+ * // Action called 3 time(s)
+ * // {
+ * //   _id: 'Exit',
+ * //   _tag: 'Failure',
+ * //   cause: { _id: 'Cause', _tag: 'Fail', failure: 'Error 3' }
+ * // }
+ * ```
+ *
+ * @see {@link retryOrElse} for a version that allows you to run a fallback.
+ * @see {@link repeat} if your retry condition is based on successful outcomes rather than errors.
+ *
+ * @since 2.0.0
+ * @category Error handling
+ */
+const retry = retry_combined;
+/**
+ * Transforms the value inside an effect by applying a function to it.
+ *
+ * **Syntax**
+ *
+ * ```ts skip-type-checking
+ * const mappedEffect = pipe(myEffect, Effect.map(transformation))
+ * // or
+ * const mappedEffect = Effect.map(myEffect, transformation)
+ * // or
+ * const mappedEffect = myEffect.pipe(Effect.map(transformation))
+ * ```
+ *
+ * **Details**
+ *
+ * `map` takes a function and applies it to the value contained within an
+ * effect, creating a new effect with the transformed value.
+ *
+ * It's important to note that effects are immutable, meaning that the original
+ * effect is not modified. Instead, a new effect is returned with the updated
+ * value.
+ *
+ * **Example** (Adding a Service Charge)
+ *
+ * ```ts
+ * import { pipe, Effect } from "effect"
+ *
+ * const addServiceCharge = (amount: number) => amount + 1
+ *
+ * const fetchTransactionAmount = Effect.promise(() => Promise.resolve(100))
+ *
+ * const finalAmount = pipe(
+ *   fetchTransactionAmount,
+ *   Effect.map(addServiceCharge)
+ * )
+ *
+ * Effect.runPromise(finalAmount).then(console.log)
+ * // Output: 101
+ * ```
+ *
+ * @see {@link mapError} for a version that operates on the error channel.
+ * @see {@link mapBoth} for a version that operates on both channels.
+ * @see {@link flatMap} or {@link andThen} for a version that can return a new effect.
+ *
+ * @since 2.0.0
+ * @category Mapping
+ */
+const map$2 = map$3;
+/**
+ * Adds a time limit to an effect, triggering a timeout if the effect exceeds
+ * the duration.
+ *
+ * **Details**
+ *
+ * This function allows you to enforce a time limit on the execution of an
+ * effect. If the effect does not complete within the given duration, it fails
+ * with a `TimeoutException`. This is useful for preventing tasks from hanging
+ * indefinitely, especially in scenarios where responsiveness or resource limits
+ * are critical.
+ *
+ * The returned effect will either:
+ * - Succeed with the original effect's result if it completes within the
+ *   specified duration.
+ * - Fail with a `TimeoutException` if the time limit is exceeded.
+ *
+ * **Example**
+ *
+ * ```ts
+ * import { Effect } from "effect"
+ *
+ * const task = Effect.gen(function* () {
+ *   console.log("Start processing...")
+ *   yield* Effect.sleep("2 seconds") // Simulates a delay in processing
+ *   console.log("Processing complete.")
+ *   return "Result"
+ * })
+ *
+ * // Output will show a TimeoutException as the task takes longer
+ * // than the specified timeout duration
+ * const timedEffect = task.pipe(Effect.timeout("1 second"))
+ *
+ * Effect.runPromiseExit(timedEffect).then(console.log)
+ * // Output:
+ * // Start processing...
+ * // {
+ * //   _id: 'Exit',
+ * //   _tag: 'Failure',
+ * //   cause: {
+ * //     _id: 'Cause',
+ * //     _tag: 'Fail',
+ * //     failure: { _tag: 'TimeoutException' }
+ * //   }
+ * // }
+ * ```
+ *
+ * @see {@link timeoutFail} for a version that raises a custom error.
+ * @see {@link timeoutFailCause} for a version that raises a custom defect.
+ * @see {@link timeoutTo} for a version that allows specifying both success and
+ * timeout handlers.
+ *
+ * @since 2.0.0
+ * @category Delays & Timeouts
+ */
+const timeout = timeout$1;
+/**
+ * Provides necessary dependencies to an effect, removing its environmental
+ * requirements.
+ *
+ * **Details**
+ *
+ * This function allows you to supply the required environment for an effect.
+ * The environment can be provided in the form of one or more `Layer`s, a
+ * `Context`, a `Runtime`, or a `ManagedRuntime`. Once the environment is
+ * provided, the effect can run without requiring external dependencies.
+ *
+ * You can compose layers to create a modular and reusable way of setting up the
+ * environment for effects. For example, layers can be used to configure
+ * databases, logging services, or any other required dependencies.
+ *
+ * **Example**
+ *
+ * ```ts
+ * import { Context, Effect, Layer } from "effect"
+ *
+ * class Database extends Context.Tag("Database")<
+ *   Database,
+ *   { readonly query: (sql: string) => Effect.Effect<Array<unknown>> }
+ * >() {}
+ *
+ * const DatabaseLive = Layer.succeed(
+ *   Database,
+ *   {
+ *     // Simulate a database query
+ *     query: (sql: string) => Effect.log(`Executing query: ${sql}`).pipe(Effect.as([]))
+ *   }
+ * )
+ *
+ * //      ┌─── Effect<unknown[], never, Database>
+ * //      ▼
+ * const program = Effect.gen(function*() {
+ *   const database = yield* Database
+ *   const result = yield* database.query("SELECT * FROM users")
+ *   return result
+ * })
+ *
+ * //      ┌─── Effect<unknown[], never, never>
+ * //      ▼
+ * const runnable = Effect.provide(program, DatabaseLive)
+ *
+ * Effect.runPromise(runnable).then(console.log)
+ * // Output:
+ * // timestamp=... level=INFO fiber=#0 message="Executing query: SELECT * FROM users"
+ * // []
+ * ```
+ *
+ * @see {@link provideService} for providing a service to an effect.
+ *
+ * @since 2.0.0
+ * @category Context
+ */
+const provide = effect_provide;
+/**
+ * Runs a side effect with the result of an effect without changing the original
+ * value.
+ *
+ * **Details**
+ *
+ * This function works similarly to `flatMap`, but it ignores the result of the
+ * function passed to it. The value from the previous effect remains available
+ * for the next part of the chain. Note that if the side effect fails, the
+ * entire chain will fail too.
+ *
+ * **When to Use**
+ *
+ * Use this function when you want to perform a side effect, like logging or
+ * tracking, without modifying the main value. This is useful when you need to
+ * observe or record an action but want the original value to be passed to the
+ * next step.
+ *
+ * **Example** (Logging a step in a pipeline)
+ *
+ * ```ts
+ * import { Console, Effect, pipe } from "effect"
+ *
+ * // Function to apply a discount safely to a transaction amount
+ * const applyDiscount = (
+ *   total: number,
+ *   discountRate: number
+ * ): Effect.Effect<number, Error> =>
+ *   discountRate === 0
+ *     ? Effect.fail(new Error("Discount rate cannot be zero"))
+ *     : Effect.succeed(total - (total * discountRate) / 100)
+ *
+ * // Simulated asynchronous task to fetch a transaction amount from database
+ * const fetchTransactionAmount = Effect.promise(() => Promise.resolve(100))
+ *
+ * const finalAmount = pipe(
+ *   fetchTransactionAmount,
+ *   // Log the fetched transaction amount
+ *   Effect.tap((amount) => Console.log(`Apply a discount to: ${amount}`)),
+ *   // `amount` is still available!
+ *   Effect.flatMap((amount) => applyDiscount(amount, 5))
+ * )
+ *
+ * Effect.runPromise(finalAmount).then(console.log)
+ * // Output:
+ * // Apply a discount to: 100
+ * // 95
+ * ```
+ *
+ * @see {@link flatMap} for a version that allows you to change the value.
+ *
+ * @since 2.0.0
+ * @category Sequencing
+ */
+const tap = tap$1;
+/**
+ * Execute a side effect on failure without modifying the original effect.
+ *
+ * **Details**
+ *
+ * This function allows you to inspect and react to the failure of an effect by
+ * executing an additional effect. The failure value is passed to the provided
+ * function, enabling you to log it, track it, or perform any other operation.
+ * Importantly, the original failure remains intact and is re-propagated, so the
+ * effect's behavior is unchanged.
+ *
+ * The side effect you provide is only executed when the effect fails. If the
+ * effect succeeds, the function is ignored, and the success value is propagated
+ * as usual.
+ *
+ * **Example**
+ *
+ * ```ts
+ * import { Effect, Console } from "effect"
+ *
+ * // Simulate a task that fails with an error
+ * const task: Effect.Effect<number, string> = Effect.fail("NetworkError")
+ *
+ * // Use tapError to log the error message when the task fails
+ * const tapping = Effect.tapError(task, (error) =>
+ *   Console.log(`expected error: ${error}`)
+ * )
+ *
+ * Effect.runFork(tapping)
+ * // Output:
+ * // expected error: NetworkError
+ * ```
+ *
+ * @since 2.0.0
+ * @category Sequencing
+ */
+const tapError = tapError$1;
+/**
+ * Inspect errors matching a specific tag without altering the original effect.
+ *
+ * **Details**
+ *
+ * This function allows you to inspect and handle specific error types based on
+ * their `_tag` property. It is particularly useful in applications where errors
+ * are modeled with tagged types (e.g., union types with discriminating tags).
+ * By targeting errors with a specific `_tag`, you can log or perform actions on
+ * them while leaving the error channel and overall effect unchanged.
+ *
+ * If the error doesn't match the specified tag, this function does nothing, and
+ * the effect proceeds as usual.
+ *
+ * **Example**
+ *
+ * ```ts
+ * import { Effect, Console } from "effect"
+ *
+ * class NetworkError {
+ *   readonly _tag = "NetworkError"
+ *   constructor(readonly statusCode: number) {}
+ * }
+ *
+ * class ValidationError {
+ *   readonly _tag = "ValidationError"
+ *   constructor(readonly field: string) {}
+ * }
+ *
+ * // Create a task that fails with a NetworkError
+ * const task: Effect.Effect<number, NetworkError | ValidationError> =
+ *   Effect.fail(new NetworkError(504))
+ *
+ * // Use tapErrorTag to inspect only NetworkError types and log the status code
+ * const tapping = Effect.tapErrorTag(task, "NetworkError", (error) =>
+ *   Console.log(`expected error: ${error.statusCode}`)
+ * )
+ *
+ * Effect.runFork(tapping)
+ * // Output:
+ * // expected error: 504
+ * ```
+ *
+ * @since 2.0.0
+ * @category Sequencing
+ */
+const tapErrorTag = tapErrorTag$1;
+/**
+ * Runs an effect and returns a `Promise` that resolves to an `Exit`,
+ * representing the outcome.
+ *
+ * **Details**
+ *
+ * This function executes an effect and resolves to an `Exit` object. The `Exit`
+ * type provides detailed information about the result of the effect:
+ * - If the effect succeeds, the `Exit` will be of type `Success` and include
+ *   the value produced by the effect.
+ * - If the effect fails, the `Exit` will be of type `Failure` and contain a
+ *   `Cause` object, detailing the failure.
+ *
+ * Using this function allows you to examine both successful results and failure
+ * cases in a unified way, while still leveraging `Promise` for handling the
+ * asynchronous behavior of the effect.
+ *
+ * **When to Use**
+ *
+ * Use this function when you need to understand the outcome of an effect,
+ * whether it succeeded or failed, and want to work with this result using
+ * `Promise` syntax. This is particularly useful when integrating with systems
+ * that rely on promises but need more detailed error handling than a simple
+ * rejection.
+ *
+ * **Example** (Handling Results as Exit)
+ *
+ * ```ts
+ * import { Effect } from "effect"
+ *
+ * // Execute a successful effect and get the Exit result as a Promise
+ * Effect.runPromiseExit(Effect.succeed(1)).then(console.log)
+ * // Output:
+ * // {
+ * //   _id: "Exit",
+ * //   _tag: "Success",
+ * //   value: 1
+ * // }
+ *
+ * // Execute a failing effect and get the Exit result as a Promise
+ * Effect.runPromiseExit(Effect.fail("my error")).then(console.log)
+ * // Output:
+ * // {
+ * //   _id: "Exit",
+ * //   _tag: "Failure",
+ * //   cause: {
+ * //     _id: "Cause",
+ * //     _tag: "Fail",
+ * //     failure: "my error"
+ * //   }
+ * // }
+ * ```
+ *
+ * @since 2.0.0
+ * @category Running Effects
+ */
+const runPromiseExit = unsafeRunPromiseExitEffect;
+const makeTagProxy = TagClass => {
+  const cache = new Map();
+  return new Proxy(TagClass, {
+    get(target, prop, receiver) {
+      if (prop in target) {
+        return Reflect.get(target, prop, receiver);
+      }
+      if (cache.has(prop)) {
+        return cache.get(prop);
+      }
+      const fn = (...args) => andThen(target, s => {
+        if (typeof s[prop] === "function") {
+          cache.set(prop, (...args) => andThen(target, s => s[prop](...args)));
+          return s[prop](...args);
+        }
+        cache.set(prop, andThen(target, s => s[prop]));
+        return s[prop];
+      });
+      const cn = andThen(target, s => s[prop]);
+      // @effect-diagnostics-next-line floatingEffect:off
+      Object.assign(fn, cn);
+      const apply = fn.apply;
+      const bind = fn.bind;
+      const call = fn.call;
+      const proto = Object.setPrototypeOf({}, Object.getPrototypeOf(cn));
+      proto.apply = apply;
+      proto.bind = bind;
+      proto.call = call;
+      Object.setPrototypeOf(fn, proto);
+      cache.set(prop, fn);
+      return fn;
+    }
+  });
+};
+/**
+ * Simplifies the creation and management of services in Effect by defining both
+ * a `Tag` and a `Layer`.
+ *
+ * **Details**
+ *
+ * This function allows you to streamline the creation of services by combining
+ * the definition of a `Context.Tag` and a `Layer` in a single step. It supports
+ * various ways of providing the service implementation:
+ * - Using an `effect` to define the service dynamically.
+ * - Using `sync` or `succeed` to define the service statically.
+ * - Using `scoped` to create services with lifecycle management.
+ *
+ * It also allows you to specify dependencies for the service, which will be
+ * provided automatically when the service is used. Accessors can be optionally
+ * generated for the service, making it more convenient to use.
+ *
+ * **Example**
+ *
+ * ```ts
+ * import { Effect } from 'effect';
+ *
+ * class Prefix extends Effect.Service<Prefix>()("Prefix", {
+ *  sync: () => ({ prefix: "PRE" })
+ * }) {}
+ *
+ * class Logger extends Effect.Service<Logger>()("Logger", {
+ *  accessors: true,
+ *  effect: Effect.gen(function* () {
+ *    const { prefix } = yield* Prefix
+ *    return {
+ *      info: (message: string) =>
+ *        Effect.sync(() => {
+ *          console.log(`[${prefix}][${message}]`)
+ *        })
+ *    }
+ *  }),
+ *  dependencies: [Prefix.Default]
+ * }) {}
+ * ```
+ *
+ * @since 3.9.0
+ * @category Context
+ * @experimental might be up for breaking changes
+ */
+const Service = function () {
+  return function () {
+    const [id, maker] = arguments;
+    const proxy = "accessors" in maker ? maker["accessors"] : false;
+    const limit = Error.stackTraceLimit;
+    Error.stackTraceLimit = 2;
+    const creationError = new Error();
+    Error.stackTraceLimit = limit;
+    let patchState = "unchecked";
+    const TagClass = function (service) {
+      if (patchState === "unchecked") {
+        const proto = Object.getPrototypeOf(service);
+        if (proto === Object.prototype || proto === null) {
+          patchState = "plain";
+        } else {
+          const selfProto = Object.getPrototypeOf(this);
+          Object.setPrototypeOf(selfProto, proto);
+          patchState = "patched";
+        }
+      }
+      if (patchState === "plain") {
+        Object.assign(this, service);
+      } else if (patchState === "patched") {
+        Object.setPrototypeOf(service, Object.getPrototypeOf(this));
+        return service;
+      }
+    };
+    TagClass.prototype._tag = id;
+    Object.defineProperty(TagClass, "make", {
+      get() {
+        return service => new this(service);
+      }
+    });
+    Object.defineProperty(TagClass, "use", {
+      get() {
+        return body => andThen(this, body);
+      }
+    });
+    TagClass.key = id;
+    Object.assign(TagClass, TagProto);
+    Object.defineProperty(TagClass, "stack", {
+      get() {
+        return creationError.stack;
+      }
+    });
+    const hasDeps = "dependencies" in maker && maker.dependencies.length > 0;
+    const layerName = hasDeps ? "DefaultWithoutDependencies" : "Default";
+    let layerCache;
+    let isFunction = false;
+    if ("effect" in maker) {
+      isFunction = typeof maker.effect === "function";
+      Object.defineProperty(TagClass, layerName, {
+        get() {
+          if (isFunction) {
+            return function () {
+              return fromEffect(TagClass, map$2(maker.effect.apply(null, arguments), _ => new this(_)));
+            }.bind(this);
+          }
+          return layerCache ??= fromEffect(TagClass, map$2(maker.effect, _ => new this(_)));
+        }
+      });
+    } else if ("scoped" in maker) {
+      isFunction = typeof maker.scoped === "function";
+      Object.defineProperty(TagClass, layerName, {
+        get() {
+          if (isFunction) {
+            return function () {
+              return scoped(TagClass, map$2(maker.scoped.apply(null, arguments), _ => new this(_)));
+            }.bind(this);
+          }
+          return layerCache ??= scoped(TagClass, map$2(maker.scoped, _ => new this(_)));
+        }
+      });
+    } else if ("sync" in maker) {
+      Object.defineProperty(TagClass, layerName, {
+        get() {
+          return layerCache ??= sync$1(TagClass, () => new this(maker.sync()));
+        }
+      });
+    } else {
+      Object.defineProperty(TagClass, layerName, {
+        get() {
+          return layerCache ??= succeed$1(TagClass, new this(maker.succeed));
+        }
+      });
+    }
+    if (hasDeps) {
+      let layerWithDepsCache;
+      Object.defineProperty(TagClass, "Default", {
+        get() {
+          if (isFunction) {
+            return function () {
+              return provide$1(this.DefaultWithoutDependencies.apply(null, arguments), maker.dependencies);
+            };
+          }
+          return layerWithDepsCache ??= provide$1(this.DefaultWithoutDependencies, maker.dependencies);
+        }
+      });
+    }
+    return proxy === true ? makeTagProxy(TagClass) : TagClass;
+  };
+};
+
+/**
+ * Creates a schedule that recurs at a fixed interval.
+ *
+ * **Details**
+ *
+ * This schedule executes at regular, evenly spaced intervals, returning the
+ * number of times it has run so far. If the action being executed takes longer
+ * than the interval, the next execution will happen immediately to prevent
+ * "pile-ups," ensuring that the schedule remains consistent without overlapping
+ * executions.
+ *
+ * ```text
+ * |-----interval-----|-----interval-----|-----interval-----|
+ * |---------action--------||action|-----|action|-----------|
+ * ```
+ *
+ * @see {@link spaced} If you need to run from the end of the last execution.
+ *
+ * @since 2.0.0
+ * @category Constructors
+ */
+const fixed = fixed$1;
+
+/**
+ * Returns `true` if the specified `ConfigError` contains only `MissingData` errors, `false` otherwise.
+ *
+ * @since 2.0.0
+ * @categer getters
+ */
+const isMissingDataOnly = isMissingDataOnly$1;
+
+/** @internal */
+const RedactedSymbolKey = "effect/Redacted";
+/** @internal */
+const redactedRegistry = /*#__PURE__*/globalValue("effect/Redacted/redactedRegistry", () => new WeakMap());
+/** @internal */
+const RedactedTypeId = /*#__PURE__*/Symbol.for(RedactedSymbolKey);
+/** @internal */
+const proto$1 = {
+  [RedactedTypeId]: {
+    _A: _ => _
+  },
+  pipe() {
+    return pipeArguments(this, arguments);
+  },
+  toString() {
+    return "<redacted>";
+  },
+  toJSON() {
+    return "<redacted>";
+  },
+  [NodeInspectSymbol]() {
+    return "<redacted>";
+  },
+  [symbol$1]() {
+    return pipe(hash(RedactedSymbolKey), combine$7(hash(redactedRegistry.get(this))), cached(this));
+  },
+  [symbol](that) {
+    return isRedacted(that) && equals$1(redactedRegistry.get(this), redactedRegistry.get(that));
+  }
+};
+/** @internal */
+const isRedacted = u => hasProperty(u, RedactedTypeId);
+/** @internal */
+const make$1 = value => {
+  const redacted = Object.create(proto$1);
+  redactedRegistry.set(redacted, value);
+  return redacted;
+};
+/** @internal */
+const value$1 = self => {
+  if (redactedRegistry.has(self)) {
+    return redactedRegistry.get(self);
+  } else {
+    throw new Error("Unable to get redacted value");
+  }
+};
+
+const ConfigSymbolKey = "effect/Config";
+/** @internal */
+const ConfigTypeId = /*#__PURE__*/Symbol.for(ConfigSymbolKey);
+const configVariance = {
+  /* c8 ignore next */
+  _A: _ => _
+};
+const proto = {
+  ...CommitPrototype$1,
+  [ConfigTypeId]: configVariance,
+  commit() {
+    return config(this);
+  }
+};
+/** @internal */
+const number$1 = name => {
+  const config = primitive("a number property", text => {
+    const result = Number(text);
+    if (Number.isNaN(result)) {
+      return left(InvalidData([], `Expected a number value but received ${text}`));
+    }
+    return right(result);
+  });
+  return name === undefined ? config : nested(config, name);
+};
+/** @internal */
+const map$1 = /*#__PURE__*/dual(2, (self, f) => mapOrFail(self, a => right(f(a))));
+/** @internal */
+const mapOrFail = /*#__PURE__*/dual(2, (self, f) => {
+  const mapOrFail = Object.create(proto);
+  mapOrFail._tag = OP_MAP_OR_FAIL;
+  mapOrFail.original = self;
+  mapOrFail.mapOrFail = f;
+  return mapOrFail;
+});
+/** @internal */
+const nested = /*#__PURE__*/dual(2, (self, name) => {
+  const nested = Object.create(proto);
+  nested._tag = OP_NESTED;
+  nested.name = name;
+  nested.config = self;
+  return nested;
+});
+/** @internal */
+const orElseIf = /*#__PURE__*/dual(2, (self, options) => {
+  const fallback = Object.create(proto);
+  fallback._tag = OP_FALLBACK;
+  fallback.first = self;
+  fallback.second = suspend(options.orElse);
+  fallback.condition = options.if;
+  return fallback;
+});
+/** @internal */
+const option$1 = self => {
+  return pipe(self, map$1(some), orElseIf({
+    orElse: () => succeed(none$4()),
+    if: isMissingDataOnly
+  }));
+};
+/** @internal */
+const primitive = (description, parse) => {
+  const primitive = Object.create(proto);
+  primitive._tag = OP_PRIMITIVE;
+  primitive.description = description;
+  primitive.parse = parse;
+  return primitive;
+};
+/** @internal */
+const redacted$1 = nameOrConfig => {
+  const config = isConfig(nameOrConfig) ? nameOrConfig : string(nameOrConfig);
+  return map$1(config, make$1);
+};
+/** @internal */
+const string = name => {
+  const config = primitive("a text property", right);
+  return name === undefined ? config : nested(config, name);
+};
+/** @internal */
+const nonEmptyString$1 = name => {
+  const config = primitive("a non-empty text property", liftPredicate(text => text.length > 0, () => MissingData([], "Expected a non-empty string")));
+  return name === undefined ? config : nested(config, name);
+};
+/** @internal */
+const succeed = value => {
+  const constant = Object.create(proto);
+  constant._tag = OP_CONSTANT;
+  constant.value = value;
+  constant.parse = () => right(value);
+  return constant;
+};
+/** @internal */
+const suspend = config => {
+  const lazy = Object.create(proto);
+  lazy._tag = OP_LAZY;
+  lazy.config = config;
+  return lazy;
+};
+/** @internal */
+const isConfig = u => hasProperty(u, ConfigTypeId);
+/** @internal */
+const validate$1 = /*#__PURE__*/dual(2, (self, {
+  message,
+  validation
+}) => mapOrFail(self, a => {
+  if (validation(a)) {
+    return right(a);
+  }
+  return left(InvalidData([], message));
+}));
+/** @internal */
+const withDefault$1 = /*#__PURE__*/dual(2, (self, def) => orElseIf(self, {
+  orElse: () => succeed(def),
+  if: isMissingDataOnly
+}));
+
+/**
+ * Constructs a config for a float value.
+ *
+ * @since 2.0.0
+ * @category constructors
+ */
+const number = number$1;
+/**
+ * Returns a  config whose structure is the same as this one, but which produces
+ * a different value, constructed using the specified function.
+ *
+ * @since 2.0.0
+ * @category mapping
+ */
+const map = map$1;
+/**
+ * Returns an optional version of this config, which will be `None` if the
+ * data is missing from configuration, and `Some` otherwise.
+ *
+ * @since 2.0.0
+ * @category utils
+ */
+const option = option$1;
+/**
+ * Constructs a config for a redacted value.
+ *
+ * @since 2.0.0
+ * @category constructors
+ */
+const redacted = redacted$1;
+/**
+ * Constructs a config for a non-empty string value.
+ *
+ * @since 3.7.0
+ * @category constructors
+ */
+const nonEmptyString = nonEmptyString$1;
+/**
+ * Returns a config that describes the same structure as this one, but which
+ * performs validation during loading.
+ *
+ * @since 2.0.0
+ * @category utils
+ */
+const validate = validate$1;
+/**
+ * Returns a config that describes the same structure as this one, but has the
+ * specified default value in case the information cannot be found.
+ *
+ * @since 2.0.0
+ * @category utils
+ */
+const withDefault = withDefault$1;
+
+({
+  ...CommitPrototype});
+
+/**
+ * This function creates a `Redacted<A>` instance from a given value `A`,
+ * securely hiding its content.
+ *
+ * @example
+ * ```ts
+ * import { Redacted } from "effect"
+ *
+ * const API_KEY = Redacted.make("1234567890")
+ * ```
+ *
+ * @since 3.3.0
+ * @category constructors
+ */
+const make = make$1;
+/**
+ * Retrieves the original value from a `Redacted` instance. Use this function
+ * with caution, as it exposes the sensitive data.
+ *
+ * @example
+ * ```ts
+ * import * as assert from "node:assert"
+ * import { Redacted } from "effect"
+ *
+ * const API_KEY = Redacted.make("1234567890")
+ *
+ * assert.equal(Redacted.value(API_KEY), "1234567890")
+ * ```
+ *
+ * @since 3.3.0
+ * @category getters
+ */
+const value = value$1;
+
+/** @internal  */
+({
+  ...CommitPrototype$1});
+
+/** @internal  */
+({
+  ...CommitPrototype$1});
+
 var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
 
 function getDefaultExportFromCjs (x) {
@@ -27286,106 +43706,101 @@ function requireCore () {
 
 var coreExports = requireCore();
 
-/**
- * Gets environment context from GitHub Actions environment variables.
- */
-function getEnvironment() {
-    coreExports.debug("Getting GitHub environment context");
-    coreExports.debug(`Repository: ${process.env.GITHUB_REPOSITORY}`);
-    const [owner, repo] = (process.env.GITHUB_REPOSITORY || "/").split("/");
-    if (!owner || !repo) {
-        throw new Error(`Invalid GITHUB_REPOSITORY format: ${process.env.GITHUB_REPOSITORY}`);
-    }
-    const eventName = process.env.GITHUB_EVENT_NAME || "";
-    const runId = parseInt(process.env.GITHUB_RUN_ID || "0", 10);
-    coreExports.debug(`Event name: ${eventName}, Run ID: ${runId}`);
-    // Technically, would be nice to get the actual job name,
-    // but it seems to be impossible to get it from the API.
-    const jobId = process.env.GITHUB_JOB || ""; // ID defined in the workflow file!
-    const environment = {
-        owner,
-        repo,
-        workflowName: process.env.GITHUB_WORKFLOW || "",
-        jobName: jobId,
-        runId,
-        actionId: process.env.GITHUB_ACTION || "",
-        actor: process.env.GITHUB_ACTOR || "",
-        eventName,
-    };
-    coreExports.debug(`GitHub environment context: ${JSON.stringify(environment)}`);
-    return environment;
-}
-/**
- * Gets action inputs from GitHub Actions core.
- */
-function getInput() {
-    coreExports.debug("Getting action inputs");
-    const timeoutSeconds = getPositiveNumber("timeout-seconds");
-    const approvalKeywords = parseKeywords("approval-keywords") || ["approved!"];
-    const rejectionKeywords = parseKeywords("rejections-keywords") || []; // no default!
-    const failOnRejection = coreExports.getBooleanInput("fail-on-rejection");
-    const failOnTimeout = coreExports.getBooleanInput("fail-on-timeout");
-    const issueTitle = coreExports.getInput("issue-title") || "";
-    const issueBody = coreExports.getInput("issue-body") || "";
-    const pollIntervalSeconds = getPositiveNumber("poll-interval-seconds");
-    coreExports.debug(`Input validation completed: timeout=${timeoutSeconds}s,` +
-        ` pollInterval=${pollIntervalSeconds}s,` +
-        ` approvalKeywords=${approvalKeywords.join(",")}, ` +
-        ` rejectionKeywords=${rejectionKeywords.join(",")}, ` +
-        ` failOnRejection=${failOnRejection}, ` +
-        ` failOnTimeout=${failOnTimeout}, ` +
-        ` issueTitle=${issueTitle}, ` +
-        ` issueBody=${issueBody}`);
-    return {
-        timeoutSeconds,
-        approvalKeywords,
-        rejectionKeywords,
-        failOnRejection,
-        failOnTimeout,
-        issueTitle,
-        issueBody,
-        pollIntervalSeconds,
-    };
-}
-function parseKeywords(inputName) {
-    const input = coreExports.getInput(inputName).trim();
-    const keywords = input
-        .trim()
-        .split(",")
-        .map((k) => k.trim().toLowerCase())
-        .filter((k) => k.length > 0);
-    return keywords;
-}
-function getPositiveNumber(input) {
-    const value = coreExports.getInput(input);
+// State
+const saveState = (name, value) => sync(() => coreExports.saveState(name, value));
+// Inputs
+const getInput = (name, options) => sync(() => coreExports.getInput(name, options));
+const getBooleanInput = (name, options) => sync(() => coreExports.getBooleanInput(name, options));
+const getPositiveNumber = (input, options) => sync(() => {
+    const value = coreExports.getInput(input, options);
     const number = parseFloat(value);
     if (Number.isNaN(number) || number <= 0) {
         throw new Error(`Invalid ${input}: ${value}`);
     }
     return number;
+});
+const getCommaSeparatedWords = (input, options) => sync(() => {
+    return coreExports.getInput(input, options)
+        .split(",")
+        .map((w) => (w.trim() ))
+        .filter((w) => (w.length > 0 ));
+});
+// Outputs
+const setOutput = (name, value) => sync(() => coreExports.setOutput(name, value));
+const setFailed = (message) => sync(() => coreExports.setFailed(message));
+// Logs
+const debug = (message) => sync(() => coreExports.debug(message));
+const info = (message) => sync(() => coreExports.info(message));
+const error = (message) => sync(() => coreExports.error(message));
+
+class Environment extends Service()("Environment", {
+    accessors: true,
+    effect: gen(function* () {
+        const env = yield* redacted("GITHUB_TOKEN").pipe(option);
+        const token = isSome(env)
+            ? env.value
+            : yield* getInput("github-token", { required: true }).pipe(map$2(make));
+        const [owner, repo] = yield* nonEmptyString("GITHUB_REPOSITORY").pipe(validate({
+            message: "Expected a string with format 'owner/repo'",
+            validation: (s) => /^[a-zA-Z0-9_-]+\/[a-zA-Z0-9_-]+$/.test(s),
+        }), map((s) => s.split("/")));
+        const eventName = yield* nonEmptyString("GITHUB_EVENT_NAME") //
+            .pipe(withDefault("undefined-event"));
+        const workflowName = yield* nonEmptyString("GITHUB_WORKFLOW") //
+            .pipe(withDefault("undefined-workflow"));
+        // Technically, would be nice to get the actual job name,
+        // but it seems to be impossible to get it from the API.
+        const jobId = yield* nonEmptyString("GITHUB_JOB") //
+            .pipe(withDefault("undefined-job")); // ID defined in the workflow file!
+        const runId = yield* number("GITHUB_RUN_ID") //
+            .pipe(withDefault(0));
+        const actionId = yield* nonEmptyString("GITHUB_ACTION") //
+            .pipe(withDefault("undefined-action"));
+        const actor = yield* nonEmptyString("GITHUB_ACTOR") //
+            .pipe(withDefault("undefined-actor"));
+        const res = {
+            token, // FIXME: Change to NonEmptyString
+            owner, // FIXME: Change to NonEmptyString
+            repo, // FIXME: Change to NonEmptyString
+            eventName,
+            workflowName,
+            jobName: jobId,
+            runId,
+            actionId,
+            actor,
+        };
+        debug(`GitHub environment: ${JSON.stringify(res)}`);
+        return res;
+    }),
+}) {
 }
 
-class TimeoutManager {
-    timeoutId = null;
-    createTimeout(seconds, onTimeout) {
-        coreExports.debug(`Creating timeout: ${seconds} seconds`);
-        this.cancel();
-        this.timeoutId = setTimeout(() => {
-            coreExports.debug(`Timeout triggered after ${seconds} seconds`);
-            this.timeoutId = null;
-            onTimeout();
-        }, seconds * 1000);
+class Inputs extends Service()("Inputs", {
+    accessors: true,
+    effect: gen(function* () {
+        const parseKeywords = (inputName, defaultKeywords = []) => getCommaSeparatedWords(inputName) //
+            .pipe(map$2((l) => l.map((w) => w.toLowerCase())))
+            .pipe(map$2((l) => (l.length > 0 ? l : defaultKeywords)));
+        const approvalKeywords = yield* parseKeywords("approval-keywords", ["approved!"]);
+        const rejectionKeywords = yield* parseKeywords("rejections-keywords", []); // no default!
+        const failOnRejection = yield* getBooleanInput("fail-on-rejection");
+        const failOnTimeout = yield* getBooleanInput("fail-on-timeout");
+        const issueTitle = yield* getInput("issue-title");
+        const issueBody = yield* getInput("issue-body");
+        const timeoutSeconds = yield* getPositiveNumber("timeout-seconds");
+        const pollIntervalSeconds = yield* getPositiveNumber("poll-interval-seconds");
         return {
-            cancel: () => this.cancel(),
+            timeoutSeconds,
+            approvalKeywords,
+            rejectionKeywords,
+            failOnRejection,
+            failOnTimeout,
+            issueTitle,
+            issueBody,
+            pollIntervalSeconds,
         };
-    }
-    cancel() {
-        if (this.timeoutId) {
-            coreExports.debug("Canceling timeout");
-            clearTimeout(this.timeoutId);
-            this.timeoutId = null;
-        }
-    }
+    }),
+}) {
 }
 
 // Whitelist of allowed GitHub context variables
@@ -27496,246 +43911,58 @@ function processTemplate(template, variables) {
     return result;
 }
 
-class ContentService {
-    inputs;
-    environment;
-    constructor(inputs, environment) {
-        this.inputs = inputs;
-        this.environment = environment;
-    }
-    async getTitle() {
-        const { issueTitle } = this.inputs;
-        return issueTitle || this.getDefaultIssueTitle();
-    }
-    getDefaultIssueTitle() {
-        const { workflowName: workflow, jobName: jobId, actionId } = this.environment;
-        return `Approval Request: ${workflow}/${jobId}/${actionId}`;
-    }
-    async getBody() {
-        const { issueBody, timeoutSeconds, approvalKeywords, rejectionKeywords } = this.inputs;
-        const { workflowName, jobName, actionId, actor, owner, repo, runId } = this.environment;
-        const templateBody = issueBody || this.getDefaultIssueBody();
-        const runUrl = `https://github.com/${owner}/${repo}/actions/runs/${runId}`;
-        const processedBody = processTemplate(templateBody, {
-            "timeout-seconds": timeoutSeconds,
-            "workflow-name": workflowName,
-            "job-id": jobName, // TODO: fix job-id vs job-name issue!
-            "action-id": actionId,
-            actor: actor,
-            "approval-keywords": approvalKeywords,
-            "rejection-keywords": rejectionKeywords,
-            "run-url": runUrl,
-        });
-        return processedBody;
-    }
-    getDefaultIssueBody() {
-        const { owner, repo, workflowName, runId, jobName: jobId, actionId } = this.environment;
-        const { approvalKeywords, rejectionKeywords, timeoutSeconds } = this.inputs;
-        const approve = approvalKeywords.join(", ") || "approved!";
-        const approveMsg = `comment with \`${approve}\``;
-        const reject = rejectionKeywords.join(", ");
-        const rejectMsg = `${reject ? `comment with \`${reject}\` or ` : ""}simply close the issue!`;
-        const runUrl = `https://github.com/${owner}/${repo}/actions/runs/${runId}`;
-        return `
+class ContentService extends Service()("ContentService", {
+    accessors: true,
+    dependencies: [Inputs.Default, Environment.Default],
+    effect: gen(function* () {
+        const inputs = yield* Inputs;
+        const env = yield* Environment;
+        const title = getTitle(inputs, env);
+        const body = getBody(inputs, env);
+        return { title, body };
+    }),
+}) {
+}
+function getTitle(inputs, env) {
+    const { issueTitle } = inputs;
+    return issueTitle || getDefaultIssueTitle(env);
+}
+function getDefaultIssueTitle(env) {
+    const { workflowName: workflow, jobName: jobId, actionId } = env;
+    return `Approval Request: ${workflow}/${jobId}/${actionId}`;
+}
+function getBody(inputs, env) {
+    const { issueBody, timeoutSeconds, approvalKeywords, rejectionKeywords } = inputs;
+    const { workflowName, jobName, actionId, actor, owner, repo, runId } = env;
+    const templateBody = issueBody || getDefaultIssueBody(inputs, env);
+    const runUrl = `https://github.com/${owner}/${repo}/actions/runs/${runId}`;
+    const processedBody = processTemplate(templateBody, {
+        "timeout-seconds": timeoutSeconds,
+        "workflow-name": workflowName,
+        "job-id": jobName, // TODO: fix job-id vs job-name issue!
+        "action-id": actionId,
+        actor: actor,
+        "approval-keywords": approvalKeywords,
+        "rejection-keywords": rejectionKeywords,
+        "run-url": runUrl,
+    });
+    return processedBody;
+}
+function getDefaultIssueBody(inputs, env) {
+    const { owner, repo, workflowName, runId, jobName: jobId, actionId } = env;
+    const { approvalKeywords, rejectionKeywords, timeoutSeconds } = inputs;
+    const approve = approvalKeywords.join(", ") || "approved!";
+    const approveMsg = `comment with \`${approve}\``;
+    const reject = rejectionKeywords.join(", ");
+    const rejectMsg = `${reject ? `comment with \`${reject}\` or ` : ""}simply close the issue!`;
+    const runUrl = `https://github.com/${owner}/${repo}/actions/runs/${runId}`;
+    return `
 **Manual approval required:** [\`${workflowName}\`/\`${jobId}\`/\`${actionId}\`](${runUrl})
 ✅ To approve, ${approveMsg}
 ❌ To reject, ${rejectMsg}
 
 This request will timeout in ${timeoutSeconds} seconds.
 `.trim();
-    }
-}
-
-class ApprovalServiceFactory {
-    github;
-    constructor(github) {
-        this.github = github;
-    }
-    async request(inputs) {
-        const env = await this.github.getEnvironment();
-        const content = new ContentService(inputs, env);
-        const title = await content.getTitle();
-        const body = await content.getBody();
-        const issue = await this.github.createIssue(title, body);
-        const request = {
-            id: issue.number,
-            issueUrl: issue.htmlUrl,
-            createdAt: new Date(),
-            expiresAt: new Date(Date.now() + inputs.timeoutSeconds * 1000),
-        };
-        return new ApprovalService(this.github, inputs, request);
-    }
-}
-class ApprovalService {
-    github;
-    inputs;
-    request;
-    timeoutManager = new TimeoutManager();
-    constructor(github, inputs, request) {
-        this.github = github;
-        this.inputs = inputs;
-        this.request = request;
-    }
-    async await() {
-        try {
-            coreExports.debug(`Starting approval request process with ${JSON.stringify(this.request)}`);
-            coreExports.info(`Approval request created at ${this.request.issueUrl}`);
-            coreExports.info(`Waiting for approval at ${this.request.issueUrl}`);
-            return await this.waitForApproval();
-        }
-        catch (error) {
-            coreExports.error(`Failed to request approval: ${error}`);
-            throw error;
-        }
-    }
-    async waitForApproval() {
-        const { timeoutSeconds, pollIntervalSeconds } = this.inputs;
-        const { id, issueUrl, createdAt } = this.request;
-        return new Promise((resolve) => {
-            let isResolved = false;
-            const timeoutHandle = this.timeoutManager.createTimeout(timeoutSeconds, () => {
-                if (!isResolved) {
-                    coreExports.debug("Approval request timed out");
-                    isResolved = true;
-                    clearInterval(logInterval);
-                    const response = {
-                        status: "timed-out",
-                        approvers: [],
-                        issueUrl: this.request?.issueUrl,
-                        timestamp: new Date(),
-                    };
-                    this.cleanup("timed-out").then(() => this.saveState(true));
-                    // Always resolve with the response, let main.ts handle the failure
-                    resolve(response);
-                }
-            });
-            const logInterval = setInterval(() => {
-                if (!isResolved)
-                    coreExports.info(`Still waiting for approval, visit ${issueUrl}`);
-            }, 3 * 1000);
-            const pollInterval = setInterval(async () => {
-                if (isResolved) {
-                    clearInterval(pollInterval);
-                    clearInterval(logInterval);
-                    return;
-                }
-                try {
-                    try {
-                        const { state } = await this.github.getIssue(id);
-                        if (state === "closed") {
-                            coreExports.info("Issue was closed unexpectedly, treating as rejection");
-                            isResolved = true;
-                            clearInterval(pollInterval);
-                            clearInterval(logInterval);
-                            timeoutHandle.cancel();
-                            const response = {
-                                status: "rejected",
-                                approvers: [], // TODO: add who closed the issue!
-                                issueUrl: this.request?.issueUrl,
-                                timestamp: new Date(),
-                            };
-                            this.cleanup("rejected").then(() => this.saveState(true));
-                            // Always resolve with the response, let main.ts handle the failure
-                            resolve(response);
-                            return;
-                        }
-                    }
-                    catch (error) {
-                        coreExports.warning(`Error checking issue status: ${error}`);
-                    }
-                    const comments = await this.github.listIssueComments(id, createdAt);
-                    coreExports.debug(`Found ${comments.length} comments to process`);
-                    for (const comment of comments) {
-                        const result = await this.processComment(comment, this.inputs);
-                        if (result === "none") {
-                            coreExports.debug(`No relevant keywords found in comment from ${comment.user.login}`);
-                            continue;
-                        }
-                        isResolved = true;
-                        clearInterval(pollInterval);
-                        clearInterval(logInterval);
-                        timeoutHandle.cancel();
-                        const response = {
-                            status: result,
-                            approvers: [comment.user.login],
-                            issueUrl: this.request?.issueUrl,
-                            timestamp: new Date(),
-                        };
-                        this.cleanup(result, [comment.user.login]).then(() => this.saveState(true));
-                        resolve(response); // Always resolve, let main.ts handle the failure
-                        break;
-                    }
-                }
-                catch (error) {
-                    coreExports.warning(`Error checking comments: ${error}`);
-                }
-            }, pollIntervalSeconds * 1000);
-        });
-    }
-    async processComment(comment, inputs) {
-        const commenter = comment.user.login;
-        const body = comment.body.toLowerCase();
-        coreExports.debug(`Processing comment from ${commenter}: "${body.substring(0, 100)}..."`);
-        const { rejectionKeywords, approvalKeywords } = inputs;
-        if (rejectionKeywords.some((k) => body.includes(k.toLowerCase()))) {
-            const hasPermission = await this.github.checkUserPermission(commenter);
-            if (hasPermission) {
-                return "rejected";
-            }
-            else {
-                coreExports.debug(`Rejection ignored from unauthorized user ${commenter}`);
-            }
-        }
-        if (approvalKeywords.some((k) => body.includes(k.toLowerCase()))) {
-            const hasPermission = await this.github.checkUserPermission(commenter);
-            if (hasPermission) {
-                return "approved";
-            }
-            else {
-                coreExports.debug(`Approval ignored from unauthorized user ${commenter}`);
-            }
-        }
-        coreExports.debug(`No relevant keywords found in comment from ${commenter}`);
-        return "none";
-    }
-    async saveState(cleanupCompleted = false) {
-        if (this.request) {
-            coreExports.debug(`Saving approval request state: ${this.request.id}`);
-            coreExports.saveState("approval_request", JSON.stringify(this.request));
-            coreExports.saveState("cleanup_completed", cleanupCompleted ? "true" : "false");
-        }
-        else {
-            coreExports.debug("No approval request to save");
-        }
-    }
-    async cleanup(status, approvers) {
-        coreExports.debug("Performing cleanup...");
-        this.timeoutManager.cancel();
-        try {
-            const issueNumber = this.request.id;
-            if (status === "approved") {
-                const approverText = approvers && approvers.length > 0 ? ` by @${approvers.join(", @")}` : "";
-                await this.github.addIssueComment(issueNumber, `✅ **Approval Received ${approverText}**\n\nThe manual approval request has been approved.`);
-                await this.github.closeIssue(issueNumber, "completed");
-            }
-            else {
-                const msg = status === "rejected" ? "Rejected" : "Timed Out";
-                await this.github.addIssueComment(issueNumber, `❌ **Approval ${msg}**\n\nThe manual approval request has been ${msg.toLowerCase()}.`);
-                // Determine close reason based on status and fail flags
-                let closeReason = "not_planned";
-                if (status === "rejected" && !this.inputs.failOnRejection) {
-                    closeReason = "completed";
-                }
-                else if (status === "timed-out" && !this.inputs.failOnTimeout) {
-                    closeReason = "completed";
-                }
-                await this.github.closeIssue(issueNumber, closeReason);
-            }
-        }
-        catch (error) {
-            coreExports.warning(`Failed to cleanup from state: ${error}`);
-        }
-    }
 }
 
 var github = {};
@@ -29065,8 +45292,8 @@ var Octokit = class {
 };
 
 var distWeb$1 = /*#__PURE__*/Object.freeze({
-	__proto__: null,
-	Octokit: Octokit
+  __proto__: null,
+  Octokit: Octokit
 });
 
 var require$$2 = /*@__PURE__*/getAugmentedNamespace(distWeb$1);
@@ -31202,9 +47429,9 @@ function legacyRestEndpointMethods(octokit) {
 legacyRestEndpointMethods.VERSION = VERSION$1;
 
 var distSrc = /*#__PURE__*/Object.freeze({
-	__proto__: null,
-	legacyRestEndpointMethods: legacyRestEndpointMethods,
-	restEndpointMethods: restEndpointMethods
+  __proto__: null,
+  legacyRestEndpointMethods: legacyRestEndpointMethods,
+  restEndpointMethods: restEndpointMethods
 });
 
 var require$$3 = /*@__PURE__*/getAugmentedNamespace(distSrc);
@@ -31573,11 +47800,11 @@ function paginateRest(octokit) {
 paginateRest.VERSION = VERSION;
 
 var distWeb = /*#__PURE__*/Object.freeze({
-	__proto__: null,
-	composePaginateRest: composePaginateRest,
-	isPaginatingEndpoint: isPaginatingEndpoint,
-	paginateRest: paginateRest,
-	paginatingEndpoints: paginatingEndpoints
+  __proto__: null,
+  composePaginateRest: composePaginateRest,
+  isPaginatingEndpoint: isPaginatingEndpoint,
+  paginateRest: paginateRest,
+  paginatingEndpoints: paginatingEndpoints
 });
 
 var require$$4 = /*@__PURE__*/getAugmentedNamespace(distWeb);
@@ -31700,168 +47927,273 @@ function requireGithub () {
 
 var githubExports = requireGithub();
 
-class GitHubService {
-    environment;
-    octokit;
-    constructor(environment) {
-        this.environment = environment;
-        const githubToken = coreExports.getInput("github-token", { required: true });
-        this.octokit = githubExports.getOctokit(githubToken);
-    }
-    async createIssue(title, body) {
-        const { owner, repo } = this.environment;
-        const request = { owner, repo, title, body };
-        coreExports.debug(`Creating issue in ${owner}/${repo} with request: ${JSON.stringify(request)}`);
-        const response = await this.octokit.request("POST /repos/{owner}/{repo}/issues", request);
-        const issue = {
-            number: response.data.number,
-            htmlUrl: response.data.html_url,
-            state: response.data.state,
-        };
-        coreExports.info(`Issue created successfully: ${issue.htmlUrl}`);
-        return issue;
-    }
-    async closeIssue(issueNumber, stateReason) {
-        const { owner, repo } = this.environment;
-        try {
-            const request = {
+class OctokitService extends Service()("OctokitService", {
+    dependencies: [Environment.Default],
+    effect: gen(function* () {
+        const token = yield* Environment.token;
+        const octokit = yield* sync(() => githubExports.getOctokit(value(token)));
+        const request = (route, options) => promise(() => octokit.request(route, options));
+        return { request };
+    }),
+}) {
+}
+class GitHubService extends Service()("GitHubService", {
+    accessors: true,
+    dependencies: [OctokitService.Default, Environment.Default],
+    effect: gen(function* () {
+        const octokit = yield* OctokitService;
+        const { owner, repo } = yield* Environment;
+        const issuesUrl = `/repos/{owner}/{repo}/issues`;
+        const getIssue = (issueNumber) => gen(function* () {
+            const req = { owner, repo, issue_number: issueNumber };
+            yield* debug(`Getting issue with: ${JSON.stringify(req)}`);
+            const { data } = yield* octokit.request(`GET ${issuesUrl}/{issue_number}`, req);
+            const res = {
+                number: data.number,
+                htmlUrl: data.html_url,
+                state: data.state,
+            };
+            return res;
+        });
+        const createIssue = (title, body) => gen(function* () {
+            const req = { owner, repo, title, body };
+            yield* debug(`Creating issue with request: ${JSON.stringify(req)}`);
+            const { data } = yield* octokit.request(`POST ${issuesUrl}`, req);
+            const res = {
+                number: data.number,
+                htmlUrl: data.html_url,
+                state: data.state,
+            };
+            yield* info(`Successfully created issue: ${res.htmlUrl}`);
+            return res;
+        });
+        const closeIssue = (issueNumber, stateReason) => gen(function* () {
+            const req = {
                 owner,
                 repo,
                 issue_number: issueNumber,
                 state: "closed",
+                state_reason: stateReason,
             };
-            if (stateReason) {
-                request.state_reason = stateReason;
-            }
-            coreExports.debug(`Closing ${owner}/${repo}/issues/${issueNumber} with state_reason: ${stateReason || "default"}`);
-            await this.octokit.request("PATCH /repos/{owner}/{repo}/issues/{issue_number}", request);
-            coreExports.info(`Issue #${issueNumber} closed successfully`);
-        }
-        catch (error) {
-            coreExports.warning(`Failed to close issue #${issueNumber}: ${error}`);
-        }
-    }
-    async getIssue(issueNumber) {
-        const { owner, repo } = this.environment;
-        const request = { owner, repo, issue_number: issueNumber };
-        coreExports.debug(`Getting ${owner}/${repo}/issues/${issueNumber}`);
-        const response = await this.octokit.request("GET /repos/{owner}/{repo}/issues/{issue_number}", request);
-        const issue = {
-            number: response.data.number,
-            htmlUrl: response.data.html_url,
-            state: response.data.state,
+            yield* debug(`Closing issue with: ${JSON.stringify(req)}`);
+            yield* octokit.request(`PATCH ${issuesUrl}/{issue_number}`, req);
+        });
+        const listIssueComments = (issueNumber, since) => gen(function* () {
+            const req = {
+                owner,
+                repo,
+                issue_number: issueNumber,
+                since: since?.toISOString(),
+            };
+            yield* debug(`Listing issue comments with: ${JSON.stringify(req)}`);
+            // TODO: How about paginating?
+            const { data } = yield* octokit.request(`GET ${issuesUrl}/{issue_number}/comments`, req);
+            const comments = data.map((comment) => ({
+                id: comment.id,
+                body: comment.body,
+                user: { login: comment.user.login },
+                createdAt: comment.created_at,
+            }));
+            return comments;
+        });
+        const addIssueComment = (issueNumber, body) => gen(function* () {
+            const req = { owner, repo, issue_number: issueNumber, body };
+            yield* debug(`Adding issue comment with: ${JSON.stringify(req)}`);
+            yield* octokit.request(`POST ${issuesUrl}/{issue_number}/comments`, req);
+        });
+        const checkUserPermission = (username) => gen(function* () {
+            const req = { owner, repo, username };
+            yield* debug(`Checking user permission with: ${JSON.stringify(req)}`);
+            const { data } = yield* octokit.request("GET /repos/{owner}/{repo}/collaborators/{username}/permission", req);
+            return (data.permission === "write" ||
+                data.permission === "maintain" ||
+                data.permission === "admin");
+        });
+        const checkTeamMembership = (teamSlug, username) => gen(function* () {
+            const req = { org: owner, team_slug: teamSlug, username };
+            yield* debug(`Checking team membership with: ${JSON.stringify(req)}`);
+            const { data } = yield* octokit.request("GET /orgs/{org}/teams/{team_slug}/memberships/{username}", req);
+            return (data.permission === "write" ||
+                data.permission === "maintain" ||
+                data.permission === "admin");
+        });
+        return {
+            getIssue,
+            createIssue,
+            closeIssue,
+            listIssueComments,
+            addIssueComment,
+            checkUserPermission,
+            checkTeamMembership,
         };
-        return issue;
-    }
-    async listIssueComments(issueNumber, since) {
-        const { owner, repo } = this.environment;
+    }),
+}) {
+}
+
+class NoApprovalResponseException extends TaggedError("NoApprovalResponseException") {
+}
+class ApprovalService extends Service()("ApprovalService", {
+    dependencies: [
+        Inputs.Default,
+        Environment.Default,
+        GitHubService.Default,
+        ContentService.Default,
+    ],
+    effect: gen(function* () {
+        const inputs = yield* Inputs;
+        const { timeoutSeconds, pollIntervalSeconds, approvalKeywords, rejectionKeywords } = inputs;
+        const { title, body } = yield* ContentService;
+        const github = yield* GitHubService;
+        const issue = yield* github.createIssue(title, body);
         const request = {
-            owner,
-            repo,
-            issue_number: issueNumber,
-            per_page: 100,
-            since: since?.toISOString(),
+            id: issue.number,
+            issueUrl: issue.htmlUrl,
+            createdAt: new Date(),
+            expiresAt: new Date(Date.now() + timeoutSeconds * 1000),
         };
-        coreExports.debug(`Listing comments for ${owner}/${repo}/issues/${issueNumber}`);
-        const response = await this.octokit.request("GET /repos/{owner}/{repo}/issues/{issue_number}/comments", request);
-        const comments = response.data.map((comment) => ({
-            id: comment.id,
-            body: comment.body,
-            user: { login: comment.user.login },
-            createdAt: comment.created_at,
-        }));
-        return comments;
-    }
-    async addIssueComment(issueNumber, body) {
-        const { owner, repo } = this.environment;
-        try {
-            const request = { owner, repo, issue_number: issueNumber, body };
-            coreExports.debug(`Adding comment to ${owner}/${repo}/issues/${issueNumber}`);
-            await this.octokit.request("POST /repos/{owner}/{repo}/issues/{issue_number}/comments", request);
-            coreExports.debug(`Comment added successfully to issue #${issueNumber}`);
-        }
-        catch (error) {
-            coreExports.warning(`Failed to add comment to issue #${issueNumber}: ${error}`);
-        }
-    }
-    async checkUserPermission(username) {
-        const { owner, repo } = this.environment;
-        try {
-            const request = { owner, repo, username };
-            coreExports.debug(`Checking user permission for ${username} in ${owner}/${repo}`);
-            const response = await this.octokit.request("GET /repos/{owner}/{repo}/collaborators/{username}/permission", request);
-            const permission = response.data.permission;
-            coreExports.debug(`User ${username} has permission level: ${permission}`);
-            return permission === "write" || permission === "maintain" || permission === "admin";
-        }
-        catch (error) {
-            coreExports.warning(`Failed to check user permission for ${username}: ${error}`);
-            return false;
-        }
-    }
-    async checkTeamMembership(teamSlug, username) {
-        const { owner } = this.environment;
-        try {
-            const request = { org: owner, team_slug: teamSlug, username };
-            coreExports.debug(`Checking team membership for ${username} in team ${teamSlug} (org: ${owner})`);
-            await this.octokit.request("GET /orgs/{org}/teams/{team_slug}/memberships/{username}", request);
-            coreExports.debug(`User ${username} is a member of team ${teamSlug}`);
-            return true;
-        }
-        catch (error) {
-            coreExports.warning(`User ${username} is not a member of team ${teamSlug}: ${error}`);
-            return false;
-        }
-    }
-    async getEnvironment() {
-        return this.environment;
-    }
+        yield* saveState("approval_request", JSON.stringify(request));
+        const processComment = (comment) => gen(function* () {
+            const commenter = comment.user.login;
+            const commentBody = comment.body.toLowerCase();
+            yield* debug(`Processing comment from ${commenter}: "${commentBody.substring(0, 100)}..."`);
+            // Check for rejection keywords first
+            if (rejectionKeywords.some((k) => commentBody.includes(k.toLowerCase()))) {
+                const hasPermission = yield* github.checkUserPermission(commenter);
+                if (hasPermission) {
+                    return "rejected";
+                }
+                else {
+                    yield* debug(`Rejection ignored from unauthorized user ${commenter}`);
+                }
+            }
+            // Check for approval keywords
+            if (approvalKeywords.some((k) => commentBody.includes(k.toLowerCase()))) {
+                const hasPermission = yield* github.checkUserPermission(commenter);
+                if (hasPermission) {
+                    return "approved";
+                }
+                else {
+                    yield* debug(`Approval ignored from unauthorized user ${commenter}`);
+                }
+            }
+            yield* debug(`No relevant keywords found in comment from ${commenter}`);
+            return "none";
+        });
+        const checkForResponse = () => gen(function* () {
+            const issueState = yield* github.getIssue(request.id).pipe(map$2(({ state }) => state));
+            if (issueState === "closed") {
+                // TODO: Maybe check the reason, if it's not "completed", treat as rejection?
+                yield* info("Issue was closed unexpectedly, treating as rejection");
+                return {
+                    status: "rejected",
+                    failed: true,
+                    approvers: [],
+                    issueUrl: request.issueUrl,
+                    timestamp: new Date(), // TODO: add the issue closed timestamp!
+                };
+            }
+            // Check comments for approval/rejection
+            const comments = yield* github.listIssueComments(request.id); // TODO: add since?
+            yield* debug(`Found ${comments.length} comments to process`);
+            for (const comment of comments) {
+                const result = yield* processComment(comment);
+                const base = {
+                    approvers: [comment.user.login],
+                    issueUrl: request.issueUrl,
+                    timestamp: new Date(), // TODO: add the comment timestamp!
+                };
+                if (result === "approved") {
+                    return {
+                        ...base,
+                        status: result,
+                        failed: false,
+                    };
+                }
+                else if (result === "rejected") {
+                    return {
+                        ...base,
+                        status: result,
+                        failed: true,
+                    };
+                }
+            }
+            return yield* new NoApprovalResponseException({ message: "No approval response found" });
+        });
+        // TODO: You can split this into three functions!
+        const handleResponse = (res) => gen(function* () {
+            yield* debug(`Handling response: ${JSON.stringify(res)}`);
+            const { status } = res;
+            if (status === "approved") {
+                const { approvers } = res;
+                const approverText = approvers.length > 0 ? ` by @${approvers.join(", @")}` : "";
+                const msg = `✅ **Approval Received${approverText}**\n\nThe manual approval request has been approved.`;
+                yield* info(msg);
+                yield* github.addIssueComment(request.id, msg);
+                yield* github.closeIssue(request.id, "completed");
+                return res;
+            }
+            else {
+                const msg = `❌ **Approval Rejected**\n\nThe manual approval request has been rejected.`;
+                yield* info(msg);
+                yield* github.addIssueComment(request.id, msg);
+                yield* github.closeIssue(request.id, "not_planned");
+                return {
+                    ...res,
+                    failed: inputs.failOnRejection,
+                };
+            }
+        });
+        const handleTimeout = () => gen(function* () {
+            yield* info(`⏱️ Approval request timed out, handling timeout...`);
+            const result = {
+                status: "timed-out",
+                failed: inputs.failOnTimeout,
+                issueUrl: request.issueUrl,
+                timestamp: new Date(),
+            };
+            const reason = inputs.failOnTimeout ? "not_planned" : "completed";
+            const outcome = reason === "completed" ? "approved" : "timed out";
+            const msg = `⏱️ **Approval Timed Out**\n\nThe manual approval request has been ${outcome}.`;
+            yield* info(msg);
+            yield* github.addIssueComment(request.id, msg);
+            yield* github.closeIssue(request.id, reason);
+            return result;
+        });
+        return {
+            await: () => gen(function* () {
+                const { issueUrl } = request;
+                yield* debug(`Starting approval request process with ${JSON.stringify(request)}`);
+                yield* info(`Approval request created at ${issueUrl}`);
+                yield* info(`Waiting for approval at ${issueUrl}`);
+                const msgWaiting = `Still waiting for approval at ${issueUrl}`;
+                return yield* checkForResponse().pipe(tap((res) => handleResponse(res)), tapErrorTag("NoApprovalResponseException", () => info(msgWaiting)), retry(fixed(seconds(pollIntervalSeconds))), timeout(seconds(timeoutSeconds)), catchTag("TimeoutException", () => handleTimeout()));
+            }).pipe(tap((res) => debug(`Approval response: ${JSON.stringify(res)}`)), tapError((e) => error(`Failed to await approval: ${e}`))),
+        };
+    }),
+}) {
 }
 
-/**
- * Runs the main phase of the action.
- *
- * @returns Resolves when the main phase is complete.
- */
-async function run() {
-    try {
-        coreExports.info(`Starting approval workflow for ${process.env.GITHUB_ACTION}`);
-        // Get action inputs
-        const inputs = getInput();
-        const environment = getEnvironment();
-        const githubService = new GitHubService(environment);
-        const factory = new ApprovalServiceFactory(githubService);
-        const approval = await factory.request(inputs);
-        const response = await approval.await();
-        await approval.saveState();
-        coreExports.debug(`Setting outputs: ${JSON.stringify(response)}`);
-        coreExports.setOutput("status", response.status);
-        coreExports.setOutput("approvers", response.approvers.join(","));
-        coreExports.setOutput("issue-url", response.issueUrl);
-        if (response.status === "approved") {
-            coreExports.info(`✅ Approval granted by: ${response.approvers.join(", ")}`);
-        }
-        else if (response.status === "rejected") {
-            coreExports.info("❌ Approval request was rejected");
-            if (inputs.failOnRejection) {
-                coreExports.setFailed("Approval request was rejected");
-                return;
-            }
-        }
-        else if (response.status === "timed-out") {
-            coreExports.info("⏱️ Approval request timed out");
-            if (inputs.failOnTimeout) {
-                coreExports.setFailed("Approval request timed out");
-                return;
-            }
-        }
-        coreExports.debug("Main phase completed successfully");
+const exit = await gen(function* () {
+    const approvalService = yield* ApprovalService;
+    const response = yield* approvalService.await();
+    const { status, issueUrl, failed } = response;
+    const approvers = status === "timed-out" ? [] : response.approvers;
+    yield* setOutput("status", status);
+    yield* setOutput("approvers", approvers.join(","));
+    yield* setOutput("issue-url", issueUrl);
+    if (status === "approved") {
+        yield* info(`✅ Approval granted by: ${approvers.join(", ")}`);
     }
-    catch (error) {
-        coreExports.setFailed(`Action failed: ${error}`);
+    else {
+        const msg = status === "rejected" //
+            ? "❌ Approval request was rejected"
+            : "⏱️ Approval request timed out";
+        yield* info(msg);
+        if (failed) {
+            yield* setFailed(msg);
+        }
     }
-}
-run();
-
-export { run };
+    return response;
+}).pipe(provide(ApprovalService.Default), runPromiseExit);
+console.log(exit);
 //# sourceMappingURL=main.js.map
