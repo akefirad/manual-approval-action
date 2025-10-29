@@ -19,18 +19,13 @@ type GitHubIssueComment = {
   created_at: string;
 };
 
-class OctokitService extends Service<OctokitService>()("OctokitService", {
-  dependencies: [Environment.Default],
-  effect: E.gen(function* () {
-    const token = yield* Environment.token;
-    const octokit = yield* E.sync(() => getOctokit(Redacted.value(token)));
-
-    const request = (route: string, options?: Record<string, unknown>): Result<GitHubResponse> =>
-      E.promise(() => octokit.request(route, options));
-
-    return { request } as const;
-  }),
-}) {}
+const makeOctokit = (token: Redacted.Redacted<string>) =>
+  E.sync(() => getOctokit(Redacted.value(token))).pipe(
+    E.map((octokit) => ({
+      request: (route: string, options?: Record<string, unknown>): Result<GitHubResponse> =>
+        E.promise(() => octokit.request(route, options)),
+    })),
+  );
 
 export interface IGitHubService {
   getIssue(issueNumber: number): Result<Issue>;
@@ -44,9 +39,10 @@ export interface IGitHubService {
 
 export class GitHubService extends Service<GitHubService>()("GitHubService", {
   accessors: true,
-  dependencies: [OctokitService.Default, Environment.Default],
+  dependencies: [Environment.Default],
   effect: E.gen(function* () {
-    const octokit = yield* OctokitService;
+    const { token } = yield* Environment;
+    const octokit = yield* makeOctokit(token);
     const { owner, repo } = yield* Environment;
     const issuesUrl = `/repos/{owner}/{repo}/issues`;
 

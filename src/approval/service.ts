@@ -54,20 +54,18 @@ export class ApprovalService extends Service<ApprovalService>()("ApprovalService
         // Check for rejection keywords first
         if (rejectionKeywords.some((k) => commentBody.includes(k.toLowerCase()))) {
           const hasPermission = yield* github.checkUserPermission(commenter);
+          yield* core.debug(`Rejection ignored from user ${commenter}? ${hasPermission}`);
           if (hasPermission) {
             return "rejected" as const;
-          } else {
-            yield* core.debug(`Rejection ignored from unauthorized user ${commenter}`);
           }
         }
 
         // Check for approval keywords
         if (approvalKeywords.some((k) => commentBody.includes(k.toLowerCase()))) {
           const hasPermission = yield* github.checkUserPermission(commenter);
+          yield* core.debug(`Approval ignored from user ${commenter}? ${hasPermission}`);
           if (hasPermission) {
             return "approved" as const;
-          } else {
-            yield* core.debug(`Approval ignored from unauthorized user ${commenter}`);
           }
         }
 
@@ -175,7 +173,7 @@ export class ApprovalService extends Service<ApprovalService>()("ApprovalService
           const msgWaiting = `Still waiting for approval at ${issueUrl}`;
 
           return yield* checkForResponse().pipe(
-            E.tap((res) => handleResponse(res)),
+            E.flatMap((res) => handleResponse(res)),
             E.tapErrorTag("NoApprovalResponseException", () => core.info(msgWaiting)),
             E.retry(Schedule.fixed(Duration.seconds(pollIntervalSeconds))),
             E.timeout(Duration.seconds(timeoutSeconds)),

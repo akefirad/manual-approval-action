@@ -301,19 +301,19 @@ function pipe(a, ab, bc, cd, de, ef, fg, gh, hi) {
  * @category constructors
  * @since 2.0.0
  */
-const make$q = isEquivalent => (self, that) => self === that || isEquivalent(self, that);
+const make$t = isEquivalent => (self, that) => self === that || isEquivalent(self, that);
 /**
  * @category mapping
  * @since 2.0.0
  */
-const mapInput$1 = /*#__PURE__*/dual(2, (self, f) => make$q((x, y) => self(f(x), f(y))));
+const mapInput$1 = /*#__PURE__*/dual(2, (self, f) => make$t((x, y) => self(f(x), f(y))));
 /**
  * Creates a new `Equivalence` for an array of values based on a given `Equivalence` for the elements of the array.
  *
  * @category combinators
  * @since 2.0.0
  */
-const array$1 = item => make$q((self, that) => {
+const array$1 = item => make$t((self, that) => {
   if (self.length !== that.length) {
     return false;
   }
@@ -924,7 +924,7 @@ const random = self => {
  * @since 2.0.0
  * @category hashing
  */
-const combine$5 = b => self => self * 53 ^ b;
+const combine$7 = b => self => self * 53 ^ b;
 /**
  * @since 2.0.0
  * @category hashing
@@ -971,7 +971,7 @@ const string$1 = str => {
 const structureKeys = (o, keys) => {
   let h = 12289;
   for (let i = 0; i < keys.length; i++) {
-    h ^= pipe(string$1(keys[i]), combine$5(hash(o[keys[i]])));
+    h ^= pipe(string$1(keys[i]), combine$7(hash(o[keys[i]])));
   }
   return optimize(h);
 };
@@ -987,7 +987,7 @@ const structure = o => structureKeys(o, Object.keys(o));
 const array = arr => {
   let h = 6151;
   for (let i = 0; i < arr.length; i++) {
-    h = pipe(h, combine$5(hash(arr[i])));
+    h = pipe(h, combine$7(hash(arr[i])));
   }
   return optimize(h);
 };
@@ -1366,7 +1366,7 @@ const SomeProto = /*#__PURE__*/Object.assign(/*#__PURE__*/Object.create(CommonPr
     return isOption(that) && isSome$1(that) && equals$1(this.value, that.value);
   },
   [symbol$1]() {
-    return cached(this, combine$5(hash(this._tag))(hash(this.value)));
+    return cached(this, combine$7(hash(this._tag))(hash(this.value)));
   },
   toJSON() {
     return {
@@ -1434,7 +1434,7 @@ const RightProto = /*#__PURE__*/Object.assign(/*#__PURE__*/Object.create(CommonP
     return isEither(that) && isRight$1(that) && equals$1(this.right, that.right);
   },
   [symbol$1]() {
-    return combine$5(hash(this._tag))(hash(this.right));
+    return combine$7(hash(this._tag))(hash(this.right));
   },
   toJSON() {
     return {
@@ -1451,7 +1451,7 @@ const LeftProto = /*#__PURE__*/Object.assign(/*#__PURE__*/Object.create(CommonPr
     return isEither(that) && isLeft$1(that) && equals$1(this.left, that.left);
   },
   [symbol$1]() {
-    return combine$5(hash(this._tag))(hash(this.left));
+    return combine$7(hash(this._tag))(hash(this.left));
   },
   toJSON() {
     return {
@@ -1621,17 +1621,17 @@ const isNonEmptyArray$1 = self => self.length > 0;
  * @category constructors
  * @since 2.0.0
  */
-const make$p = compare => (self, that) => self === that ? 0 : compare(self, that);
+const make$s = compare => (self, that) => self === that ? 0 : compare(self, that);
 /**
  * @category instances
  * @since 2.0.0
  */
-const number$2 = /*#__PURE__*/make$p((self, that) => self < that ? -1 : 1);
+const number$2 = /*#__PURE__*/make$s((self, that) => self < that ? -1 : 1);
 /**
  * @category mapping
  * @since 2.0.0
  */
-const mapInput = /*#__PURE__*/dual(2, (self, f) => make$p((b1, b2) => self(f(b1), f(b2))));
+const mapInput = /*#__PURE__*/dual(2, (self, f) => make$s((b1, b2) => self(f(b1), f(b2))));
 /**
  * Test whether one value is _strictly greater than_ another.
  *
@@ -1976,7 +1976,7 @@ const map$7 = /*#__PURE__*/dual(2, (self, f) => isNone(self) ? none$4() : some(f
  * @category Sequencing
  * @since 2.0.0
  */
-const flatMap$3 = /*#__PURE__*/dual(2, (self, f) => isNone(self) ? none$4() : f(self.value));
+const flatMap$4 = /*#__PURE__*/dual(2, (self, f) => isNone(self) ? none$4() : f(self.value));
 /**
  * Returns a function that checks if an `Option` contains a specified value,
  * using a provided equivalence function.
@@ -2064,7 +2064,7 @@ const contains = /*#__PURE__*/containsWith(_equivalence$3);
  * @category constructors
  * @since 2.0.0
  */
-const make$o = (...elements) => elements;
+const make$r = (...elements) => elements;
 
 /**
  * This module provides utility functions for working with arrays in TypeScript.
@@ -2263,7 +2263,7 @@ const clamp = (i, as) => Math.floor(Math.min(Math.max(0, i), as.length));
  * @category getters
  * @since 2.0.0
  */
-const get$8 = /*#__PURE__*/dual(2, (self, index) => {
+const get$9 = /*#__PURE__*/dual(2, (self, index) => {
   const i = Math.floor(index);
   return isOutOfBounds(i, self) ? none$4() : some(self[i]);
 });
@@ -2286,7 +2286,7 @@ const unsafeGet$3 = /*#__PURE__*/dual(2, (self, index) => {
  * @category getters
  * @since 2.0.0
  */
-const head = /*#__PURE__*/get$8(0);
+const head$1 = /*#__PURE__*/get$9(0);
 /**
  * Get the first element of a non empty array.
  *
@@ -2428,7 +2428,7 @@ const sort = /*#__PURE__*/dual(2, (self, O) => {
  * @category zipping
  * @since 2.0.0
  */
-const zip$1 = /*#__PURE__*/dual(2, (self, that) => zipWith$2(self, that, make$o));
+const zip$1 = /*#__PURE__*/dual(2, (self, that) => zipWith$2(self, that, make$r));
 /**
  * Apply a function to pairs of elements at the same index in two `Iterable`s, collecting the results in a new `Array`. If one
  * input `Iterable` is short, excess elements of the longer `Iterable` are discarded.
@@ -2566,7 +2566,7 @@ const union$2 = /*#__PURE__*/dual(2, (self, that) => unionWith(self, that, _equi
  * @category constructors
  * @since 2.0.0
  */
-const empty$j = () => [];
+const empty$l = () => [];
 /**
  * Constructs a new `NonEmptyArray<A>` from the specified value.
  *
@@ -2585,7 +2585,7 @@ const map$6 = /*#__PURE__*/dual(2, (self, f) => self.map(f));
  * @category sequencing
  * @since 2.0.0
  */
-const flatMap$2 = /*#__PURE__*/dual(2, (self, f) => {
+const flatMap$3 = /*#__PURE__*/dual(2, (self, f) => {
   if (isEmptyReadonlyArray(self)) {
     return [];
   }
@@ -2615,7 +2615,7 @@ const flatMap$2 = /*#__PURE__*/dual(2, (self, f) => {
  * @category sequencing
  * @since 2.0.0
  */
-const flatten$2 = /*#__PURE__*/flatMap$2(identity);
+const flatten$2 = /*#__PURE__*/flatMap$3(identity);
 /**
  * Reduces an array from the left.
  *
@@ -2636,7 +2636,7 @@ const reduce$6 = /*#__PURE__*/dual(3, (self, b, f) => fromIterable$6(self).reduc
  * @category constructors
  * @since 2.0.0
  */
-const unfold = (b, f) => {
+const unfold$1 = (b, f) => {
   const out = [];
   let next = b;
   let o;
@@ -2734,7 +2734,7 @@ const emptyArray = [];
  * @category equivalence
  * @since 2.0.0
  */
-const getEquivalence$1 = isEquivalent => make$q((self, that) => self.length === that.length && toReadonlyArray(self).every((value, i) => isEquivalent(value, unsafeGet$2(that, i))));
+const getEquivalence$1 = isEquivalent => make$t((self, that) => self.length === that.length && toReadonlyArray(self).every((value, i) => isEquivalent(value, unsafeGet$2(that, i))));
 const _equivalence$1 = /*#__PURE__*/getEquivalence$1(equals$1);
 const ChunkProto = {
   [TypeId$9]: {
@@ -2839,14 +2839,14 @@ const _empty$6 = /*#__PURE__*/makeChunk({
  * @category constructors
  * @since 2.0.0
  */
-const empty$i = () => _empty$6;
+const empty$k = () => _empty$6;
 /**
  * Builds a `NonEmptyChunk` from an non-empty collection of elements.
  *
  * @category constructors
  * @since 2.0.0
  */
-const make$n = (...as) => unsafeFromNonEmptyArray(as);
+const make$q = (...as) => unsafeFromNonEmptyArray(as);
 /**
  * Builds a `NonEmptyChunk` from a single element.
  *
@@ -2974,12 +2974,19 @@ const reverseChunk = self => {
  */
 const reverse$1 = reverseChunk;
 /**
+ * This function provides a safe way to read a value at a particular index from a `Chunk`.
+ *
+ * @category elements
+ * @since 2.0.0
+ */
+const get$8 = /*#__PURE__*/dual(2, (self, index) => index < 0 || index >= self.length ? none$4() : some(unsafeGet$2(self, index)));
+/**
  * Wraps an array into a chunk without copying, unsafe on mutable arrays
  *
  * @since 2.0.0
  * @category unsafe
  */
-const unsafeFromArray = self => self.length === 0 ? empty$i() : self.length === 1 ? of$1(self[0]) : makeChunk({
+const unsafeFromArray = self => self.length === 0 ? empty$k() : self.length === 1 ? of$1(self[0]) : makeChunk({
   _tag: "IArray",
   array: self
 });
@@ -3192,14 +3199,21 @@ const appendAll$1 = /*#__PURE__*/dual(2, (self, that) => {
  * @since 2.0.0
  * @category elements
  */
-const isEmpty$3 = self => self.length === 0;
+const isEmpty$5 = self => self.length === 0;
 /**
  * Determines if the chunk is not empty.
  *
  * @since 2.0.0
  * @category elements
  */
-const isNonEmpty = self => self.length > 0;
+const isNonEmpty$2 = self => self.length > 0;
+/**
+ * Returns the first element of this chunk if it exists.
+ *
+ * @since 2.0.0
+ * @category elements
+ */
+const head = /*#__PURE__*/get$8(0);
 /**
  * Returns the first element of this chunk.
  *
@@ -3263,7 +3277,7 @@ function fromBitmap(bitmap, bit) {
   return popcount(bitmap & bit - 1);
 }
 
-const make$m = (value, previous) => ({
+const make$p = (value, previous) => ({
   value,
   previous
 });
@@ -3549,7 +3563,7 @@ function mergeLeaves(edit, shift, h1, n1, h2, n2) {
   while (true) {
     const res = mergeLeavesInner(edit, currentShift, h1, n1, h2, n2);
     if (typeof res === "function") {
-      stack = make$m(res, stack);
+      stack = make$p(res, stack);
       currentShift = currentShift + SIZE;
     } else {
       let final = res;
@@ -3573,7 +3587,7 @@ const HashMapProto = {
   [symbol$1]() {
     let hash$1 = hash(HashMapSymbolKey);
     for (const item of this) {
-      hash$1 ^= pipe(hash(item[0]), combine$5(hash(item[1])));
+      hash$1 ^= pipe(hash(item[0]), combine$7(hash(item[1])));
     }
     return cached(this, hash$1);
   },
@@ -3684,10 +3698,10 @@ const visitLazyChildren = (len, children, i, f, cont) => {
 };
 const _empty$5 = /*#__PURE__*/makeImpl$1(false, 0, /*#__PURE__*/new EmptyNode(), 0);
 /** @internal */
-const empty$h = () => _empty$5;
+const empty$j = () => _empty$5;
 /** @internal */
 const fromIterable$4 = entries => {
-  const map = beginMutation$1(empty$h());
+  const map = beginMutation$1(empty$j());
   for (const entry of entries) {
     set$4(map, entry[0], entry[1]);
   }
@@ -3696,7 +3710,7 @@ const fromIterable$4 = entries => {
 /** @internal */
 const isHashMap = u => hasProperty(u, HashMapTypeId);
 /** @internal */
-const isEmpty$2 = self => self && isEmptyNode(self._root);
+const isEmpty$4 = self => self && isEmptyNode(self._root);
 /** @internal */
 const get$7 = /*#__PURE__*/dual(2, (self, key) => getHash(self, key, hash(key)));
 /** @internal */
@@ -3789,7 +3803,7 @@ const remove$3 = /*#__PURE__*/dual(2, (self, key) => modifyAt$1(self, key, none$
  * @since 2.0.0
  * @category mapping
  */
-const map$5 = /*#__PURE__*/dual(2, (self, f) => reduce$5(self, empty$h(), (map, value, key) => set$4(map, key, f(value, key))));
+const map$5 = /*#__PURE__*/dual(2, (self, f) => reduce$5(self, empty$j(), (map, value, key) => set$4(map, key, f(value, key))));
 /** @internal */
 const forEach$2 = /*#__PURE__*/dual(2, (self, f) => reduce$5(self, void 0, (_, value, key) => f(value, key)));
 /** @internal */
@@ -3829,7 +3843,7 @@ const HashSetProto = {
     return keys$1(this._keyMap);
   },
   [symbol$1]() {
-    return cached(this, combine$5(hash(this._keyMap))(hash(HashSetSymbolKey)));
+    return cached(this, combine$7(hash(this._keyMap))(hash(HashSetSymbolKey)));
   },
   [symbol](that) {
     if (isHashSet(that)) {
@@ -3861,20 +3875,20 @@ const makeImpl = keyMap => {
 };
 /** @internal */
 const isHashSet = u => hasProperty(u, HashSetTypeId);
-const _empty$4 = /*#__PURE__*/makeImpl(/*#__PURE__*/empty$h());
+const _empty$4 = /*#__PURE__*/makeImpl(/*#__PURE__*/empty$j());
 /** @internal */
-const empty$g = () => _empty$4;
+const empty$i = () => _empty$4;
 /** @internal */
 const fromIterable$3 = elements => {
-  const set = beginMutation(empty$g());
+  const set = beginMutation(empty$i());
   for (const value of elements) {
     add$4(set, value);
   }
   return endMutation(set);
 };
 /** @internal */
-const make$l = (...elements) => {
-  const set = beginMutation(empty$g());
+const make$o = (...elements) => {
+  const set = beginMutation(empty$i());
   for (const value of elements) {
     add$4(set, value);
   }
@@ -3908,7 +3922,7 @@ const difference$1 = /*#__PURE__*/dual(2, (self, that) => mutate(self, set => {
   }
 }));
 /** @internal */
-const union$1 = /*#__PURE__*/dual(2, (self, that) => mutate(empty$g(), set => {
+const union$1 = /*#__PURE__*/dual(2, (self, that) => mutate(empty$i(), set => {
   forEach$1(self, value => add$4(set, value));
   for (const value of that) {
     add$4(set, value);
@@ -4199,7 +4213,7 @@ const reduce$4 = /*#__PURE__*/dual(3, (self, zero, f) => reduce$5(self._keyMap, 
  *
  * @see Other `HashSet` constructors are {@link module:HashSet.make} {@link module:HashSet.fromIterable}
  */
-const empty$f = empty$g;
+const empty$h = empty$i;
 /**
  * Creates a new `HashSet` from an iterable collection of values.
  *
@@ -4381,7 +4395,7 @@ const fromIterable$2 = fromIterable$3;
  *
  * @see Other `HashSet` constructors are {@link module:HashSet.fromIterable} {@link module:HashSet.empty}
  */
-const make$k = make$l;
+const make$n = make$o;
 /**
  * Checks if the specified value exists in the `HashSet`.
  *
@@ -4612,7 +4626,7 @@ const variance$3 = {
 const proto$4 = {
   [CauseTypeId]: variance$3,
   [symbol$1]() {
-    return pipe(hash(CauseSymbolKey), combine$5(hash(flattenCause(this))), cached(this));
+    return pipe(hash(CauseSymbolKey), combine$7(hash(flattenCause(this))), cached(this));
   },
   [symbol](that) {
     return isCause(that) && causeEquals(this, that);
@@ -4666,7 +4680,7 @@ const proto$4 = {
 // Constructors
 // -----------------------------------------------------------------------------
 /** @internal */
-const empty$e = /*#__PURE__*/(() => {
+const empty$g = /*#__PURE__*/(() => {
   const o = /*#__PURE__*/Object.create(proto$4);
   o._tag = OP_EMPTY$2;
   return o;
@@ -4716,7 +4730,9 @@ const isCause = u => hasProperty(u, CauseTypeId);
 /** @internal */
 const isEmptyType = self => self._tag === OP_EMPTY$2;
 /** @internal */
-const isEmpty$1 = self => {
+const isDieType = self => self._tag === OP_DIE;
+/** @internal */
+const isEmpty$3 = self => {
   if (self._tag === OP_EMPTY$2) {
     return true;
   }
@@ -4744,11 +4760,11 @@ const isInterrupted = self => isSome(interruptOption(self));
 /** @internal */
 const isInterruptedOnly = self => reduceWithContext$1(undefined, IsInterruptedOnlyCauseReducer)(self);
 /** @internal */
-const failures = self => reverse$1(reduce$2(self, empty$i(), (list, cause) => cause._tag === OP_FAIL$1 ? some(pipe(list, prepend$1(cause.error))) : none$4()));
+const failures = self => reverse$1(reduce$2(self, empty$k(), (list, cause) => cause._tag === OP_FAIL$1 ? some(pipe(list, prepend$1(cause.error))) : none$4()));
 /** @internal */
-const defects = self => reverse$1(reduce$2(self, empty$i(), (list, cause) => cause._tag === OP_DIE ? some(pipe(list, prepend$1(cause.defect))) : none$4()));
+const defects = self => reverse$1(reduce$2(self, empty$k(), (list, cause) => cause._tag === OP_DIE ? some(pipe(list, prepend$1(cause.defect))) : none$4()));
 /** @internal */
-const interruptors = self => reduce$2(self, empty$f(), (set, cause) => cause._tag === OP_INTERRUPT ? some(pipe(set, add$3(cause.fiberId))) : none$4());
+const interruptors = self => reduce$2(self, empty$h(), (set, cause) => cause._tag === OP_INTERRUPT ? some(pipe(set, add$3(cause.fiberId))) : none$4());
 /** @internal */
 const failureOption = self => find(self, cause => cause._tag === OP_FAIL$1 ? some(cause.error) : none$4());
 /** @internal */
@@ -4770,8 +4786,8 @@ const failureOrCause = self => {
 const interruptOption = self => find(self, cause => cause._tag === OP_INTERRUPT ? some(cause.fiberId) : none$4());
 /** @internal */
 const stripFailures = self => match$2(self, {
-  onEmpty: empty$e,
-  onFail: () => empty$e,
+  onEmpty: empty$g,
+  onFail: () => empty$g,
   onDie: die$1,
   onInterrupt: interrupt,
   onSequential: sequential$2,
@@ -4779,7 +4795,7 @@ const stripFailures = self => match$2(self, {
 });
 /** @internal */
 const electFailures = self => match$2(self, {
-  onEmpty: empty$e,
+  onEmpty: empty$g,
   onFail: die$1,
   onDie: die$1,
   onInterrupt: interrupt,
@@ -4790,12 +4806,12 @@ const electFailures = self => match$2(self, {
 const causeEquals = (left, right) => {
   let leftStack = of$1(left);
   let rightStack = of$1(right);
-  while (isNonEmpty(leftStack) && isNonEmpty(rightStack)) {
-    const [leftParallel, leftSequential] = pipe(headNonEmpty(leftStack), reduce$2([empty$f(), empty$i()], ([parallel, sequential], cause) => {
+  while (isNonEmpty$2(leftStack) && isNonEmpty$2(rightStack)) {
+    const [leftParallel, leftSequential] = pipe(headNonEmpty(leftStack), reduce$2([empty$h(), empty$k()], ([parallel, sequential], cause) => {
       const [par, seq] = evaluateCause(cause);
       return some([pipe(parallel, union(par)), pipe(sequential, appendAll$1(seq))]);
     }));
-    const [rightParallel, rightSequential] = pipe(headNonEmpty(rightStack), reduce$2([empty$f(), empty$i()], ([parallel, sequential], cause) => {
+    const [rightParallel, rightSequential] = pipe(headNonEmpty(rightStack), reduce$2([empty$h(), empty$k()], ([parallel, sequential], cause) => {
       const [par, seq] = evaluateCause(cause);
       return some([pipe(parallel, union(par)), pipe(sequential, appendAll$1(seq))]);
     }));
@@ -4818,18 +4834,18 @@ const causeEquals = (left, right) => {
  * @internal
  */
 const flattenCause = cause => {
-  return flattenCauseLoop(of$1(cause), empty$i());
+  return flattenCauseLoop(of$1(cause), empty$k());
 };
 /** @internal */
 const flattenCauseLoop = (causes, flattened) => {
   // eslint-disable-next-line no-constant-condition
   while (1) {
-    const [parallel, sequential] = pipe(causes, reduce$6([empty$f(), empty$i()], ([parallel, sequential], cause) => {
+    const [parallel, sequential] = pipe(causes, reduce$6([empty$h(), empty$k()], ([parallel, sequential], cause) => {
       const [par, seq] = evaluateCause(cause);
       return [pipe(parallel, union(par)), pipe(sequential, appendAll$1(seq))];
     }));
     const updated = size(parallel) > 0 ? pipe(flattened, prepend$1(parallel)) : flattened;
-    if (isEmpty$3(sequential)) {
+    if (isEmpty$5(sequential)) {
       return reverse$1(updated);
     }
     causes = sequential;
@@ -4880,8 +4896,8 @@ const find = /*#__PURE__*/dual(2, (self, pf) => {
 const evaluateCause = self => {
   let cause = self;
   const stack = [];
-  let _parallel = empty$f();
-  let _sequential = empty$i();
+  let _parallel = empty$h();
+  let _sequential = empty$k();
   while (cause !== undefined) {
     switch (cause._tag) {
       case OP_EMPTY$2:
@@ -4894,7 +4910,7 @@ const evaluateCause = self => {
         }
       case OP_FAIL$1:
         {
-          _parallel = add$3(_parallel, make$n(cause._tag, cause.error));
+          _parallel = add$3(_parallel, make$q(cause._tag, cause.error));
           if (stack.length === 0) {
             return [_parallel, _sequential];
           }
@@ -4903,7 +4919,7 @@ const evaluateCause = self => {
         }
       case OP_DIE:
         {
-          _parallel = add$3(_parallel, make$n(cause._tag, cause.defect));
+          _parallel = add$3(_parallel, make$q(cause._tag, cause.defect));
           if (stack.length === 0) {
             return [_parallel, _sequential];
           }
@@ -4912,7 +4928,7 @@ const evaluateCause = self => {
         }
       case OP_INTERRUPT:
         {
-          _parallel = add$3(_parallel, make$n(cause._tag, cause.fiberId));
+          _parallel = add$3(_parallel, make$q(cause._tag, cause.fiberId));
           if (stack.length === 0) {
             return [_parallel, _sequential];
           }
@@ -5289,7 +5305,7 @@ const TagProto = {
     return self;
   },
   context(self) {
-    return make$j(this, self);
+    return make$m(this, self);
   }
 };
 const ReferenceProto = {
@@ -5399,9 +5415,9 @@ const isTag$1 = u => hasProperty(u, TagTypeId);
 const isReference = u => hasProperty(u, ReferenceTypeId);
 const _empty$3 = /*#__PURE__*/makeContext(/*#__PURE__*/new Map());
 /** @internal */
-const empty$d = () => _empty$3;
+const empty$f = () => _empty$3;
 /** @internal */
-const make$j = (tag, service) => makeContext(new Map([[tag.key, service]]));
+const make$m = (tag, service) => makeContext(new Map([[tag.key, service]]));
 /** @internal */
 const add$2 = /*#__PURE__*/dual(3, (self, tag, service) => {
   const map = new Map(self.unsafeMap);
@@ -5506,7 +5522,7 @@ const isTag = isTag$1;
  * @since 2.0.0
  * @category constructors
  */
-const empty$c = empty$d;
+const empty$e = empty$f;
 /**
  * Creates a new `Context` with a single service associated to the tag.
  *
@@ -5525,7 +5541,7 @@ const empty$c = empty$d;
  * @since 2.0.0
  * @category constructors
  */
-const make$i = make$j;
+const make$l = make$m;
 /**
  * Adds a service to a given `Context`.
  *
@@ -5811,7 +5827,7 @@ const DurationProto = {
     return pipeArguments(this, arguments);
   }
 };
-const make$h = input => {
+const make$k = input => {
   const duration = Object.create(DurationProto);
   if (isNumber(input)) {
     if (isNaN(input) || input <= 0) {
@@ -5868,52 +5884,52 @@ const isZero = self => {
  * @since 2.0.0
  * @category constructors
  */
-const zero = /*#__PURE__*/make$h(0);
+const zero = /*#__PURE__*/make$k(0);
 /**
  * @since 2.0.0
  * @category constructors
  */
-const infinity = /*#__PURE__*/make$h(Infinity);
+const infinity = /*#__PURE__*/make$k(Infinity);
 /**
  * @since 2.0.0
  * @category constructors
  */
-const nanos = nanos => make$h(nanos);
+const nanos = nanos => make$k(nanos);
 /**
  * @since 2.0.0
  * @category constructors
  */
-const micros = micros => make$h(micros * bigint1e3);
+const micros = micros => make$k(micros * bigint1e3);
 /**
  * @since 2.0.0
  * @category constructors
  */
-const millis = millis => make$h(millis);
+const millis = millis => make$k(millis);
 /**
  * @since 2.0.0
  * @category constructors
  */
-const seconds = seconds => make$h(seconds * 1000);
+const seconds = seconds => make$k(seconds * 1000);
 /**
  * @since 2.0.0
  * @category constructors
  */
-const minutes = minutes => make$h(minutes * 60_000);
+const minutes = minutes => make$k(minutes * 60_000);
 /**
  * @since 2.0.0
  * @category constructors
  */
-const hours = hours => make$h(hours * 3_600_000);
+const hours = hours => make$k(hours * 3_600_000);
 /**
  * @since 2.0.0
  * @category constructors
  */
-const days = days => make$h(days * 86_400_000);
+const days = days => make$k(days * 86_400_000);
 /**
  * @since 2.0.0
  * @category constructors
  */
-const weeks = weeks => make$h(weeks * 604_800_000);
+const weeks = weeks => make$k(weeks * 604_800_000);
 /**
  * @since 2.0.0
  * @category getters
@@ -6119,11 +6135,22 @@ const MutableRefProto = {
  * @since 2.0.0
  * @category constructors
  */
-const make$g = value => {
+const make$j = value => {
   const ref = Object.create(MutableRefProto);
   ref.current = value;
   return ref;
 };
+/**
+ * @since 2.0.0
+ * @category general
+ */
+const compareAndSet = /*#__PURE__*/dual(3, (self, oldValue, newValue) => {
+  if (equals$1(oldValue, self.current)) {
+    self.current = newValue;
+    return true;
+  }
+  return false;
+});
 /**
  * @since 2.0.0
  * @category general
@@ -6206,19 +6233,61 @@ class Runtime {
   }
 }
 /** @internal */
+class Composite {
+  left;
+  right;
+  [FiberIdTypeId] = FiberIdTypeId;
+  _tag = OP_COMPOSITE;
+  constructor(left, right) {
+    this.left = left;
+    this.right = right;
+  }
+  _hash;
+  [symbol$1]() {
+    return pipe(string$1(`${FiberIdSymbolKey}-${this._tag}`), combine$7(hash(this.left)), combine$7(hash(this.right)), cached(this));
+  }
+  [symbol](that) {
+    return isFiberId(that) && that._tag === OP_COMPOSITE && equals$1(this.left, that.left) && equals$1(this.right, that.right);
+  }
+  toString() {
+    return format$2(this.toJSON());
+  }
+  toJSON() {
+    return {
+      _id: "FiberId",
+      _tag: this._tag,
+      left: toJSON(this.left),
+      right: toJSON(this.right)
+    };
+  }
+  [NodeInspectSymbol]() {
+    return this.toJSON();
+  }
+}
+/** @internal */
 const none$3 = /*#__PURE__*/new None$2();
 /** @internal */
 const isFiberId = self => hasProperty(self, FiberIdTypeId);
+/** @internal */
+const combine$6 = /*#__PURE__*/dual(2, (self, that) => {
+  if (self._tag === OP_NONE) {
+    return that;
+  }
+  if (that._tag === OP_NONE) {
+    return self;
+  }
+  return new Composite(self, that);
+});
 /** @internal */
 const ids = self => {
   switch (self._tag) {
     case OP_NONE:
       {
-        return empty$f();
+        return empty$h();
       }
     case OP_RUNTIME:
       {
-        return make$k(self.id);
+        return make$n(self.id);
       }
     case OP_COMPOSITE:
       {
@@ -6226,7 +6295,7 @@ const ids = self => {
       }
   }
 };
-const _fiberCounter = /*#__PURE__*/globalValue(/*#__PURE__*/Symbol.for("effect/Fiber/Id/_fiberCounter"), () => make$g(0));
+const _fiberCounter = /*#__PURE__*/globalValue(/*#__PURE__*/Symbol.for("effect/Fiber/Id/_fiberCounter"), () => make$j(0));
 /** @internal */
 const threadName$1 = self => {
   const identifiers = Array.from(ids(self)).map(n => `#${n}`).join(",");
@@ -6244,6 +6313,13 @@ const unsafeMake$5 = () => {
  * @category constructors
  */
 const none$2 = none$3;
+/**
+ * Combine two `FiberId`s.
+ *
+ * @since 2.0.0
+ * @category constructors
+ */
+const combine$5 = combine$6;
 /**
  * Creates a string representing the name of the current thread of execution
  * represented by the specified `FiberId`.
@@ -6269,7 +6345,7 @@ const unsafeMake$4 = unsafeMake$5;
  * @since 2.0.0
  * @category constructors
  */
-const empty$b = empty$h;
+const empty$d = empty$j;
 /**
  * Creates a new `HashMap` from an iterable collection of key/value pairs.
  *
@@ -6283,7 +6359,7 @@ const fromIterable$1 = fromIterable$4;
  * @since 2.0.0
  * @category elements
  */
-const isEmpty = isEmpty$2;
+const isEmpty$2 = isEmpty$4;
 /**
  * Safely lookup the value for the specified key in the `HashMap` using the
  * internal hashing function.
@@ -6515,7 +6591,7 @@ const cons = (head, tail) => makeCons(head, tail);
  * @since 2.0.0
  * @category constructors
  */
-const empty$a = nil;
+const empty$c = nil;
 /**
  * Constructs a new `List<A>` from the specified value.
  *
@@ -6608,7 +6684,7 @@ const reduce = /*#__PURE__*/dual(3, (self, zero, f) => {
  * @category elements
  */
 const reverse = self => {
-  let result = empty$a();
+  let result = empty$c();
   let these = self;
   while (!isNil(these)) {
     result = prepend(result, these.head);
@@ -6651,7 +6727,7 @@ const _empty$2 = /*#__PURE__*/Object.create(EmptyProto$2);
 /**
  * @internal
  */
-const empty$9 = () => _empty$2;
+const empty$b = () => _empty$2;
 const AndThenProto$2 = /*#__PURE__*/Object.assign(/*#__PURE__*/Object.create(PatchProto$2), {
   _tag: "AndThen"
 });
@@ -6690,7 +6766,7 @@ const makeUpdateService = (key, update) => {
 /** @internal */
 const diff$6 = (oldValue, newValue) => {
   const missingServices = new Map(oldValue.unsafeMap);
-  let patch = empty$9();
+  let patch = empty$b();
   for (const [tag, newService] of newValue.unsafeMap.entries()) {
     if (missingServices.has(tag)) {
       const old = missingServices.get(tag);
@@ -6718,7 +6794,7 @@ const patch$7 = /*#__PURE__*/dual(2, (self, context) => {
   let wasServiceUpdated = false;
   let patches = of$1(self);
   const updatedContext = new Map(context.unsafeMap);
-  while (isNonEmpty(patches)) {
+  while (isNonEmpty$2(patches)) {
     const head = headNonEmpty(patches);
     const tail = tailNonEmpty(patches);
     switch (head._tag) {
@@ -6792,7 +6868,7 @@ const EmptyProto$1 = /*#__PURE__*/Object.assign(/*#__PURE__*/Object.create(Patch
 });
 const _empty$1 = /*#__PURE__*/Object.create(EmptyProto$1);
 /** @internal */
-const empty$8 = () => _empty$1;
+const empty$a = () => _empty$1;
 const AndThenProto$1 = /*#__PURE__*/Object.assign(/*#__PURE__*/Object.create(PatchProto$1), {
   _tag: "AndThen"
 });
@@ -6823,7 +6899,7 @@ const makeRemove = value => {
 };
 /** @internal */
 const diff$5 = (oldValue, newValue) => {
-  const [removed, patch] = reduce$3([oldValue, empty$8()], ([set, patch], value) => {
+  const [removed, patch] = reduce$3([oldValue, empty$a()], ([set, patch], value) => {
     if (has$1(value)(set)) {
       return [remove$1(value)(set), patch];
     }
@@ -6840,7 +6916,7 @@ const patch$6 = /*#__PURE__*/dual(2, (self, oldValue) => {
   }
   let set = oldValue;
   let patches = of$1(self);
-  while (isNonEmpty(patches)) {
+  while (isNonEmpty$2(patches)) {
     const head = headNonEmpty(patches);
     const tail = tailNonEmpty(patches);
     switch (head._tag) {
@@ -6893,7 +6969,7 @@ const _empty = /*#__PURE__*/Object.create(EmptyProto);
 /**
  * @internal
  */
-const empty$7 = () => _empty;
+const empty$9 = () => _empty;
 const AndThenProto = /*#__PURE__*/Object.assign(/*#__PURE__*/Object.create(PatchProto), {
   _tag: "AndThen"
 });
@@ -6932,7 +7008,7 @@ const makeUpdate = (index, patch) => {
 /** @internal */
 const diff$4 = options => {
   let i = 0;
-  let patch = empty$7();
+  let patch = empty$9();
   while (i < options.oldValue.length && i < options.newValue.length) {
     const oldElement = options.oldValue[i];
     const newElement = options.newValue[i];
@@ -7012,7 +7088,7 @@ const DifferProto = {
   }
 };
 /** @internal */
-const make$f = params => {
+const make$i = params => {
   const differ = Object.create(DifferProto);
   differ.empty = params.empty;
   differ.diff = params.diff;
@@ -7021,22 +7097,22 @@ const make$f = params => {
   return differ;
 };
 /** @internal */
-const environment = () => make$f({
-  empty: empty$9(),
+const environment = () => make$i({
+  empty: empty$b(),
   combine: (first, second) => combine$4(second)(first),
   diff: (oldValue, newValue) => diff$6(oldValue, newValue),
   patch: (patch, oldValue) => patch$7(oldValue)(patch)
 });
 /** @internal */
-const hashSet = () => make$f({
-  empty: empty$8(),
+const hashSet = () => make$i({
+  empty: empty$a(),
   combine: (first, second) => combine$3(second)(first),
   diff: (oldValue, newValue) => diff$5(oldValue, newValue),
   patch: (patch, oldValue) => patch$6(oldValue)(patch)
 });
 /** @internal */
-const readonlyArray = differ => make$f({
-  empty: empty$7(),
+const readonlyArray = differ => make$i({
+  empty: empty$9(),
   combine: (first, second) => combine$2(first, second),
   diff: (oldValue, newValue) => diff$4({
     oldValue,
@@ -7048,7 +7124,7 @@ const readonlyArray = differ => make$f({
 /** @internal */
 const update$2 = () => updateWith((_, a) => a);
 /** @internal */
-const updateWith = f => make$f({
+const updateWith = f => make$i({
   empty: identity,
   combine: (first, second) => {
     if (first === identity) {
@@ -7077,15 +7153,15 @@ const active = patch => patch & BIT_MASK;
 /** @internal */
 const enabled = patch => patch >> BIT_SHIFT & BIT_MASK;
 /** @internal */
-const make$e = (active, enabled) => (active & BIT_MASK) + ((enabled & active & BIT_MASK) << BIT_SHIFT);
+const make$h = (active, enabled) => (active & BIT_MASK) + ((enabled & active & BIT_MASK) << BIT_SHIFT);
 /** @internal */
-const empty$6 = /*#__PURE__*/make$e(0, 0);
+const empty$8 = /*#__PURE__*/make$h(0, 0);
 /** @internal */
-const enable$2 = flag => make$e(flag, flag);
+const enable$2 = flag => make$h(flag, flag);
 /** @internal */
-const disable$1 = flag => make$e(flag, 0);
+const disable$1 = flag => make$h(flag, 0);
 /** @internal */
-const exclude$1 = /*#__PURE__*/dual(2, (self, flag) => make$e(active(self) & ~flag, enabled(self)));
+const exclude$1 = /*#__PURE__*/dual(2, (self, flag) => make$h(active(self) & ~flag, enabled(self)));
 /** @internal */
 const andThen$1 = /*#__PURE__*/dual(2, (self, that) => self | that);
 /** @internal */
@@ -7114,19 +7190,19 @@ const interruption = self => isEnabled(self, Interruption);
 /** @internal */
 const isEnabled = /*#__PURE__*/dual(2, (self, flag) => (self & flag) !== 0);
 /** @internal */
-const make$d = (...flags) => flags.reduce((a, b) => a | b, 0);
+const make$g = (...flags) => flags.reduce((a, b) => a | b, 0);
 /** @internal */
-const none$1 = /*#__PURE__*/make$d(None$1);
+const none$1 = /*#__PURE__*/make$g(None$1);
 /** @internal */
 const runtimeMetrics = self => isEnabled(self, RuntimeMetrics);
 const windDown = self => isEnabled(self, WindDown);
 /** @internal */
-const diff$3 = /*#__PURE__*/dual(2, (self, that) => make$e(self ^ that, that));
+const diff$3 = /*#__PURE__*/dual(2, (self, that) => make$h(self ^ that, that));
 /** @internal */
 const patch$4 = /*#__PURE__*/dual(2, (self, patch) => self & (invert(active(patch)) | enabled(patch)) | active(patch) & enabled(patch));
 /** @internal */
-const differ$1 = /*#__PURE__*/make$f({
-  empty: empty$6,
+const differ$1 = /*#__PURE__*/make$i({
+  empty: empty$8,
   diff: (oldValue, newValue) => diff$3(oldValue, newValue),
   combine: (first, second) => andThen$1(second)(first),
   patch: (_patch, oldValue) => patch$4(oldValue, _patch)
@@ -7188,10 +7264,10 @@ const seq = (self, that) => ({
  */
 const flatten$1 = self => {
   let current = of(self);
-  let updated = empty$a();
+  let updated = empty$c();
   // eslint-disable-next-line no-constant-condition
   while (1) {
-    const [parallel, sequential] = reduce(current, [parallelCollectionEmpty(), empty$a()], ([parallel, sequential], blockedRequest) => {
+    const [parallel, sequential] = reduce(current, [parallelCollectionEmpty(), empty$c()], ([parallel, sequential], blockedRequest) => {
       const [par, seq] = step$1(blockedRequest);
       return [parallelCollectionCombine(parallel, par), appendAll(sequential, seq)];
     });
@@ -7212,8 +7288,8 @@ const flatten$1 = self => {
 const step$1 = requests => {
   let current = requests;
   let parallel = parallelCollectionEmpty();
-  let stack = empty$a();
-  let sequential = empty$a();
+  let stack = empty$c();
+  let sequential = empty$c();
   // eslint-disable-next-line no-constant-condition
   while (1) {
     switch (current._tag) {
@@ -7313,7 +7389,7 @@ class ParallelImpl {
   }
 }
 /** @internal */
-const parallelCollectionEmpty = () => new ParallelImpl(empty$b());
+const parallelCollectionEmpty = () => new ParallelImpl(empty$d());
 /** @internal */
 const parallelCollectionAdd = (self, blockedRequest) => new ParallelImpl(modifyAt(self.map, blockedRequest.dataSource, _ => orElseSome(map$7(_, append(blockedRequest.blockedRequest)), () => of$1(blockedRequest.blockedRequest))));
 /** @internal */
@@ -7322,7 +7398,7 @@ const parallelCollectionCombine = (self, that) => new ParallelImpl(reduce$1(self
   onSome: other => appendAll$1(value, other)
 }))));
 /** @internal */
-const parallelCollectionIsEmpty = self => isEmpty(self.map);
+const parallelCollectionIsEmpty = self => isEmpty$2(self.map);
 /** @internal */
 const parallelCollectionKeys = self => Array.from(keys(self.map));
 /** @internal */
@@ -7349,7 +7425,7 @@ class SequentialImpl {
 const sequentialCollectionMake = map => new SequentialImpl(map);
 /** @internal */
 const sequentialCollectionCombine = (self, that) => new SequentialImpl(reduce$1(that.map, self.map, (map, value, key) => set$2(map, key, match$3(get$3(map, key), {
-  onNone: () => empty$i(),
+  onNone: () => empty$k(),
   onSome: a => appendAll$1(a, value)
 }))));
 /** @internal */
@@ -7381,7 +7457,7 @@ const pending = joiners => {
   };
 };
 /** @internal */
-const done$2 = effect => {
+const done$4 = effect => {
   return {
     _tag: OP_STATE_DONE,
     effect
@@ -7511,7 +7587,7 @@ class EffectPrimitiveFailure {
     // @ts-expect-error
     string$1(this._tag),
     // @ts-expect-error
-    combine$5(hash(this.effect_instruction_i0)), cached(this));
+    combine$7(hash(this.effect_instruction_i0)), cached(this));
   }
   get cause() {
     return this.effect_instruction_i0;
@@ -7559,7 +7635,7 @@ class EffectPrimitiveSuccess {
     // @ts-expect-error
     string$1(this._tag),
     // @ts-expect-error
-    combine$5(hash(this.effect_instruction_i0)), cached(this));
+    combine$7(hash(this.effect_instruction_i0)), cached(this));
   }
   get value() {
     return this.effect_instruction_i0;
@@ -7593,7 +7669,7 @@ const withFiberRuntime = withRuntime => {
   return effect;
 };
 /* @internal */
-const acquireUseRelease = /*#__PURE__*/dual(3, (acquire, use, release) => uninterruptibleMask$1(restore => flatMap$1(acquire, a => flatMap$1(exit$1(suspend$2(() => restore(use(a)))), exit => {
+const acquireUseRelease = /*#__PURE__*/dual(3, (acquire, use, release) => uninterruptibleMask$1(restore => flatMap$2(acquire, a => flatMap$2(exit(suspend$2(() => restore(use(a)))), exit => {
   return suspend$2(() => release(a, exit)).pipe(matchCauseEffect$1({
     onFailure: cause => {
       switch (exit._tag) {
@@ -7607,7 +7683,7 @@ const acquireUseRelease = /*#__PURE__*/dual(3, (acquire, use, release) => uninte
   }));
 }))));
 /* @internal */
-const as = /*#__PURE__*/dual(2, (self, value) => flatMap$1(self, () => succeed$3(value)));
+const as = /*#__PURE__*/dual(2, (self, value) => flatMap$2(self, () => succeed$3(value)));
 /* @internal */
 const asVoid = self => as(self, void 0);
 /* @internal */
@@ -7690,9 +7766,26 @@ const async_ = (resume, blockingOn = none$2) => {
   });
 };
 /* @internal */
+const catchAllCause = /*#__PURE__*/dual(2, (self, f) => {
+  const effect = new EffectPrimitive(OP_ON_FAILURE);
+  effect.effect_instruction_i0 = self;
+  effect.effect_instruction_i1 = f;
+  return effect;
+});
+/* @internal */
 const catchAll = /*#__PURE__*/dual(2, (self, f) => matchEffect(self, {
   onFailure: f,
   onSuccess: succeed$3
+}));
+/* @internal */
+const catchIf = /*#__PURE__*/dual(3, (self, predicate, f) => catchAllCause(self, cause => {
+  const either = failureOrCause(cause);
+  switch (either._tag) {
+    case "Left":
+      return predicate(either.left) ? f(either.left) : failCause$1(cause);
+    case "Right":
+      return failCause$1(either.right);
+  }
 }));
 const originalSymbol = /*#__PURE__*/Symbol.for("effect/OriginalAnnotation");
 /* @internal */
@@ -7726,14 +7819,14 @@ const either = self => matchEffect(self, {
   onSuccess: a => succeed$3(right(a))
 });
 /* @internal */
-const exit$1 = self => matchCause(self, {
+const exit = self => matchCause(self, {
   onFailure: exitFailCause$1,
   onSuccess: exitSucceed$1
 });
 /* @internal */
 const fail = error => isObject(error) && !(spanSymbol in error) ? withFiberRuntime(fiber => failCause$1(fail$1(capture(error, currentSpanFromFiber(fiber))))) : failCause$1(fail$1(error));
 /* @internal */
-const failSync = evaluate => flatMap$1(sync$2(evaluate), fail);
+const failSync = evaluate => flatMap$2(sync$2(evaluate), fail);
 /* @internal */
 const failCause$1 = cause => {
   const effect = new EffectPrimitiveFailure(OP_FAILURE);
@@ -7741,20 +7834,20 @@ const failCause$1 = cause => {
   return effect;
 };
 /* @internal */
-const failCauseSync = evaluate => flatMap$1(sync$2(evaluate), failCause$1);
+const failCauseSync = evaluate => flatMap$2(sync$2(evaluate), failCause$1);
 /* @internal */
 const fiberId = /*#__PURE__*/withFiberRuntime(state => succeed$3(state.id()));
 /* @internal */
 const fiberIdWith = f => withFiberRuntime(state => f(state.id()));
 /* @internal */
-const flatMap$1 = /*#__PURE__*/dual(2, (self, f) => {
+const flatMap$2 = /*#__PURE__*/dual(2, (self, f) => {
   const effect = new EffectPrimitive(OP_ON_SUCCESS);
   effect.effect_instruction_i0 = self;
   effect.effect_instruction_i1 = f;
   return effect;
 });
 /* @internal */
-const andThen = /*#__PURE__*/dual(2, (self, f) => flatMap$1(self, a => {
+const andThen = /*#__PURE__*/dual(2, (self, f) => flatMap$2(self, a => {
   const b = typeof f === "function" ? f(a) : f;
   if (isEffect(b)) {
     return b;
@@ -7772,7 +7865,7 @@ const step = self => {
   return effect;
 };
 /* @internal */
-const flatten = self => flatMap$1(self, identity);
+const flatten = self => flatMap$2(self, identity);
 /* @internal */
 const matchCause = /*#__PURE__*/dual(2, (self, options) => matchCauseEffect$1(self, {
   onFailure: cause => succeed$3(options.onFailure(cause)),
@@ -7834,7 +7927,7 @@ const interruptible$1 = self => {
   return effect;
 };
 /* @internal */
-const map$3 = /*#__PURE__*/dual(2, (self, f) => flatMap$1(self, a => sync$2(() => f(a))));
+const map$3 = /*#__PURE__*/dual(2, (self, f) => flatMap$2(self, a => sync$2(() => f(a))));
 /* @internal */
 const mapBoth = /*#__PURE__*/dual(2, (self, options) => matchEffect(self, {
   onFailure: e => failSync(() => options.onFailure(e)),
@@ -7877,6 +7970,13 @@ const onInterrupt = /*#__PURE__*/dual(2, (self, cleanup) => onExit$1(self, exitM
   onSuccess: () => void_$1
 })));
 /* @internal */
+const orDie = self => orDieWith(self, identity);
+/* @internal */
+const orDieWith = /*#__PURE__*/dual(2, (self, f) => matchEffect(self, {
+  onFailure: e => die(f(e)),
+  onSuccess: succeed$3
+}));
+/* @internal */
 const succeed$3 = value => {
   const effect = new EffectPrimitiveSuccess(OP_SUCCESS);
   effect.effect_instruction_i0 = value;
@@ -7895,7 +7995,7 @@ const sync$2 = thunk => {
   return effect;
 };
 /* @internal */
-const tap = /*#__PURE__*/dual(args => args.length === 3 || args.length === 2 && !(isObject(args[1]) && "onlyEffect" in args[1]), (self, f) => flatMap$1(self, a => {
+const tap$1 = /*#__PURE__*/dual(args => args.length === 3 || args.length === 2 && !(isObject(args[1]) && "onlyEffect" in args[1]), (self, f) => flatMap$2(self, a => {
   const b = typeof f === "function" ? f(a) : f;
   if (isEffect(b)) {
     return as(b, a);
@@ -7935,7 +8035,7 @@ const updateRuntimeFlags = patch => {
   return effect;
 };
 /* @internal */
-const whenEffect = /*#__PURE__*/dual(2, (self, condition) => flatMap$1(condition, b => {
+const whenEffect = /*#__PURE__*/dual(2, (self, condition) => flatMap$2(condition, b => {
   if (b) {
     return pipe(self, map$3(some));
   }
@@ -7966,20 +8066,20 @@ const yieldNow$2 = options => {
   return typeof options?.priority !== "undefined" ? withSchedulingPriority(effect, options.priority) : effect;
 };
 /* @internal */
-const zip = /*#__PURE__*/dual(2, (self, that) => flatMap$1(self, a => map$3(that, b => [a, b])));
+const zip = /*#__PURE__*/dual(2, (self, that) => flatMap$2(self, a => map$3(that, b => [a, b])));
 /* @internal */
-const zipLeft = /*#__PURE__*/dual(2, (self, that) => flatMap$1(self, a => as(that, a)));
+const zipLeft = /*#__PURE__*/dual(2, (self, that) => flatMap$2(self, a => as(that, a)));
 /* @internal */
-const zipRight = /*#__PURE__*/dual(2, (self, that) => flatMap$1(self, () => that));
+const zipRight = /*#__PURE__*/dual(2, (self, that) => flatMap$2(self, () => that));
 /* @internal */
-const zipWith$1 = /*#__PURE__*/dual(3, (self, that, f) => flatMap$1(self, a => map$3(that, b => f(a, b))));
+const zipWith$1 = /*#__PURE__*/dual(3, (self, that, f) => flatMap$2(self, a => map$3(that, b => f(a, b))));
 // -----------------------------------------------------------------------------
 // Fiber
 // -----------------------------------------------------------------------------
 /* @internal */
-const interruptFiber = self => flatMap$1(fiberId, fiberId => pipe(self, interruptAsFiber(fiberId)));
+const interruptFiber = self => flatMap$2(fiberId, fiberId => pipe(self, interruptAsFiber(fiberId)));
 /* @internal */
-const interruptAsFiber = /*#__PURE__*/dual(2, (self, fiberId) => flatMap$1(self.interruptAsFork(fiberId), () => self.await));
+const interruptAsFiber = /*#__PURE__*/dual(2, (self, fiberId) => flatMap$2(self.interruptAsFork(fiberId), () => self.await));
 // -----------------------------------------------------------------------------
 // LogLevel
 // -----------------------------------------------------------------------------
@@ -8077,7 +8177,7 @@ const fiberRefVariance = {
 /* @internal */
 const fiberRefGet = self => withFiberRuntime(fiber => exitSucceed$1(fiber.getFiberRef(self)));
 /* @internal */
-const fiberRefGetWith = /*#__PURE__*/dual(2, (self, f) => flatMap$1(fiberRefGet(self), f));
+const fiberRefGetWith = /*#__PURE__*/dual(2, (self, f) => flatMap$2(fiberRefGet(self), f));
 /* @internal */
 const fiberRefSet = /*#__PURE__*/dual(2, (self, value) => fiberRefModify(self, () => [void 0, value]));
 /* @internal */
@@ -8143,17 +8243,17 @@ const fiberRefUnsafeMakeRuntimeFlags = initial => fiberRefUnsafeMakePatch(initia
   fork: differ$1.empty
 });
 /** @internal */
-const currentContext = /*#__PURE__*/globalValue(/*#__PURE__*/Symbol.for("effect/FiberRef/currentContext"), () => fiberRefUnsafeMakeContext(empty$c()));
+const currentContext = /*#__PURE__*/globalValue(/*#__PURE__*/Symbol.for("effect/FiberRef/currentContext"), () => fiberRefUnsafeMakeContext(empty$e()));
 /** @internal */
 const currentSchedulingPriority = /*#__PURE__*/globalValue(/*#__PURE__*/Symbol.for("effect/FiberRef/currentSchedulingPriority"), () => fiberRefUnsafeMake(0));
 /** @internal */
 const currentMaxOpsBeforeYield = /*#__PURE__*/globalValue(/*#__PURE__*/Symbol.for("effect/FiberRef/currentMaxOpsBeforeYield"), () => fiberRefUnsafeMake(2048));
 /** @internal */
-const currentLogAnnotations = /*#__PURE__*/globalValue(/*#__PURE__*/Symbol.for("effect/FiberRef/currentLogAnnotation"), () => fiberRefUnsafeMake(empty$b()));
+const currentLogAnnotations = /*#__PURE__*/globalValue(/*#__PURE__*/Symbol.for("effect/FiberRef/currentLogAnnotation"), () => fiberRefUnsafeMake(empty$d()));
 /** @internal */
 const currentLogLevel = /*#__PURE__*/globalValue(/*#__PURE__*/Symbol.for("effect/FiberRef/currentLogLevel"), () => fiberRefUnsafeMake(logLevelInfo));
 /** @internal */
-const currentLogSpan = /*#__PURE__*/globalValue(/*#__PURE__*/Symbol.for("effect/FiberRef/currentLogSpan"), () => fiberRefUnsafeMake(empty$a()));
+const currentLogSpan = /*#__PURE__*/globalValue(/*#__PURE__*/Symbol.for("effect/FiberRef/currentLogSpan"), () => fiberRefUnsafeMake(empty$c()));
 /** @internal */
 const withSchedulingPriority = /*#__PURE__*/dual(2, (self, scheduler) => fiberRefLocally(self, currentSchedulingPriority, scheduler));
 /** @internal */
@@ -8167,15 +8267,15 @@ const currentUnhandledErrorLogLevel = /*#__PURE__*/globalValue(/*#__PURE__*/Symb
 /** @internal */
 const currentVersionMismatchErrorLogLevel = /*#__PURE__*/globalValue(/*#__PURE__*/Symbol.for("effect/FiberRef/versionMismatchErrorLogLevel"), () => fiberRefUnsafeMake(some(logLevelWarning)));
 /** @internal */
-const currentMetricLabels = /*#__PURE__*/globalValue(/*#__PURE__*/Symbol.for("effect/FiberRef/currentMetricLabels"), () => fiberRefUnsafeMakeReadonlyArray(empty$j()));
+const currentMetricLabels = /*#__PURE__*/globalValue(/*#__PURE__*/Symbol.for("effect/FiberRef/currentMetricLabels"), () => fiberRefUnsafeMakeReadonlyArray(empty$l()));
 /** @internal */
 const currentForkScopeOverride = /*#__PURE__*/globalValue(/*#__PURE__*/Symbol.for("effect/FiberRef/currentForkScopeOverride"), () => fiberRefUnsafeMake(none$4(), {
   fork: () => none$4(),
   join: (parent, _) => parent
 }));
 /** @internal */
-const currentInterruptedCause = /*#__PURE__*/globalValue(/*#__PURE__*/Symbol.for("effect/FiberRef/currentInterruptedCause"), () => fiberRefUnsafeMake(empty$e, {
-  fork: () => empty$e,
+const currentInterruptedCause = /*#__PURE__*/globalValue(/*#__PURE__*/Symbol.for("effect/FiberRef/currentInterruptedCause"), () => fiberRefUnsafeMake(empty$g, {
+  fork: () => empty$g,
   join: (parent, _) => parent
 }));
 // -----------------------------------------------------------------------------
@@ -8249,6 +8349,14 @@ const NoSuchElementExceptionTypeId = /*#__PURE__*/Symbol.for("effect/Cause/error
 const NoSuchElementException = /*#__PURE__*/makeException({
   [NoSuchElementExceptionTypeId]: NoSuchElementExceptionTypeId
 }, "NoSuchElementException");
+/** @internal */
+const TimeoutExceptionTypeId = /*#__PURE__*/Symbol.for("effect/Cause/errors/Timeout");
+/** @internal */
+const TimeoutException = /*#__PURE__*/makeException({
+  [TimeoutExceptionTypeId]: TimeoutExceptionTypeId
+}, "TimeoutException");
+/** @internal */
+const timeoutExceptionFromDuration = duration => new TimeoutException(`Operation timed out after '${format$1(duration)}'`);
 /** @internal */
 const UnknownExceptionTypeId = /*#__PURE__*/Symbol.for("effect/Cause/errors/UnknownException");
 /** @internal */
@@ -8372,7 +8480,7 @@ const exitZipWith = /*#__PURE__*/dual(3, (self, that, {
 });
 const exitCollectAllInternal = (exits, combineCauses) => {
   const list = fromIterable$5(exits);
-  if (!isNonEmpty(list)) {
+  if (!isNonEmpty$2(list)) {
     return none$4();
   }
   return pipe(tailNonEmpty(list), reduce$6(pipe(headNonEmpty(list), exitMap(of$1)), (accumulator, current) => pipe(accumulator, exitZipWith(current, {
@@ -8388,7 +8496,7 @@ const deferredUnsafeMake = fiberId => {
   const _deferred = {
     ...CommitPrototype$1,
     [DeferredTypeId]: deferredVariance,
-    state: make$g(pending([])),
+    state: make$j(pending([])),
     commit() {
       return deferredAwait(this);
     },
@@ -8397,7 +8505,7 @@ const deferredUnsafeMake = fiberId => {
   return _deferred;
 };
 /* @internal */
-const deferredMake = () => flatMap$1(fiberId, id => deferredMakeAs(id));
+const deferredMake = () => flatMap$2(fiberId, id => deferredMakeAs(id));
 /* @internal */
 const deferredMakeAs = fiberId => sync$2(() => deferredUnsafeMake(fiberId));
 /* @internal */
@@ -8426,7 +8534,7 @@ const deferredCompleteWith = /*#__PURE__*/dual(2, (self, effect) => sync$2(() =>
       }
     case OP_STATE_PENDING:
       {
-        set$3(self.state, done$2(effect));
+        set$3(self.state, done$4(effect));
         for (let i = 0, len = state.joiners.length; i < len; i++) {
           state.joiners[i](effect);
         }
@@ -8442,7 +8550,7 @@ const deferredSucceed = /*#__PURE__*/dual(2, (self, value) => deferredCompleteWi
 const deferredUnsafeDone = (self, effect) => {
   const state = get$4(self.state);
   if (state._tag === OP_STATE_PENDING) {
-    set$3(self.state, done$2(effect));
+    set$3(self.state, done$4(effect));
     for (let i = 0, len = state.joiners.length; i < len; i++) {
       state.joiners[i](effect);
     }
@@ -8465,7 +8573,7 @@ const constContext = /*#__PURE__*/withFiberRuntime(fiber => exitSucceed$1(fiber.
 /* @internal */
 const context$2 = () => constContext;
 /* @internal */
-const contextWithEffect = f => flatMap$1(context$2(), f);
+const contextWithEffect = f => flatMap$2(context$2(), f);
 /* @internal */
 const provideContext$1 = /*#__PURE__*/dual(2, (self, context) => fiberRefLocally(currentContext, context)(self));
 /* @internal */
@@ -8552,7 +8660,7 @@ class ClockImpl {
   }
 }
 /** @internal */
-const make$c = () => new ClockImpl();
+const make$f = () => new ClockImpl();
 
 /**
  * # Number
@@ -8935,7 +9043,7 @@ const reduceWithContext = /*#__PURE__*/dual(3, (self, context, reducer) => {
 const isMissingDataOnly$1 = self => reduceWithContext(self, void 0, IsMissingDataOnlyReducer);
 
 /** @internal */
-const empty$5 = {
+const empty$7 = {
   _tag: "Empty"
 };
 /** @internal */
@@ -8969,7 +9077,7 @@ const patch$3 = /*#__PURE__*/dual(2, (path, patch) => {
         }
       case "Unnested":
         {
-          const containsName = pipe(head(output), contains(patch.name));
+          const containsName = pipe(head$1(output), contains(patch.name));
           if (containsName) {
             output = tailNonEmpty$1(output);
             input = input.tail;
@@ -9018,7 +9126,7 @@ const FlatConfigProviderSymbolKey = "effect/ConfigProviderFlat";
 /** @internal */
 const FlatConfigProviderTypeId = /*#__PURE__*/Symbol.for(FlatConfigProviderSymbolKey);
 /** @internal */
-const make$b = options => ({
+const make$e = options => ({
   [ConfigProviderTypeId]: ConfigProviderTypeId,
   pipe() {
     return pipeArguments(this, arguments);
@@ -9033,9 +9141,9 @@ const makeFlat = options => ({
   enumerateChildren: options.enumerateChildren
 });
 /** @internal */
-const fromFlat = flat => make$b({
-  load: config => flatMap$1(fromFlatLoop(flat, empty$j(), config, false), chunk => match$3(head(chunk), {
-    onNone: () => fail(MissingData(empty$j(), `Expected a single value having structure: ${config}`)),
+const fromFlat = flat => make$e({
+  load: config => flatMap$2(fromFlatLoop(flat, empty$l(), config, false), chunk => match$3(head$1(chunk), {
+    onNone: () => fail(MissingData(empty$l(), `Expected a single value having structure: ${config}`)),
     onSome: succeed$3
   })),
   flattened: flat
@@ -9056,7 +9164,7 @@ const fromEnv = options => {
     const pathString = makePathString(path);
     const current = getEnv();
     const valueOpt = pathString in current ? some(current[pathString]) : none$4();
-    return pipe(valueOpt, mapError(() => MissingData(path, `Expected ${pathString} to exist in the process context`)), flatMap$1(value => parsePrimitive(value, path, primitive, seqDelim, split)));
+    return pipe(valueOpt, mapError(() => MissingData(path, `Expected ${pathString} to exist in the process context`)), flatMap$2(value => parsePrimitive(value, path, primitive, seqDelim, split)));
   };
   const enumerateChildren = path => sync$2(() => {
     const current = getEnv();
@@ -9077,12 +9185,12 @@ const fromEnv = options => {
   return fromFlat(makeFlat({
     load,
     enumerateChildren,
-    patch: empty$5
+    patch: empty$7
   }));
 };
 const extend = (leftDef, rightDef, left, right) => {
-  const leftPad = unfold(left.length, index => index >= right.length ? none$4() : some([leftDef(index), index + 1]));
-  const rightPad = unfold(right.length, index => index >= left.length ? none$4() : some([rightDef(index), index + 1]));
+  const leftPad = unfold$1(left.length, index => index >= right.length ? none$4() : some([leftDef(index), index + 1]));
+  const rightPad = unfold$1(right.length, index => index >= left.length ? none$4() : some([rightDef(index), index + 1]));
   const leftExtension = concat(left, leftPad);
   const rightExtension = concat(right, rightPad);
   return [leftExtension, rightExtension];
@@ -9129,7 +9237,7 @@ const fromFlatLoop = (flat, prefix, config, split) => {
       }
     case OP_MAP_OR_FAIL:
       {
-        return suspend$2(() => pipe(fromFlatLoop(flat, prefix, op.original, split), flatMap$1(forEachSequential(a => pipe(op.mapOrFail(a), mapError(prefixed(appendConfigPath(prefix, op.original))))))));
+        return suspend$2(() => pipe(fromFlatLoop(flat, prefix, op.original, split), flatMap$2(forEachSequential(a => pipe(op.mapOrFail(a), mapError(prefixed(appendConfigPath(prefix, op.original))))))));
       }
     case OP_NESTED:
       {
@@ -9137,7 +9245,7 @@ const fromFlatLoop = (flat, prefix, config, split) => {
       }
     case OP_PRIMITIVE:
       {
-        return pipe(patch$3(prefix, flat.patch), flatMap$1(prefix => pipe(flat.load(prefix, op, split), flatMap$1(values => {
+        return pipe(patch$3(prefix, flat.patch), flatMap$2(prefix => pipe(flat.load(prefix, op, split), flatMap$2(values => {
           if (values.length === 0) {
             const name = pipe(last(prefix), getOrElse(() => "<n/a>"));
             return fail(MissingData([], `Expected ${op.description} with name ${name}`));
@@ -9147,14 +9255,14 @@ const fromFlatLoop = (flat, prefix, config, split) => {
       }
     case OP_SEQUENCE:
       {
-        return pipe(patch$3(prefix, flat.patch), flatMap$1(patchedPrefix => pipe(flat.enumerateChildren(patchedPrefix), flatMap$1(indicesFrom), flatMap$1(indices => {
+        return pipe(patch$3(prefix, flat.patch), flatMap$2(patchedPrefix => pipe(flat.enumerateChildren(patchedPrefix), flatMap$2(indicesFrom), flatMap$2(indices => {
           if (indices.length === 0) {
             return suspend$2(() => map$3(fromFlatLoop(flat, prefix, op.config, true), of$2));
           }
           return pipe(forEachSequential(indices, index => fromFlatLoop(flat, append$1(prefix, `[${index}]`), op.config, true)), map$3(chunkChunk => {
             const flattened = flatten$2(chunkChunk);
             if (flattened.length === 0) {
-              return of$2(empty$j());
+              return of$2(empty$l());
             }
             return of$2(flattened);
           }));
@@ -9162,10 +9270,10 @@ const fromFlatLoop = (flat, prefix, config, split) => {
       }
     case OP_HASHMAP:
       {
-        return suspend$2(() => pipe(patch$3(prefix, flat.patch), flatMap$1(prefix => pipe(flat.enumerateChildren(prefix), flatMap$1(keys => {
+        return suspend$2(() => pipe(patch$3(prefix, flat.patch), flatMap$2(prefix => pipe(flat.enumerateChildren(prefix), flatMap$2(keys => {
           return pipe(keys, forEachSequential(key => fromFlatLoop(flat, concat(prefix, of$2(key)), op.valueConfig, split)), map$3(matrix => {
             if (matrix.length === 0) {
-              return of$2(empty$b());
+              return of$2(empty$d());
             }
             return pipe(transpose(matrix), map$6(values => fromIterable$1(zip$1(fromIterable$6(keys), values))));
           }));
@@ -9173,7 +9281,7 @@ const fromFlatLoop = (flat, prefix, config, split) => {
       }
     case OP_ZIP_WITH$1:
       {
-        return suspend$2(() => pipe(fromFlatLoop(flat, prefix, op.left, split), either, flatMap$1(left => pipe(fromFlatLoop(flat, prefix, op.right, split), either, flatMap$1(right$1 => {
+        return suspend$2(() => pipe(fromFlatLoop(flat, prefix, op.left, split), either, flatMap$2(left => pipe(fromFlatLoop(flat, prefix, op.right, split), either, flatMap$2(right$1 => {
           if (isLeft(left) && isLeft(right$1)) {
             return fail(And(left.left, right$1.left));
           }
@@ -9212,7 +9320,7 @@ const transpose = array => {
   return Object.keys(array[0]).map(column => array.map(row => row[column]));
 };
 const indicesFrom = quotedIndices => pipe(forEachSequential(quotedIndices, parseQuotedIndex), mapBoth({
-  onFailure: () => empty$j(),
+  onFailure: () => empty$l(),
   onSuccess: sort(Order$1)
 }), either, map$3(merge$5));
 const QUOTED_INDEX_REGEX = /^(\[(\d+)\])$/;
@@ -9220,7 +9328,7 @@ const parseQuotedIndex = str => {
   const match = str.match(QUOTED_INDEX_REGEX);
   if (match !== null) {
     const matchedIndex = match[2];
-    return pipe(matchedIndex !== undefined && matchedIndex.length > 0 ? some(matchedIndex) : none$4(), flatMap$3(parseInteger));
+    return pipe(matchedIndex !== undefined && matchedIndex.length > 0 ? some(matchedIndex) : none$4(), flatMap$4(parseInteger));
   }
   return none$4();
 };
@@ -9354,7 +9462,7 @@ class RandomImpl {
   }
 }
 const shuffleWith = (elements, nextIntBounded) => {
-  return suspend$2(() => pipe(sync$2(() => Array.from(elements)), flatMap$1(buffer => {
+  return suspend$2(() => pipe(sync$2(() => Array.from(elements)), flatMap$2(buffer => {
     const numbers = [];
     for (let i = buffer.length; i >= 2; i = i - 1) {
       numbers.push(i);
@@ -9368,7 +9476,7 @@ const swap = (buffer, index1, index2) => {
   buffer[index2] = tmp;
   return buffer;
 };
-const make$a = seed => new RandomImpl(hash(seed));
+const make$d = seed => new RandomImpl(hash(seed));
 
 /**
  * @since 2.0.0
@@ -9376,7 +9484,7 @@ const make$a = seed => new RandomImpl(hash(seed));
 /** @internal */
 const TracerTypeId = /*#__PURE__*/Symbol.for("effect/Tracer");
 /** @internal */
-const make$9 = options => ({
+const make$c = options => ({
   [TracerTypeId]: TracerTypeId,
   ...options
 });
@@ -9445,13 +9553,13 @@ class NativeSpan {
   }
 }
 /** @internal */
-const nativeTracer = /*#__PURE__*/make$9({
+const nativeTracer = /*#__PURE__*/make$c({
   span: (name, parent, context, links, startTime, kind) => new NativeSpan(name, parent, context, links, startTime, kind),
   context: f => f()
 });
 
 /** @internal */
-const liveServices = /*#__PURE__*/pipe(/*#__PURE__*/empty$c(), /*#__PURE__*/add$1(clockTag, /*#__PURE__*/make$c()), /*#__PURE__*/add$1(consoleTag, defaultConsole), /*#__PURE__*/add$1(randomTag, /*#__PURE__*/make$a(/*#__PURE__*/Math.random())), /*#__PURE__*/add$1(configProviderTag, /*#__PURE__*/fromEnv()), /*#__PURE__*/add$1(tracerTag, nativeTracer));
+const liveServices = /*#__PURE__*/pipe(/*#__PURE__*/empty$e(), /*#__PURE__*/add$1(clockTag, /*#__PURE__*/make$f()), /*#__PURE__*/add$1(consoleTag, defaultConsole), /*#__PURE__*/add$1(randomTag, /*#__PURE__*/make$d(/*#__PURE__*/Math.random())), /*#__PURE__*/add$1(configProviderTag, /*#__PURE__*/fromEnv()), /*#__PURE__*/add$1(tracerTag, nativeTracer));
 /**
  * The `FiberRef` holding the default `Effect` services.
  *
@@ -9459,8 +9567,18 @@ const liveServices = /*#__PURE__*/pipe(/*#__PURE__*/empty$c(), /*#__PURE__*/add$
  * @category fiberRefs
  */
 const currentServices = /*#__PURE__*/globalValue(/*#__PURE__*/Symbol.for("effect/DefaultServices/currentServices"), () => fiberRefUnsafeMakeContext(liveServices));
+// circular with Clock
+/** @internal */
+const sleep$2 = duration => {
+  const decodedDuration = decode(duration);
+  return clockWith(clock => clock.sleep(decodedDuration));
+};
 /** @internal */
 const defaultServicesWith = f => withFiberRuntime(fiber => f(fiber.currentDefaultServices));
+/** @internal */
+const clockWith = f => defaultServicesWith(services => f(services.unsafeMap.get(clockTag.key)));
+/** @internal */
+const currentTimeMillis$1 = /*#__PURE__*/clockWith(clock => clock.currentTimeMillis);
 /** @internal */
 const configProviderWith = f => defaultServicesWith(services => f(services.unsafeMap.get(configProviderTag.key)));
 /** @internal */
@@ -9534,7 +9652,7 @@ function unsafeMake$3(fiberRefLocals) {
   return new FiberRefsImpl(fiberRefLocals);
 }
 /** @internal */
-function empty$4() {
+function empty$6() {
   return unsafeMake$3(new Map());
 }
 /** @internal */
@@ -9728,7 +9846,7 @@ const updateManyAs = updateManyAs$1;
  * @category constructors
  * @since 2.0.0
  */
-const empty$3 = empty$4;
+const empty$5 = empty$6;
 
 /** @internal */
 const OP_EMPTY$1 = "Empty";
@@ -9741,13 +9859,13 @@ const OP_UPDATE = "Update";
 /** @internal */
 const OP_AND_THEN$1 = "AndThen";
 /** @internal */
-const empty$2 = {
+const empty$4 = {
   _tag: OP_EMPTY$1
 };
 /** @internal */
 const diff$2 = (oldValue, newValue) => {
   const missingLocals = new Map(oldValue.locals);
-  let patch = empty$2;
+  let patch = empty$4;
   for (const [fiberRef, pairs] of newValue.locals.entries()) {
     const newValue = headNonEmpty$1(pairs)[1];
     const old = missingLocals.get(fiberRef);
@@ -9854,21 +9972,21 @@ const FiberStatusSymbolKey = "effect/FiberStatus";
 /** @internal */
 const FiberStatusTypeId = /*#__PURE__*/Symbol.for(FiberStatusSymbolKey);
 /** @internal */
-const OP_DONE = "Done";
+const OP_DONE$1 = "Done";
 /** @internal */
 const OP_RUNNING = "Running";
 /** @internal */
 const OP_SUSPENDED = "Suspended";
-const DoneHash = /*#__PURE__*/string$1(`${FiberStatusSymbolKey}-${OP_DONE}`);
+const DoneHash = /*#__PURE__*/string$1(`${FiberStatusSymbolKey}-${OP_DONE$1}`);
 /** @internal */
 class Done {
   [FiberStatusTypeId] = FiberStatusTypeId;
-  _tag = OP_DONE;
+  _tag = OP_DONE$1;
   [symbol$1]() {
     return DoneHash;
   }
   [symbol](that) {
-    return isFiberStatus(that) && that._tag === OP_DONE;
+    return isFiberStatus(that) && that._tag === OP_DONE$1;
   }
 }
 /** @internal */
@@ -9880,7 +9998,7 @@ class Running {
     this.runtimeFlags = runtimeFlags;
   }
   [symbol$1]() {
-    return pipe(hash(FiberStatusSymbolKey), combine$5(hash(this._tag)), combine$5(hash(this.runtimeFlags)), cached(this));
+    return pipe(hash(FiberStatusSymbolKey), combine$7(hash(this._tag)), combine$7(hash(this.runtimeFlags)), cached(this));
   }
   [symbol](that) {
     return isFiberStatus(that) && that._tag === OP_RUNNING && this.runtimeFlags === that.runtimeFlags;
@@ -9897,14 +10015,14 @@ class Suspended {
     this.blockingOn = blockingOn;
   }
   [symbol$1]() {
-    return pipe(hash(FiberStatusSymbolKey), combine$5(hash(this._tag)), combine$5(hash(this.runtimeFlags)), combine$5(hash(this.blockingOn)), cached(this));
+    return pipe(hash(FiberStatusSymbolKey), combine$7(hash(this._tag)), combine$7(hash(this.runtimeFlags)), combine$7(hash(this.blockingOn)), cached(this));
   }
   [symbol](that) {
     return isFiberStatus(that) && that._tag === OP_SUSPENDED && this.runtimeFlags === that.runtimeFlags && equals$1(this.blockingOn, that.blockingOn);
   }
 }
 /** @internal */
-const done$1 = /*#__PURE__*/new Done();
+const done$3 = /*#__PURE__*/new Done();
 /** @internal */
 const running$1 = runtimeFlags => new Running(runtimeFlags);
 /** @internal */
@@ -9912,13 +10030,13 @@ const suspended$1 = (runtimeFlags, blockingOn) => new Suspended(runtimeFlags, bl
 /** @internal */
 const isFiberStatus = u => hasProperty(u, FiberStatusTypeId);
 /** @internal */
-const isDone$1 = self => self._tag === OP_DONE;
+const isDone$3 = self => self._tag === OP_DONE$1;
 
 /**
  * @since 2.0.0
  * @category constructors
  */
-const done = done$1;
+const done$2 = done$3;
 /**
  * @since 2.0.0
  * @category constructors
@@ -9935,7 +10053,7 @@ const suspended = suspended$1;
  * @since 2.0.0
  * @category refinements
  */
-const isDone = isDone$1;
+const isDone$2 = isDone$3;
 
 /**
  * @since 2.0.0
@@ -9951,7 +10069,7 @@ const Fatal = logLevelFatal;
  * @since 2.0.0
  * @category constructors
  */
-const Error$1 = logLevelError;
+const Error$2 = logLevelError;
 /**
  * @since 2.0.0
  * @category constructors
@@ -9998,7 +10116,7 @@ const fromLiteral = literal => {
     case "Debug":
       return Debug;
     case "Error":
-      return Error$1;
+      return Error$2;
     case "Fatal":
       return Fatal;
     case "Info":
@@ -10183,7 +10301,7 @@ class MicroFiberImpl {
     // tree-shaken if not used
     const interruptChildren = fiberMiddleware.interruptChildren && fiberMiddleware.interruptChildren(this);
     if (interruptChildren !== undefined) {
-      return this.evaluate(flatMap(interruptChildren, () => exit));
+      return this.evaluate(flatMap$1(interruptChildren, () => exit));
     }
     this._exit = exit;
     for (let i = 0; i < this._observers.length; i++) {
@@ -10201,7 +10319,7 @@ class MicroFiberImpl {
         if (!yielding && this.getRef(CurrentScheduler).shouldYield(this)) {
           yielding = true;
           const prev = current;
-          current = flatMap(yieldNow$1, () => prev);
+          current = flatMap$1(yieldNow$1, () => prev);
         }
         current = current[evaluate](this);
         if (current === Yield) {
@@ -10320,7 +10438,7 @@ const makeExit = options => {
       return isMicroExit(that) && that._tag === options.op && equals$1(this[args], that[args]);
     },
     [symbol$1]() {
-      return cached(this, combine$5(string$1(options.op))(hash(this[args])));
+      return cached(this, combine$7(string$1(options.op))(hash(this[args])));
     }
   };
   return function (value) {
@@ -10417,7 +10535,7 @@ const withMicroFiber = /*#__PURE__*/makePrimitive({
  * @experimental
  * @category mapping & sequencing
  */
-const flatMap = /*#__PURE__*/dual(2, (self, f) => {
+const flatMap$1 = /*#__PURE__*/dual(2, (self, f) => {
   const onSuccess = Object.create(OnSuccessProto);
   onSuccess[args] = self;
   onSuccess[successCont] = f;
@@ -10590,8 +10708,8 @@ const OnSuccessAndFailureProto = /*#__PURE__*/makePrimitiveProto({
  * @category resources & finalization
  */
 const onExit = /*#__PURE__*/dual(2, (self, f) => uninterruptibleMask(restore => matchCauseEffect(restore(self), {
-  onFailure: cause => flatMap(f(exitFailCause(cause)), () => failCause(cause)),
-  onSuccess: a => flatMap(f(exitSucceed(a)), () => succeed$2(a))
+  onFailure: cause => flatMap$1(f(exitFailCause(cause)), () => failCause(cause)),
+  onSuccess: a => flatMap$1(f(exitSucceed(a)), () => succeed$2(a))
 })));
 const setInterruptible = /*#__PURE__*/makePrimitive({
   op: "SetInterruptible",
@@ -10717,9 +10835,9 @@ class RefImpl extends Class {
   }
 }
 /** @internal */
-const unsafeMake$2 = value => new RefImpl(make$g(value));
+const unsafeMake$2 = value => new RefImpl(make$j(value));
 /** @internal */
-const make$8 = value => sync$2(() => unsafeMake$2(value));
+const make$b = value => sync$2(() => unsafeMake$2(value));
 /** @internal */
 const get$1 = self => self.get;
 /** @internal */
@@ -10854,6 +10972,17 @@ const match = (concurrency, sequential, unbounded, bounded) => {
   }
 };
 
+/**
+ * @since 2.0.0
+ * @category constructors
+ */
+const sleep$1 = sleep$2;
+/**
+ * @since 2.0.0
+ * @category constructors
+ */
+const currentTimeMillis = currentTimeMillis$1;
+
 /** @internal */
 /**
  * Sanitize a given string by replacing spaces, equal signs, and double quotes with underscores.
@@ -10893,7 +11022,7 @@ class MetricLabelImpl {
   }
 }
 /** @internal */
-const make$7 = (key, value) => {
+const make$a = (key, value) => {
   return new MetricLabelImpl(key, value);
 };
 /** @internal */
@@ -10902,9 +11031,29 @@ const isMetricLabel = u => hasProperty(u, MetricLabelTypeId);
 /* @internal */
 const asSome = self => map$3(self, some);
 /* @internal */
+const catchTag$1 = /*#__PURE__*/dual(args => isEffect(args[0]), (self, ...args) => {
+  const f = args[args.length - 1];
+  let predicate;
+  if (args.length === 2) {
+    predicate = isTagged(args[0]);
+  } else {
+    predicate = e => {
+      const tag = hasProperty(e, "_tag") ? e["_tag"] : undefined;
+      if (!tag) return false;
+      for (let i = 0; i < args.length - 1; i++) {
+        if (args[i] === tag) return true;
+      }
+      return false;
+    };
+  }
+  return catchIf(self, predicate, f);
+});
+/* @internal */
 const diffFiberRefs = self => summarized(self, fiberRefs, diff$2);
 /* @internal */
 const fiberRefs = /*#__PURE__*/withFiberRuntime(state => succeed$3(state.getFiberRefs()));
+/* @internal */
+const negate = self => map$3(self, b => !b);
 /* @internal */
 const patchFiberRefs = patch => updateFiberRefs((fiberId, fiberRefs) => pipe(patch, patch$2(fiberId, fiberRefs)));
 /* @internal */
@@ -10925,9 +11074,33 @@ const promise$1 = evaluate => evaluate.length >= 1 ? async_((resolve, signal) =>
 /* @internal */
 const provideService = /*#__PURE__*/dual(3, (self, tag, service) => contextWithEffect(env => provideContext$1(self, add$1(env, tag, service))));
 /* @internal */
+const provideServiceEffect = /*#__PURE__*/dual(3, (self, tag, effect) => contextWithEffect(env => flatMap$2(effect, service => provideContext$1(self, pipe(env, add$1(tag, service))))));
+/* @internal */
+const sleep = sleep$1;
+/* @internal */
 const succeedNone = /*#__PURE__*/succeed$3(/*#__PURE__*/none$4());
 /* @internal */
-const summarized = /*#__PURE__*/dual(3, (self, summary, f) => flatMap$1(summary, start => flatMap$1(self, value => map$3(summary, end => [f(start, end), value]))));
+const summarized = /*#__PURE__*/dual(3, (self, summary, f) => flatMap$2(summary, start => flatMap$2(self, value => map$3(summary, end => [f(start, end), value]))));
+/* @internal */
+const tapError$1 = /*#__PURE__*/dual(2, (self, f) => matchCauseEffect$1(self, {
+  onFailure: cause => {
+    const either = failureOrCause(cause);
+    switch (either._tag) {
+      case "Left":
+        return zipRight(f(either.left), failCause$1(cause));
+      case "Right":
+        return failCause$1(cause);
+    }
+  },
+  onSuccess: succeed$3
+}));
+/* @internal */
+const tapErrorTag$1 = /*#__PURE__*/dual(3, (self, k, f) => tapError$1(self, e => {
+  if (isTagged(e, k)) {
+    return f(e);
+  }
+  return void_$1;
+}));
 /* @internal */
 const updateFiberRefs = f => withFiberRuntime(state => {
   state.setFiberRefs(f(state.id(), state.getFiberRefs()));
@@ -11106,7 +11279,7 @@ class MetricBoundariesImpl {
   [MetricBoundariesTypeId] = MetricBoundariesTypeId;
   constructor(values) {
     this.values = values;
-    this._hash = pipe(string$1(MetricBoundariesSymbolKey), combine$5(array(this.values)));
+    this._hash = pipe(string$1(MetricBoundariesSymbolKey), combine$7(array(this.values)));
   }
   _hash;
   [symbol$1]() {
@@ -11188,7 +11361,7 @@ class HistogramKeyType {
   [HistogramKeyTypeTypeId] = HistogramKeyTypeTypeId;
   constructor(boundaries) {
     this.boundaries = boundaries;
-    this._hash = pipe(string$1(HistogramKeyTypeSymbolKey), combine$5(hash(this.boundaries)));
+    this._hash = pipe(string$1(HistogramKeyTypeSymbolKey), combine$7(hash(this.boundaries)));
   }
   _hash;
   [symbol$1]() {
@@ -11239,7 +11412,7 @@ class MetricKeyImpl {
     this.keyType = keyType;
     this.description = description;
     this.tags = tags;
-    this._hash = pipe(string$1(this.name + this.description), combine$5(hash(this.keyType)), combine$5(array(this.tags)));
+    this._hash = pipe(string$1(this.name + this.description), combine$7(hash(this.keyType)), combine$7(array(this.tags)));
   }
   _hash;
   [symbol$1]() {
@@ -11332,7 +11505,7 @@ class BucketIterator {
  * @since 2.0.0
  * @category constructors
  */
-const empty$1 = () => {
+const empty$3 = () => {
   const self = Object.create(MutableHashMapProto);
   self.referential = new Map();
   self.buckets = new Map();
@@ -11439,7 +11612,7 @@ class CounterState {
     this.count = count;
   }
   [symbol$1]() {
-    return pipe(hash(CounterStateSymbolKey), combine$5(hash(this.count)), cached(this));
+    return pipe(hash(CounterStateSymbolKey), combine$7(hash(this.count)), cached(this));
   }
   [symbol](that) {
     return isCounterState(that) && this.count === that.count;
@@ -11459,7 +11632,7 @@ class FrequencyState {
   }
   _hash;
   [symbol$1]() {
-    return pipe(string$1(FrequencyStateSymbolKey), combine$5(array(fromIterable$6(this.occurrences.entries()))), cached(this));
+    return pipe(string$1(FrequencyStateSymbolKey), combine$7(array(fromIterable$6(this.occurrences.entries()))), cached(this));
   }
   [symbol](that) {
     return isFrequencyState(that) && arrayEquals(fromIterable$6(this.occurrences.entries()), fromIterable$6(that.occurrences.entries()));
@@ -11477,7 +11650,7 @@ class GaugeState {
     this.value = value;
   }
   [symbol$1]() {
-    return pipe(hash(GaugeStateSymbolKey), combine$5(hash(this.value)), cached(this));
+    return pipe(hash(GaugeStateSymbolKey), combine$7(hash(this.value)), cached(this));
   }
   [symbol](u) {
     return isGaugeState(u) && this.value === u.value;
@@ -11503,7 +11676,7 @@ class HistogramState {
     this.sum = sum;
   }
   [symbol$1]() {
-    return pipe(hash(HistogramStateSymbolKey), combine$5(hash(this.buckets)), combine$5(hash(this.count)), combine$5(hash(this.min)), combine$5(hash(this.max)), combine$5(hash(this.sum)), cached(this));
+    return pipe(hash(HistogramStateSymbolKey), combine$7(hash(this.buckets)), combine$7(hash(this.count)), combine$7(hash(this.min)), combine$7(hash(this.max)), combine$7(hash(this.sum)), cached(this));
   }
   [symbol](that) {
     return isHistogramState(that) && equals$1(this.buckets, that.buckets) && this.count === that.count && this.min === that.min && this.max === that.max && this.sum === that.sum;
@@ -11531,7 +11704,7 @@ class SummaryState {
     this.sum = sum;
   }
   [symbol$1]() {
-    return pipe(hash(SummaryStateSymbolKey), combine$5(hash(this.error)), combine$5(hash(this.quantiles)), combine$5(hash(this.count)), combine$5(hash(this.min)), combine$5(hash(this.max)), combine$5(hash(this.sum)), cached(this));
+    return pipe(hash(SummaryStateSymbolKey), combine$7(hash(this.error)), combine$7(hash(this.quantiles)), combine$7(hash(this.count)), combine$7(hash(this.min)), combine$7(hash(this.max)), combine$7(hash(this.sum)), cached(this));
   }
   [symbol](that) {
     return isSummaryState(that) && this.error === that.error && equals$1(this.quantiles, that.quantiles) && this.count === that.count && this.min === that.min && this.max === that.max && this.sum === that.sum;
@@ -11586,7 +11759,7 @@ const metricHookVariance = {
   _Out: _ => _
 };
 /** @internal */
-const make$6 = options => ({
+const make$9 = options => ({
   [MetricHookTypeId]: metricHookVariance,
   pipe() {
     return pipeArguments(this, arguments);
@@ -11603,7 +11776,7 @@ const counter$1 = key => {
       sum = sum + value;
     }
   };
-  return make$6({
+  return make$9({
     get: () => counter$2(sum),
     update,
     modify: update
@@ -11619,7 +11792,7 @@ const frequency = key => {
     const slotCount = values.get(word) ?? 0;
     values.set(word, slotCount + 1);
   };
-  return make$6({
+  return make$9({
     get: () => frequency$1(values),
     update,
     modify: update
@@ -11628,7 +11801,7 @@ const frequency = key => {
 /** @internal */
 const gauge = (_key, startAt) => {
   let value = startAt;
-  return make$6({
+  return make$9({
     get: () => gauge$1(value),
     update: v => {
       value = v;
@@ -11698,7 +11871,7 @@ const histogram$1 = key => {
     }
     return builder;
   };
-  return make$6({
+  return make$9({
     get: () => histogram$2({
       buckets: getBuckets(),
       count,
@@ -11765,7 +11938,7 @@ const summary$1 = key => {
     count = count + 1;
     sum = sum + value;
   };
-  return make$6({
+  return make$9({
     get: () => summary$2({
       error,
       quantiles: snapshot(Date.now()),
@@ -11783,7 +11956,7 @@ const calculateQuantiles = (error, sortedQuantiles, sortedSamples) => {
   // The number of samples examined
   const sampleCount = sortedSamples.length;
   if (!isNonEmptyReadonlyArray(sortedQuantiles)) {
-    return empty$j();
+    return empty$l();
   }
   const head = sortedQuantiles[0];
   const tail = sortedQuantiles.slice(1);
@@ -11846,7 +12019,7 @@ const resolveQuantile = (error, sampleCount, current, consumed, quantile, rest) 
     if (candConsumed < desired - allowedError) {
       error_2 = error_1;
       sampleCount_2 = sampleCount_1;
-      current_2 = head(rest_1);
+      current_2 = head$1(rest_1);
       consumed_2 = candConsumed;
       quantile_2 = quantile_1;
       rest_2 = sameHead[1];
@@ -11875,7 +12048,7 @@ const resolveQuantile = (error, sampleCount, current, consumed, quantile, rest) 
         {
           error_2 = error_1;
           sampleCount_2 = sampleCount_1;
-          current_2 = head(rest_1);
+          current_2 = head$1(rest_1);
           consumed_2 = candConsumed;
           quantile_2 = quantile_1;
           rest_2 = sameHead[1];
@@ -11893,7 +12066,7 @@ const resolveQuantile = (error, sampleCount, current, consumed, quantile, rest) 
           if (candError < prevError) {
             error_2 = error_1;
             sampleCount_2 = sampleCount_1;
-            current_2 = head(rest_1);
+            current_2 = head$1(rest_1);
             consumed_2 = candConsumed;
             quantile_2 = quantile_1;
             rest_2 = sameHead[1];
@@ -11944,7 +12117,7 @@ const MetricRegistryTypeId = /*#__PURE__*/Symbol.for(MetricRegistrySymbolKey);
 /** @internal */
 class MetricRegistryImpl {
   [MetricRegistryTypeId] = MetricRegistryTypeId;
-  map = /*#__PURE__*/empty$1();
+  map = /*#__PURE__*/empty$3();
   snapshot() {
     const result = [];
     for (const [key, hook] of this.map) {
@@ -12032,7 +12205,7 @@ class MetricRegistryImpl {
   }
 }
 /** @internal */
-const make$5 = () => {
+const make$8 = () => {
   return new MetricRegistryImpl();
 };
 
@@ -12049,10 +12222,10 @@ const metricVariance = {
   _Out: _ => _
 };
 /** @internal */
-const globalMetricRegistry = /*#__PURE__*/globalValue(/*#__PURE__*/Symbol.for("effect/Metric/globalMetricRegistry"), () => make$5());
+const globalMetricRegistry = /*#__PURE__*/globalValue(/*#__PURE__*/Symbol.for("effect/Metric/globalMetricRegistry"), () => make$8());
 /** @internal */
-const make$4 = function (keyType, unsafeUpdate, unsafeValue, unsafeModify) {
-  const metric = Object.assign(effect => tap(effect, a => update(metric, a)), {
+const make$7 = function (keyType, unsafeUpdate, unsafeValue, unsafeModify) {
+  const metric = Object.assign(effect => tap$1(effect, a => update(metric, a)), {
     [MetricTypeId]: metricVariance,
     keyType,
     unsafeUpdate,
@@ -12090,15 +12263,15 @@ const fromMetricKey = key => {
     hookCache.set(extraTags, hook);
     return hook;
   };
-  return make$4(key.keyType, (input, extraTags) => hook(extraTags).update(input), extraTags => hook(extraTags).get(), (input, extraTags) => hook(extraTags).modify(input));
+  return make$7(key.keyType, (input, extraTags) => hook(extraTags).update(input), extraTags => hook(extraTags).get(), (input, extraTags) => hook(extraTags).modify(input));
 };
 /** @internal */
 const histogram = (name, boundaries, description) => fromMetricKey(histogram$3(name, boundaries, description));
 /** @internal */
-const tagged = /*#__PURE__*/dual(3, (self, key, value) => taggedWithLabels(self, [make$7(key, value)]));
+const tagged = /*#__PURE__*/dual(3, (self, key, value) => taggedWithLabels(self, [make$a(key, value)]));
 /** @internal */
 const taggedWithLabels = /*#__PURE__*/dual(2, (self, extraTags) => {
-  return make$4(self.keyType, (input, extraTags1) => self.unsafeUpdate(input, union$2(extraTags, extraTags1)), extraTags1 => self.unsafeValue(union$2(extraTags, extraTags1)), (input, extraTags1) => self.unsafeModify(input, union$2(extraTags, extraTags1)));
+  return make$7(self.keyType, (input, extraTags1) => self.unsafeUpdate(input, union$2(extraTags, extraTags1)), extraTags1 => self.unsafeValue(union$2(extraTags, extraTags1)), (input, extraTags1) => self.unsafeModify(input, union$2(extraTags, extraTags1)));
 });
 /* @internal */
 const update = /*#__PURE__*/dual(2, (self, input) => fiberRefGetWith(currentMetricLabels, tags => sync$2(() => self.unsafeUpdate(input, tags))));
@@ -12249,7 +12422,7 @@ const none = /*#__PURE__*/globalValue("effect/Supervisor/none", () => fromEffect
  * @since 2.0.0
  * @category constructors
  */
-const make$3 = make$f;
+const make$6 = make$i;
 
 /** @internal */
 const OP_EMPTY = "Empty";
@@ -12264,7 +12437,7 @@ const OP_AND_THEN = "AndThen";
  *
  * @internal
  */
-const empty = {
+const empty$2 = {
   _tag: OP_EMPTY
 };
 /**
@@ -12292,7 +12465,7 @@ const patch = (self, supervisor) => {
 const patchLoop = (_supervisor, _patches) => {
   let supervisor = _supervisor;
   let patches = _patches;
-  while (isNonEmpty(patches)) {
+  while (isNonEmpty$2(patches)) {
     const head = headNonEmpty(patches);
     switch (head._tag) {
       case OP_EMPTY:
@@ -12336,35 +12509,35 @@ const removeSupervisor = (self, that) => {
 /** @internal */
 const toSet = self => {
   if (equals$1(self, none)) {
-    return empty$f();
+    return empty$h();
   } else {
     if (isZip(self)) {
       return pipe(toSet(self.left), union(toSet(self.right)));
     } else {
-      return make$k(self);
+      return make$n(self);
     }
   }
 };
 /** @internal */
 const diff = (oldValue, newValue) => {
   if (equals$1(oldValue, newValue)) {
-    return empty;
+    return empty$2;
   }
   const oldSupervisors = toSet(oldValue);
   const newSupervisors = toSet(newValue);
-  const added = pipe(newSupervisors, difference(oldSupervisors), reduce$3(empty, (patch, supervisor) => combine(patch, {
+  const added = pipe(newSupervisors, difference(oldSupervisors), reduce$3(empty$2, (patch, supervisor) => combine(patch, {
     _tag: OP_ADD_SUPERVISOR,
     supervisor
   })));
-  const removed = pipe(oldSupervisors, difference(newSupervisors), reduce$3(empty, (patch, supervisor) => combine(patch, {
+  const removed = pipe(oldSupervisors, difference(newSupervisors), reduce$3(empty$2, (patch, supervisor) => combine(patch, {
     _tag: OP_REMOVE_SUPERVISOR,
     supervisor
   })));
   return combine(added, removed);
 };
 /** @internal */
-const differ = /*#__PURE__*/make$3({
-  empty,
+const differ = /*#__PURE__*/make$6({
+  empty: empty$2,
   patch,
   combine,
   diff
@@ -12456,7 +12629,7 @@ const drainQueueWhileRunningTable = {
     return cur;
   },
   [OP_YIELD_NOW]: (_self, _runtimeFlags, cur, _message) => {
-    return flatMap$1(yieldNow$2(), () => cur);
+    return flatMap$2(yieldNow$2(), () => cur);
   }
 };
 /**
@@ -12541,7 +12714,7 @@ class FiberRuntime extends Class {
    */
   get runtimeFlags() {
     return this.ask((state, status) => {
-      if (isDone(status)) {
+      if (isDone$2(status)) {
         return state.currentRuntimeFlags;
       }
       return status.runtimeFlags;
@@ -12859,7 +13032,7 @@ class FiberRuntime extends Class {
    * log annotations and log level) may not be up-to-date.
    */
   isInterrupted() {
-    return !isEmpty$1(this.getFiberRef(currentInterruptedCause));
+    return !isEmpty$3(this.getFiberRef(currentInterruptedCause));
   }
   /**
    * Adds an interruptor to the set of interruptors that are interrupting this
@@ -13028,7 +13201,7 @@ class FiberRuntime extends Class {
         }
       case OP_STATEFUL:
         {
-          message.onFiber(this, this._exitValue !== null ? done : suspended(this.currentRuntimeFlags, this._asyncBlockingOn));
+          message.onFiber(this, this._exitValue !== null ? done$2 : suspended(this.currentRuntimeFlags, this._asyncBlockingOn));
           return EvaluationSignalContinue;
         }
       default:
@@ -13068,7 +13241,7 @@ class FiberRuntime extends Class {
           this.currentRuntimeFlags = pipe(this.currentRuntimeFlags, enable$1(WindDown));
           const interruption = this.interruptAllChildren();
           if (interruption !== null) {
-            effect = flatMap$1(interruption, () => exit);
+            effect = flatMap$2(interruption, () => exit);
           } else {
             if (this._queue.length === 0) {
               // No more messages to process, so we will allow the fiber to end life:
@@ -13344,7 +13517,7 @@ class FiberRuntime extends Class {
         return op.effect_instruction_i1;
       })));
     }
-    return uninterruptibleMask$1(restore => flatMap$1(forkDaemon(runRequestBlock(op.effect_instruction_i0)), () => restore(op.effect_instruction_i1)));
+    return uninterruptibleMask$1(restore => flatMap$2(forkDaemon(runRequestBlock(op.effect_instruction_i0)), () => restore(op.effect_instruction_i1)));
   }
   ["RunBlocked"](op) {
     return runBlockedRequests(op.effect_instruction_i0);
@@ -13437,7 +13610,7 @@ class FiberRuntime extends Class {
           this._isYielding = true;
           this.currentOpCount = 0;
           const oldCur = cur;
-          cur = flatMap$1(yieldNow$2({
+          cur = flatMap$2(yieldNow$2({
             priority: shouldYield
           }), () => oldCur);
         }
@@ -13449,7 +13622,7 @@ class FiberRuntime extends Class {
             const level = this.getFiberRef(currentVersionMismatchErrorLogLevel);
             if (level._tag === "Some") {
               const effectVersion = cur[EffectTypeId]._V;
-              this.log(`Executing an Effect versioned ${effectVersion} with a Runtime of version ${getCurrentVersion()}, you may want to dedupe the effect dependencies, you can use the language service plugin to detect this at compile time: https://github.com/Effect-TS/language-service`, empty$e, level);
+              this.log(`Executing an Effect versioned ${effectVersion} with a Runtime of version ${getCurrentVersion()}, you may want to dedupe the effect dependencies, you can use the language service plugin to detect this at compile time: https://github.com/Effect-TS/language-service`, empty$g, level);
             }
           }
           // @ts-expect-error
@@ -13516,7 +13689,7 @@ const tracerLogger = /*#__PURE__*/globalValue(/*#__PURE__*/Symbol.for("effect/Lo
   span.value.event(toStringUnknown(Array.isArray(message) && message.length === 1 ? message[0] : message), clockService.unsafeCurrentTimeNanos(), attributes);
 }));
 /** @internal */
-const currentLoggers = /*#__PURE__*/globalValue(/*#__PURE__*/Symbol.for("effect/FiberRef/currentLoggers"), () => fiberRefUnsafeMakeHashSet(make$k(defaultLogger, tracerLogger)));
+const currentLoggers = /*#__PURE__*/globalValue(/*#__PURE__*/Symbol.for("effect/FiberRef/currentLoggers"), () => fiberRefUnsafeMakeHashSet(make$n(defaultLogger, tracerLogger)));
 // === all
 const allResolveInput = input => {
   if (Array.isArray(input) || isIterable(input)) {
@@ -13537,7 +13710,7 @@ const allValidate = (effects, reconcile, options) => {
   for (const effect of effects) {
     eitherEffects.push(either(effect));
   }
-  return flatMap$1(forEach(eitherEffects, identity, {
+  return flatMap$2(forEach(eitherEffects, identity, {
     concurrency: options?.concurrency,
     batching: options?.batching,
     concurrentFinalizers: options?.concurrentFinalizers
@@ -13606,7 +13779,7 @@ const forEach = /*#__PURE__*/dual(args => isIterable(args[0]), (self, f, options
 const forEachParUnbounded = (self, f, batching) => suspend$2(() => {
   const as = fromIterable$6(self);
   const array = new Array(as.length);
-  const fn = (a, i) => flatMap$1(f(a, i), b => sync$2(() => array[i] = b));
+  const fn = (a, i) => flatMap$2(f(a, i), b => sync$2(() => array[i] = b));
   return zipRight(forEachConcurrentDiscard(as, fn, batching, false), succeed$3(array));
 });
 /** @internal */
@@ -13659,7 +13832,7 @@ const forEachConcurrentDiscard = (self, f, batching, processAll, n) => uninterru
     interrupted = true;
     interruptAll();
   };
-  const stepOrExit = batching ? step : exit$1;
+  const stepOrExit = batching ? step : exit;
   const processingFiber = runFiber(async_(resume => {
     const pushResult = (res, index) => {
       if (res._op === "Blocked") {
@@ -13681,7 +13854,7 @@ const forEachConcurrentDiscard = (self, f, batching, processAll, n) => uninterru
         const returnNextElement = () => {
           const a = todos.pop();
           index = counter++;
-          return flatMap$1(yieldNow$2(), () => flatMap$1(stepOrExit(restore(f(a, index))), onRes));
+          return flatMap$2(yieldNow$2(), () => flatMap$2(stepOrExit(restore(f(a, index))), onRes));
         };
         const onRes = res => {
           if (todos.length > 0) {
@@ -13692,7 +13865,7 @@ const forEachConcurrentDiscard = (self, f, batching, processAll, n) => uninterru
           }
           return succeed$3(res);
         };
-        const todo = flatMap$1(stepOrExit(restore(f(a, index))), onRes);
+        const todo = flatMap$2(stepOrExit(restore(f(a, index))), onRes);
         const fiber = runFiber(todo);
         startOrder.push(fiber);
         fibers.add(fiber);
@@ -13808,7 +13981,7 @@ const parallelFinalizers = self => contextWithEffect(context => match$3(getOptio
         return self;
       case "Sequential":
       case "ParallelN":
-        return flatMap$1(scopeFork(scope, parallel), inner => scopeExtend(self, inner));
+        return flatMap$2(scopeFork(scope, parallel), inner => scopeExtend(self, inner));
     }
   }
 }));
@@ -13819,7 +13992,7 @@ const parallelNFinalizers = parallelism => self => contextWithEffect(context => 
     if (scope.strategy._tag === "ParallelN" && scope.strategy.parallelism === parallelism) {
       return self;
     }
-    return flatMap$1(scopeFork(scope, parallelN(parallelism)), inner => scopeExtend(self, inner));
+    return flatMap$2(scopeFork(scope, parallelN(parallelism)), inner => scopeExtend(self, inner));
   }
 }));
 /* @internal */
@@ -13842,9 +14015,9 @@ const finalizersMaskInternal = (strategy, concurrentFinalizers) => self => conte
   }
 }));
 /* @internal */
-const scopeWith = f => flatMap$1(scopeTag, f);
+const scopeWith = f => flatMap$2(scopeTag, f);
 /** @internal */
-const scopedWith = f => flatMap$1(scopeMake(), scope => onExit$1(f(scope), exit => scope.close(exit)));
+const scopedWith = f => flatMap$2(scopeMake(), scope => onExit$1(f(scope), exit => scope.close(exit)));
 /* @internal */
 const sequentialFinalizers = self => contextWithEffect(context => match$3(getOption(context, scopeTag), {
   onNone: () => self,
@@ -13854,7 +14027,7 @@ const sequentialFinalizers = self => contextWithEffect(context => match$3(getOpt
         return self;
       case "Parallel":
       case "ParallelN":
-        return flatMap$1(scopeFork(scope, sequential), inner => scopeExtend(self, inner));
+        return flatMap$2(scopeFork(scope, sequential), inner => scopeExtend(self, inner));
     }
   }
 }));
@@ -13896,7 +14069,7 @@ const ScopeImplProto = {
       return newScope;
     });
   },
-  close(exit) {
+  close(exit$1) {
     return suspend$2(() => {
       if (this.state._tag === "Closed") {
         return void_$1;
@@ -13904,14 +14077,14 @@ const ScopeImplProto = {
       const finalizers = Array.from(this.state.finalizers.values()).reverse();
       this.state = {
         _tag: "Closed",
-        exit
+        exit: exit$1
       };
       if (finalizers.length === 0) {
         return void_$1;
       }
-      return isSequential(this.strategy) ? pipe(forEachSequential(finalizers, fin => exit$1(fin(exit))), flatMap$1(results => pipe(exitCollectAll(results), map$7(exitAsVoid), getOrElse(() => exitVoid$1)))) : isParallel(this.strategy) ? pipe(forEachParUnbounded(finalizers, fin => exit$1(fin(exit)), false), flatMap$1(results => pipe(exitCollectAll(results, {
+      return isSequential(this.strategy) ? pipe(forEachSequential(finalizers, fin => exit(fin(exit$1))), flatMap$2(results => pipe(exitCollectAll(results), map$7(exitAsVoid), getOrElse(() => exitVoid$1)))) : isParallel(this.strategy) ? pipe(forEachParUnbounded(finalizers, fin => exit(fin(exit$1)), false), flatMap$2(results => pipe(exitCollectAll(results, {
         parallel: true
-      }), map$7(exitAsVoid), getOrElse(() => exitVoid$1)))) : pipe(forEachParN(finalizers, this.strategy.parallelism, fin => exit$1(fin(exit)), false), flatMap$1(results => pipe(exitCollectAll(results, {
+      }), map$7(exitAsVoid), getOrElse(() => exitVoid$1)))) : pipe(forEachParN(finalizers, this.strategy.parallelism, fin => exit(fin(exit$1)), false), flatMap$2(results => pipe(exitCollectAll(results, {
         parallel: true
       }), map$7(exitAsVoid), getOrElse(() => exitVoid$1))));
     });
@@ -13940,17 +14113,35 @@ const scopeMake = (strategy = sequential$1) => sync$2(() => scopeUnsafeMake(stra
 /* @internal */
 const scopeExtend = /*#__PURE__*/dual(2, (effect, scope) => mapInputContext(effect,
 // @ts-expect-error
-merge$3(make$i(scopeTag, scope))));
+merge$3(make$l(scopeTag, scope))));
 // circular with Supervisor
 /** @internal */
 const fiberRefUnsafeMakeSupervisor = initial => fiberRefUnsafeMakePatch(initial, {
   differ: differ,
-  fork: empty
+  fork: empty$2
 });
 /** @internal */
 const currentRuntimeFlags = /*#__PURE__*/fiberRefUnsafeMakeRuntimeFlags(none$1);
 /** @internal */
 const currentSupervisor = /*#__PURE__*/fiberRefUnsafeMakeSupervisor(none);
+/** @internal */
+const raceFibersWith = /*#__PURE__*/dual(3, (self, other, options) => withFiberRuntime((parentFiber, parentStatus) => {
+  const parentRuntimeFlags = parentStatus.runtimeFlags;
+  const raceIndicator = make$j(true);
+  const leftFiber = unsafeMakeChildFiber(self, parentFiber, parentRuntimeFlags, options.selfScope);
+  const rightFiber = unsafeMakeChildFiber(other, parentFiber, parentRuntimeFlags, options.otherScope);
+  return async_(cb => {
+    leftFiber.addObserver(() => completeRace(leftFiber, rightFiber, options.onSelfWin, raceIndicator, cb));
+    rightFiber.addObserver(() => completeRace(rightFiber, leftFiber, options.onOtherWin, raceIndicator, cb));
+    leftFiber.startFork(self);
+    rightFiber.startFork(other);
+  }, combine$5(leftFiber.id(), rightFiber.id()));
+}));
+const completeRace = (winner, loser, cont, ab, cb) => {
+  if (compareAndSet(true, false)(ab)) {
+    cb(cont(winner, loser));
+  }
+};
 /** @internal */
 const ensuring = /*#__PURE__*/dual(2, (self, finalizer) => uninterruptibleMask$1(restore => matchCauseEffect$1(restore(self), {
   onFailure: cause1 => matchCauseEffect$1(finalizer, {
@@ -13960,7 +14151,7 @@ const ensuring = /*#__PURE__*/dual(2, (self, finalizer) => uninterruptibleMask$1
   onSuccess: a => as(finalizer, a)
 })));
 /** @internal */
-const invokeWithInterrupt = (self, entries, onInterrupt) => fiberIdWith(id => flatMap$1(flatMap$1(forkDaemon(interruptible$1(self)), processing => async_(cb => {
+const invokeWithInterrupt = (self, entries, onInterrupt) => fiberIdWith(id => flatMap$2(flatMap$2(forkDaemon(interruptible$1(self)), processing => async_(cb => {
   const counts = entries.map(_ => _.listeners.count);
   const checkDone = () => {
     if (counts.every(count => count === 0)) {
@@ -14004,6 +14195,237 @@ const invokeWithInterrupt = (self, entries, onInterrupt) => fiberIdWith(id => fl
   });
   return forEachSequentialDiscard(residual, entry => complete(entry.request, exitInterrupt$1(id)));
 })));
+
+/** @internal */
+const IntervalSymbolKey = "effect/ScheduleInterval";
+/** @internal */
+const IntervalTypeId = /*#__PURE__*/Symbol.for(IntervalSymbolKey);
+/** @internal */
+const empty$1 = {
+  [IntervalTypeId]: IntervalTypeId,
+  startMillis: 0,
+  endMillis: 0
+};
+/** @internal */
+const make$5 = (startMillis, endMillis) => {
+  if (startMillis > endMillis) {
+    return empty$1;
+  }
+  return {
+    [IntervalTypeId]: IntervalTypeId,
+    startMillis,
+    endMillis
+  };
+};
+/** @internal */
+const lessThan$3 = /*#__PURE__*/dual(2, (self, that) => min(self, that) === self);
+/** @internal */
+const min = /*#__PURE__*/dual(2, (self, that) => {
+  if (self.endMillis <= that.startMillis) return self;
+  if (that.endMillis <= self.startMillis) return that;
+  if (self.startMillis < that.startMillis) return self;
+  if (that.startMillis < self.startMillis) return that;
+  if (self.endMillis <= that.endMillis) return self;
+  return that;
+});
+/** @internal */
+const isEmpty$1 = self => {
+  return self.startMillis >= self.endMillis;
+};
+/** @internal */
+const intersect$4 = /*#__PURE__*/dual(2, (self, that) => {
+  const start = Math.max(self.startMillis, that.startMillis);
+  const end = Math.min(self.endMillis, that.endMillis);
+  return make$5(start, end);
+});
+/** @internal */
+const after$1 = startMilliseconds => {
+  return make$5(startMilliseconds, Number.POSITIVE_INFINITY);
+};
+
+/**
+ * An `Interval` of zero-width.
+ *
+ * @since 2.0.0
+ * @category constructors
+ */
+const empty = empty$1;
+/**
+ * Returns `true` if this `Interval` is less than `that` interval, `false`
+ * otherwise.
+ *
+ * @since 2.0.0
+ * @category ordering
+ */
+const lessThan$2 = lessThan$3;
+/**
+ * Returns `true` if the specified `Interval` is empty, `false` otherwise.
+ *
+ * @since 2.0.0
+ * @category ordering
+ */
+const isEmpty = isEmpty$1;
+/**
+ * Computes a new `Interval` which is the intersection of this `Interval` and
+ * that `Interval`.
+ *
+ * @since 2.0.0
+ * @category ordering
+ */
+const intersect$3 = intersect$4;
+/**
+ * Construct an `Interval` that includes all time equal to and after the
+ * specified start time.
+ *
+ * @since 2.0.0
+ * @category constructors
+ */
+const after = after$1;
+
+/** @internal */
+const IntervalsSymbolKey = "effect/ScheduleIntervals";
+/** @internal */
+const IntervalsTypeId = /*#__PURE__*/Symbol.for(IntervalsSymbolKey);
+/** @internal */
+const make$4 = intervals => {
+  return {
+    [IntervalsTypeId]: IntervalsTypeId,
+    intervals
+  };
+};
+/** @internal */
+const intersect$2 = /*#__PURE__*/dual(2, (self, that) => intersectLoop(self.intervals, that.intervals, empty$k()));
+/** @internal */
+const intersectLoop = (_left, _right, _acc) => {
+  let left = _left;
+  let right = _right;
+  let acc = _acc;
+  while (isNonEmpty$2(left) && isNonEmpty$2(right)) {
+    const interval = pipe(headNonEmpty(left), intersect$3(headNonEmpty(right)));
+    const intervals = isEmpty(interval) ? acc : pipe(acc, prepend$1(interval));
+    if (pipe(headNonEmpty(left), lessThan$2(headNonEmpty(right)))) {
+      left = tailNonEmpty(left);
+    } else {
+      right = tailNonEmpty(right);
+    }
+    acc = intervals;
+  }
+  return make$4(reverse$1(acc));
+};
+/** @internal */
+const start$1 = self => {
+  return pipe(self.intervals, head, getOrElse(() => empty)).startMillis;
+};
+/** @internal */
+const end$1 = self => {
+  return pipe(self.intervals, head, getOrElse(() => empty)).endMillis;
+};
+/** @internal */
+const lessThan$1 = /*#__PURE__*/dual(2, (self, that) => start$1(self) < start$1(that));
+/** @internal */
+const isNonEmpty$1 = self => {
+  return isNonEmpty$2(self.intervals);
+};
+
+/**
+ * Creates a new `Intervals` from a `List` of `Interval`s.
+ *
+ * @since 2.0.0
+ * @category constructors
+ */
+const make$3 = make$4;
+/**
+ * Produces the intersection of this `Intervals` and that `Intervals`.
+ *
+ * @since 2.0.0
+ * @category utils
+ */
+const intersect$1 = intersect$2;
+/**
+ * The start of the earliest interval in the specified `Intervals`.
+ *
+ * @since 2.0.0
+ * @category getters
+ */
+const start = start$1;
+/**
+ * The end of the latest interval in the specified `Intervals`.
+ *
+ * @since 2.0.0
+ * @category getters
+ */
+const end = end$1;
+/**
+ * Returns `true` if the start of this `Intervals` is before the start of that
+ * `Intervals`, `false` otherwise.
+ *
+ * @since 2.0.0
+ * @category ordering
+ */
+const lessThan = lessThan$1;
+/**
+ * Returns `true` if this `Intervals` is non-empty, `false` otherwise.
+ *
+ * @since 2.0.0
+ * @category getters
+ */
+const isNonEmpty = isNonEmpty$1;
+
+/** @internal */
+const OP_CONTINUE = "Continue";
+/** @internal */
+const OP_DONE = "Done";
+/** @internal */
+const _continue$1 = intervals => {
+  return {
+    _tag: OP_CONTINUE,
+    intervals
+  };
+};
+/** @internal */
+const continueWith$1 = interval => {
+  return {
+    _tag: OP_CONTINUE,
+    intervals: make$3(of$1(interval))
+  };
+};
+/** @internal */
+const done$1 = {
+  _tag: OP_DONE
+};
+/** @internal */
+const isContinue$1 = self => {
+  return self._tag === OP_CONTINUE;
+};
+/** @internal */
+const isDone$1 = self => {
+  return self._tag === OP_DONE;
+};
+
+/**
+ * @since 2.0.0
+ */
+const _continue = _continue$1;
+/**
+ * @since 2.0.0
+ * @category constructors
+ */
+const continueWith = continueWith$1;
+/**
+ * @since 2.0.0
+ * @category constructors
+ */
+const done = done$1;
+/**
+ * @since 2.0.0
+ * @category refinements
+ */
+const isContinue = isContinue$1;
+/**
+ * @since 2.0.0
+ * @category refinements
+ */
+const isDone = isDone$1;
 
 /**
  * @since 2.0.0
@@ -14080,7 +14502,7 @@ class Semaphore {
   }));
   release = n => this.updateTaken(taken => taken - n);
   releaseAll = /*#__PURE__*/this.updateTaken(_ => 0);
-  withPermits = n => self => uninterruptibleMask$1(restore => flatMap$1(restore(this.take(n)), permits => ensuring(restore(self), this.release(permits))));
+  withPermits = n => self => uninterruptibleMask$1(restore => flatMap$2(restore(this.take(n)), permits => ensuring(restore(self), this.release(permits))));
   withPermitsIfAvailable = n => self => uninterruptibleMask$1(restore => suspend$2(() => {
     if (this.free < n) {
       return succeedNone;
@@ -14091,6 +14513,42 @@ class Semaphore {
 }
 /** @internal */
 const unsafeMakeSemaphore = permits => new Semaphore(permits);
+/** @internal */
+const timeout$1 = /*#__PURE__*/dual(2, (self, duration) => timeoutFail(self, {
+  onTimeout: () => timeoutExceptionFromDuration(duration),
+  duration
+}));
+/** @internal */
+const timeoutFail = /*#__PURE__*/dual(2, (self, {
+  duration,
+  onTimeout
+}) => flatten(timeoutTo(self, {
+  onTimeout: () => failSync(onTimeout),
+  onSuccess: succeed$3,
+  duration
+})));
+/** @internal */
+const timeoutTo = /*#__PURE__*/dual(2, (self, {
+  duration,
+  onSuccess,
+  onTimeout
+}) => fiberIdWith(parentFiberId => uninterruptibleMask$1(restore => raceFibersWith(restore(self), interruptible$1(sleep(duration)), {
+  onSelfWin: (winner, loser) => flatMap$2(winner.await, exit => {
+    if (exit._tag === "Success") {
+      return flatMap$2(winner.inheritAll, () => as(interruptAsFiber(loser, parentFiberId), onSuccess(exit.value)));
+    } else {
+      return flatMap$2(interruptAsFiber(loser, parentFiberId), () => exitFailCause$1(exit.cause));
+    }
+  }),
+  onOtherWin: (winner, loser) => flatMap$2(winner.await, exit => {
+    if (exit._tag === "Success") {
+      return flatMap$2(winner.inheritAll, () => as(interruptAsFiber(loser, parentFiberId), onTimeout()));
+    } else {
+      return flatMap$2(interruptAsFiber(loser, parentFiberId), () => exitFailCause$1(exit.cause));
+    }
+  }),
+  otherScope: globalScope
+}))));
 // circular with Synchronized
 /** @internal */
 const SynchronizedSymbolKey = "effect/Ref/SynchronizedRef";
@@ -14122,7 +14580,7 @@ class SynchronizedImpl extends Class {
     return this.modifyEffect(a => succeed$3(f(a)));
   }
   modifyEffect(f) {
-    return this.withLock(pipe(flatMap$1(get$1(this.ref), f), flatMap$1(([b, a]) => as(set$1(this.ref, a), b))));
+    return this.withLock(pipe(flatMap$2(get$1(this.ref), f), flatMap$2(([b, a]) => as(set$1(this.ref, a), b))));
   }
 }
 /** @internal */
@@ -14178,7 +14636,7 @@ const unsafeFork = /*#__PURE__*/makeDual((runtime, self, options) => {
   const fiberRuntime = new FiberRuntime(fiberId, fiberRefs, runtime.runtimeFlags);
   let effect = self;
   if (options?.scope) {
-    effect = flatMap$1(fork(options.scope, sequential$1), closeableScope => zipRight(scopeAddFinalizer(closeableScope, fiberIdWith(id => equals$1(id, fiberRuntime.id()) ? void_$1 : interruptAsFiber(fiberRuntime, id))), onExit$1(self, exit => close(closeableScope, exit))));
+    effect = flatMap$2(fork(options.scope, sequential$1), closeableScope => zipRight(scopeAddFinalizer(closeableScope, fiberIdWith(id => equals$1(id, fiberRuntime.id()) ? void_$1 : interruptAsFiber(fiberRuntime, id))), onExit$1(self, exit => close(closeableScope, exit))));
   }
   const supervisor = fiberRuntime.currentSupervisor;
   // we can compare by reference here as _supervisor.none is wrapped with globalValue
@@ -14195,6 +14653,46 @@ const unsafeFork = /*#__PURE__*/makeDual((runtime, self, options) => {
   }
   return fiberRuntime;
 });
+/** @internal */
+const FiberFailureId = /*#__PURE__*/Symbol.for("effect/Runtime/FiberFailure");
+/** @internal */
+const FiberFailureCauseId = /*#__PURE__*/Symbol.for("effect/Runtime/FiberFailure/Cause");
+class FiberFailureImpl extends Error {
+  [FiberFailureId];
+  [FiberFailureCauseId];
+  constructor(cause) {
+    const head = prettyErrors(cause)[0];
+    super(head?.message || "An error has occurred");
+    this[FiberFailureId] = FiberFailureId;
+    this[FiberFailureCauseId] = cause;
+    this.name = head ? `(FiberFailure) ${head.name}` : "FiberFailure";
+    if (head?.stack) {
+      this.stack = head.stack;
+    }
+  }
+  toJSON() {
+    return {
+      _id: "FiberFailure",
+      cause: this[FiberFailureCauseId].toJSON()
+    };
+  }
+  toString() {
+    return "(FiberFailure) " + pretty(this[FiberFailureCauseId], {
+      renderErrorCause: true
+    });
+  }
+  [NodeInspectSymbol]() {
+    return this.toString();
+  }
+}
+/** @internal */
+const fiberFailure = cause => {
+  const limit = Error.stackTraceLimit;
+  Error.stackTraceLimit = 0;
+  const error = new FiberFailureImpl(cause);
+  Error.stackTraceLimit = limit;
+  return error;
+};
 const fastPath = effect => {
   const op = effect;
   switch (op._op) {
@@ -14223,6 +14721,19 @@ const fastPath = effect => {
       }
   }
 };
+/** @internal */
+const unsafeRunPromise = /*#__PURE__*/makeDual((runtime, effect, options) => unsafeRunPromiseExit(runtime, effect, options).then(result => {
+  switch (result._tag) {
+    case OP_SUCCESS:
+      {
+        return result.effect_instruction_i0;
+      }
+    case OP_FAILURE:
+      {
+        throw fiberFailure(result.effect_instruction_i0);
+      }
+  }
+}));
 /** @internal */
 const unsafeRunPromiseExit = /*#__PURE__*/makeDual((runtime, effect, options) => new Promise(resolve => {
   const op = fastPath(effect);
@@ -14262,15 +14773,15 @@ class RuntimeImpl {
 /** @internal */
 const make$2 = options => new RuntimeImpl(options.context, options.runtimeFlags, options.fiberRefs);
 /** @internal */
-const defaultRuntimeFlags = /*#__PURE__*/make$d(Interruption, CooperativeYielding, RuntimeMetrics);
+const defaultRuntimeFlags = /*#__PURE__*/make$g(Interruption, CooperativeYielding, RuntimeMetrics);
 /** @internal */
 const defaultRuntime = /*#__PURE__*/make$2({
-  context: /*#__PURE__*/empty$c(),
+  context: /*#__PURE__*/empty$e(),
   runtimeFlags: defaultRuntimeFlags,
-  fiberRefs: /*#__PURE__*/empty$3()
+  fiberRefs: /*#__PURE__*/empty$5()
 });
 /** @internal */
-const unsafeRunPromiseExitEffect = /*#__PURE__*/unsafeRunPromiseExit(defaultRuntime);
+const unsafeRunPromiseEffect = /*#__PURE__*/unsafeRunPromise(defaultRuntime);
 
 /** @internal */
 const modifyEffect = /*#__PURE__*/dual(2, (self, f) => self.modifyEffect(f));
@@ -14329,14 +14840,14 @@ class MemoMapImpl {
       const inMap = map.get(layer);
       if (inMap !== undefined) {
         const [acquire, release] = inMap;
-        const cached = pipe(acquire, flatMap$1(([patch, b]) => pipe(patchFiberRefs(patch), as(b))), onExit$1(exitMatch({
+        const cached = pipe(acquire, flatMap$2(([patch, b]) => pipe(patchFiberRefs(patch), as(b))), onExit$1(exitMatch({
           onFailure: () => void_$1,
           onSuccess: () => scopeAddFinalizerExit(scope, release)
         })));
         return succeed$3([cached, map]);
       }
-      return pipe(make$8(0), flatMap$1(observers => pipe(deferredMake(), flatMap$1(deferred => pipe(make$8(() => void_$1), map$3(finalizerRef => {
-        const resource = uninterruptibleMask$1(restore => pipe(scopeMake(), flatMap$1(innerScope => pipe(restore(flatMap$1(makeBuilder(layer, innerScope, true), f => diffFiberRefs(f(this)))), exit$1, flatMap$1(exit => {
+      return pipe(make$b(0), flatMap$2(observers => pipe(deferredMake(), flatMap$2(deferred => pipe(make$b(() => void_$1), map$3(finalizerRef => {
+        const resource = uninterruptibleMask$1(restore => pipe(scopeMake(), flatMap$2(innerScope => pipe(restore(flatMap$2(makeBuilder(layer, innerScope, true), f => diffFiberRefs(f(this)))), exit, flatMap$2(exit => {
           switch (exit._tag) {
             case OP_FAILURE:
               {
@@ -14344,14 +14855,14 @@ class MemoMapImpl {
               }
             case OP_SUCCESS:
               {
-                return pipe(set$1(finalizerRef, exit => pipe(scopeClose(innerScope, exit), whenEffect(modify(observers, n => [n === 1, n - 1])), asVoid)), zipRight(update$1(observers, n => n + 1)), zipRight(scopeAddFinalizerExit(scope, exit => pipe(sync$2(() => map.delete(layer)), zipRight(get$1(finalizerRef)), flatMap$1(finalizer => finalizer(exit))))), zipRight(deferredSucceed(deferred, exit.effect_instruction_i0)), as(exit.effect_instruction_i0[1]));
+                return pipe(set$1(finalizerRef, exit => pipe(scopeClose(innerScope, exit), whenEffect(modify(observers, n => [n === 1, n - 1])), asVoid)), zipRight(update$1(observers, n => n + 1)), zipRight(scopeAddFinalizerExit(scope, exit => pipe(sync$2(() => map.delete(layer)), zipRight(get$1(finalizerRef)), flatMap$2(finalizer => finalizer(exit))))), zipRight(deferredSucceed(deferred, exit.effect_instruction_i0)), as(exit.effect_instruction_i0[1]));
               }
           }
         })))));
         const memoized = [pipe(deferredAwait(deferred), onExit$1(exitMatchEffect({
           onFailure: () => void_$1,
           onSuccess: () => update$1(observers, n => n + 1)
-        }))), exit => pipe(get$1(finalizerRef), flatMap$1(finalizer => finalizer(exit)))];
+        }))), exit => pipe(get$1(finalizerRef), flatMap$2(finalizer => finalizer(exit)))];
         return [resource, isFresh(layer) ? map : map.set(layer, memoized)];
       }))))));
     }), flatten);
@@ -14362,9 +14873,9 @@ const makeMemoMap = /*#__PURE__*/suspend$2(() => map$3(makeSynchronized(new Map(
 /** @internal */
 const unsafeMakeMemoMap = () => new MemoMapImpl(unsafeMakeSynchronized(new Map()));
 /** @internal */
-const buildWithScope = /*#__PURE__*/dual(2, (self, scope) => flatMap$1(makeMemoMap, memoMap => buildWithMemoMap(self, memoMap, scope)));
+const buildWithScope = /*#__PURE__*/dual(2, (self, scope) => flatMap$2(makeMemoMap, memoMap => buildWithMemoMap(self, memoMap, scope)));
 /** @internal */
-const buildWithMemoMap = /*#__PURE__*/dual(3, (self, memoMap, scope) => flatMap$1(makeBuilder(self, scope), run => provideService(run(memoMap), CurrentMemoMap, memoMap)));
+const buildWithMemoMap = /*#__PURE__*/dual(3, (self, memoMap, scope) => flatMap$2(makeBuilder(self, scope), run => provideService(run(memoMap), CurrentMemoMap, memoMap)));
 const makeBuilder = (self, scope, inMemoMap = false) => {
   const op = self;
   switch (op._op_layer) {
@@ -14393,7 +14904,7 @@ const makeBuilder = (self, scope, inMemoMap = false) => {
       }
     case "Provide":
       {
-        return sync$2(() => memoMap => pipe(memoMap.getOrElseMemoize(op.first, scope), flatMap$1(env => pipe(memoMap.getOrElseMemoize(op.second, scope), provideContext$1(env)))));
+        return sync$2(() => memoMap => pipe(memoMap.getOrElseMemoize(op.first, scope), flatMap$2(env => pipe(memoMap.getOrElseMemoize(op.second, scope), provideContext$1(env)))));
       }
     case "Scoped":
       {
@@ -14422,7 +14933,7 @@ const fromEffect = /*#__PURE__*/dual(2, (a, b) => {
   const tagFirst = isTag(a);
   const tag = tagFirst ? a : b;
   const effect = tagFirst ? b : a;
-  return fromEffectContext(map$3(effect, service => make$i(tag, service)));
+  return fromEffectContext(map$3(effect, service => make$l(tag, service)));
 });
 /** @internal */
 function fromEffectContext(effect) {
@@ -14446,7 +14957,7 @@ const scoped = /*#__PURE__*/dual(2, (a, b) => {
   const tagFirst = isTag(a);
   const tag = tagFirst ? a : b;
   const effect = tagFirst ? b : a;
-  return scopedContext(map$3(effect, service => make$i(tag, service)));
+  return scopedContext(map$3(effect, service => make$l(tag, service)));
 });
 /** @internal */
 const scopedContext = effect => {
@@ -14460,7 +14971,7 @@ const succeed$1 = /*#__PURE__*/dual(2, (a, b) => {
   const tagFirst = isTag(a);
   const tag = tagFirst ? a : b;
   const resource = tagFirst ? b : a;
-  return fromEffectContext(succeed$3(make$i(tag, resource)));
+  return fromEffectContext(succeed$3(make$l(tag, resource)));
 });
 /** @internal */
 const suspend$1 = evaluate => {
@@ -14474,7 +14985,7 @@ const sync$1 = /*#__PURE__*/dual(2, (a, b) => {
   const tagFirst = isTag(a);
   const tag = tagFirst ? a : b;
   const evaluate = tagFirst ? b : a;
-  return fromEffectContext(sync$2(() => make$i(tag, evaluate())));
+  return fromEffectContext(sync$2(() => make$l(tag, evaluate())));
 });
 /** @internal */
 const provide$1 = /*#__PURE__*/dual(2, (self, that) => suspend$1(() => {
@@ -14509,7 +15020,7 @@ const zipWith = /*#__PURE__*/dual(3, (self, that, f) => suspend$1(() => {
   return zipWith;
 }));
 // circular with Effect
-const provideSomeLayer = /*#__PURE__*/dual(2, (self, layer) => scopedWith(scope => flatMap$1(buildWithScope(layer, scope), context => provideSomeContext(self, context))));
+const provideSomeLayer = /*#__PURE__*/dual(2, (self, layer) => scopedWith(scope => flatMap$2(buildWithScope(layer, scope), context => provideSomeContext(self, context))));
 const provideSomeRuntime = /*#__PURE__*/dual(2, (self, rt) => {
   const patchRefs = diff$1(defaultRuntime.fiberRefs, rt.fiberRefs);
   const patchFlags = diff$3(defaultRuntime.runtimeFlags, rt.runtimeFlags);
@@ -14540,11 +15051,308 @@ const effect_provide = /*#__PURE__*/dual(2, (self, source) => {
   } else if (isContext(source)) {
     return provideSomeContext(self, source);
   } else if (TypeId in source) {
-    return flatMap$1(source.runtimeEffect, rt => provideSomeRuntime(self, rt));
+    return flatMap$2(source.runtimeEffect, rt => provideSomeRuntime(self, rt));
   } else {
     return provideSomeRuntime(self, source);
   }
 });
+
+/**
+ * Provides a constructor for a Case Class.
+ *
+ * @since 2.0.0
+ * @category constructors
+ */
+const Error$1 = /*#__PURE__*/function () {
+  const plainArgsSymbol = /*#__PURE__*/Symbol.for("effect/Data/Error/plainArgs");
+  const O = {
+    BaseEffectError: class extends YieldableError {
+      constructor(args) {
+        super(args?.message, args?.cause ? {
+          cause: args.cause
+        } : undefined);
+        if (args) {
+          Object.assign(this, args);
+          // @effect-diagnostics-next-line floatingEffect:off
+          Object.defineProperty(this, plainArgsSymbol, {
+            value: args,
+            enumerable: false
+          });
+        }
+      }
+      toJSON() {
+        return {
+          ...this[plainArgsSymbol],
+          ...this
+        };
+      }
+    }
+  };
+  return O.BaseEffectError;
+}();
+/**
+ * @since 2.0.0
+ * @category constructors
+ */
+const TaggedError = tag => {
+  const O = {
+    BaseEffectError: class extends Error$1 {
+      _tag = tag;
+    }
+  };
+  O.BaseEffectError.prototype.name = tag;
+  return O.BaseEffectError;
+};
+
+/** @internal */
+const ScheduleSymbolKey = "effect/Schedule";
+/** @internal */
+const ScheduleTypeId = /*#__PURE__*/Symbol.for(ScheduleSymbolKey);
+/** @internal */
+const isSchedule = u => hasProperty(u, ScheduleTypeId);
+/** @internal */
+const ScheduleDriverSymbolKey = "effect/ScheduleDriver";
+/** @internal */
+const ScheduleDriverTypeId = /*#__PURE__*/Symbol.for(ScheduleDriverSymbolKey);
+/** @internal */
+const defaultIterationMetadata = {
+  start: 0,
+  now: 0,
+  input: undefined,
+  output: undefined,
+  elapsed: zero,
+  elapsedSincePrevious: zero,
+  recurrence: 0
+};
+/** @internal */
+const CurrentIterationMetadata = /*#__PURE__*/Reference()("effect/Schedule/CurrentIterationMetadata", {
+  defaultValue: () => defaultIterationMetadata
+});
+const scheduleVariance = {
+  /* c8 ignore next */
+  _Out: _ => _,
+  /* c8 ignore next */
+  _In: _ => _,
+  /* c8 ignore next */
+  _R: _ => _
+};
+const scheduleDriverVariance = {
+  /* c8 ignore next */
+  _Out: _ => _,
+  /* c8 ignore next */
+  _In: _ => _,
+  /* c8 ignore next */
+  _R: _ => _
+};
+/** @internal */
+class ScheduleImpl {
+  initial;
+  step;
+  [ScheduleTypeId] = scheduleVariance;
+  constructor(initial, step) {
+    this.initial = initial;
+    this.step = step;
+  }
+  pipe() {
+    return pipeArguments(this, arguments);
+  }
+}
+/** @internal */
+const updateInfo = (iterationMetaRef, now, input, output) => update$1(iterationMetaRef, prev => prev.recurrence === 0 ? {
+  now,
+  input,
+  output,
+  recurrence: prev.recurrence + 1,
+  elapsed: zero,
+  elapsedSincePrevious: zero,
+  start: now
+} : {
+  now,
+  input,
+  output,
+  recurrence: prev.recurrence + 1,
+  elapsed: millis(now - prev.start),
+  elapsedSincePrevious: millis(now - prev.now),
+  start: prev.start
+});
+/** @internal */
+class ScheduleDriverImpl {
+  schedule;
+  ref;
+  [ScheduleDriverTypeId] = scheduleDriverVariance;
+  constructor(schedule, ref) {
+    this.schedule = schedule;
+    this.ref = ref;
+  }
+  get state() {
+    return map$3(get$1(this.ref), tuple => tuple[1]);
+  }
+  get last() {
+    return flatMap$2(get$1(this.ref), ([element, _]) => {
+      switch (element._tag) {
+        case "None":
+          {
+            return failSync(() => new NoSuchElementException());
+          }
+        case "Some":
+          {
+            return succeed$3(element.value);
+          }
+      }
+    });
+  }
+  iterationMeta = /*#__PURE__*/unsafeMake$2(defaultIterationMetadata);
+  get reset() {
+    return set$1(this.ref, [none$4(), this.schedule.initial]).pipe(zipLeft(set$1(this.iterationMeta, defaultIterationMetadata)));
+  }
+  next(input) {
+    return pipe(map$3(get$1(this.ref), tuple => tuple[1]), flatMap$2(state => pipe(currentTimeMillis, flatMap$2(now => pipe(suspend$2(() => this.schedule.step(now, input, state)), flatMap$2(([state, out, decision]) => {
+      const setState = set$1(this.ref, [some(out), state]);
+      if (isDone(decision)) {
+        return setState.pipe(zipRight(fail(none$4())));
+      }
+      const millis$1 = start(decision.intervals) - now;
+      if (millis$1 <= 0) {
+        return setState.pipe(zipRight(updateInfo(this.iterationMeta, now, input, out)), as(out));
+      }
+      const duration = millis(millis$1);
+      return pipe(setState, zipRight(updateInfo(this.iterationMeta, now, input, out)), zipRight(sleep(duration)), as(out));
+    }))))));
+  }
+}
+/** @internal */
+const makeWithState = (initial, step) => new ScheduleImpl(initial, step);
+/** @internal */
+const check = /*#__PURE__*/dual(2, (self, test) => checkEffect(self, (input, out) => sync$2(() => test(input, out))));
+/** @internal */
+const checkEffect = /*#__PURE__*/dual(2, (self, test) => makeWithState(self.initial, (now, input, state) => flatMap$2(self.step(now, input, state), ([state, out, decision]) => {
+  if (isDone(decision)) {
+    return succeed$3([state, out, done]);
+  }
+  return map$3(test(input, out), cont => cont ? [state, out, decision] : [state, out, done]);
+})));
+/** @internal */
+const driver = self => pipe(make$b([none$4(), self.initial]), map$3(ref => new ScheduleDriverImpl(self, ref)));
+/** @internal */
+const fixed$1 = intervalInput => {
+  const interval = decode(intervalInput);
+  const intervalMillis = toMillis(interval);
+  return makeWithState([none$4(), 0], (now, _, [option, n]) => sync$2(() => {
+    switch (option._tag) {
+      case "None":
+        {
+          return [[some([now, now + intervalMillis]), n + 1], n, continueWith(after(now + intervalMillis))];
+        }
+      case "Some":
+        {
+          const [startMillis, lastRun] = option.value;
+          const runningBehind = now > lastRun + intervalMillis;
+          const boundary = equals$1(interval, zero) ? interval : millis(intervalMillis - (now - startMillis) % intervalMillis);
+          const sleepTime = equals$1(boundary, zero) ? interval : boundary;
+          const nextRun = runningBehind ? now : now + toMillis(sleepTime);
+          return [[some([startMillis, nextRun]), n + 1], n, continueWith(after(nextRun))];
+        }
+    }
+  }));
+};
+/** @internal */
+const intersect = /*#__PURE__*/dual(2, (self, that) => intersectWith(self, that, intersect$1));
+/** @internal */
+const intersectWith = /*#__PURE__*/dual(3, (self, that, f) => makeWithState([self.initial, that.initial], (now, input, state) => pipe(zipWith$1(self.step(now, input, state[0]), that.step(now, input, state[1]), (a, b) => [a, b]), flatMap$2(([[lState, out, lDecision], [rState, out2, rDecision]]) => {
+  if (isContinue(lDecision) && isContinue(rDecision)) {
+    return intersectWithLoop(self, that, input, lState, out, lDecision.intervals, rState, out2, rDecision.intervals, f);
+  }
+  return succeed$3([[lState, rState], [out, out2], done]);
+}))));
+/** @internal */
+const intersectWithLoop = (self, that, input, lState, out, lInterval, rState, out2, rInterval, f) => {
+  const combined = f(lInterval, rInterval);
+  if (isNonEmpty(combined)) {
+    return succeed$3([[lState, rState], [out, out2], _continue(combined)]);
+  }
+  if (pipe(lInterval, lessThan(rInterval))) {
+    return flatMap$2(self.step(end(lInterval), input, lState), ([lState, out, decision]) => {
+      if (isDone(decision)) {
+        return succeed$3([[lState, rState], [out, out2], done]);
+      }
+      return intersectWithLoop(self, that, input, lState, out, decision.intervals, rState, out2, rInterval, f);
+    });
+  }
+  return flatMap$2(that.step(end(rInterval), input, rState), ([rState, out2, decision]) => {
+    if (isDone(decision)) {
+      return succeed$3([[lState, rState], [out, out2], done]);
+    }
+    return intersectWithLoop(self, that, input, lState, out, lInterval, rState, out2, decision.intervals, f);
+  });
+};
+/** @internal */
+const recurs = n => whileOutput(forever, out => out < n);
+/** @internal */
+const unfold = (initial, f) => makeWithState(initial, (now, _, state) => sync$2(() => [f(state), state, continueWith(after(now))]));
+/** @internal */
+const untilInputEffect = /*#__PURE__*/dual(2, (self, f) => checkEffect(self, (input, _) => negate(f(input))));
+/** @internal */
+const whileInputEffect = /*#__PURE__*/dual(2, (self, f) => checkEffect(self, (input, _) => f(input)));
+/** @internal */
+const whileOutput = /*#__PURE__*/dual(2, (self, f) => check(self, (_, out) => f(out)));
+// circular with Effect
+const ScheduleDefectTypeId = /*#__PURE__*/Symbol.for("effect/Schedule/ScheduleDefect");
+class ScheduleDefect {
+  error;
+  [ScheduleDefectTypeId];
+  constructor(error) {
+    this.error = error;
+    this[ScheduleDefectTypeId] = ScheduleDefectTypeId;
+  }
+}
+const isScheduleDefect = u => hasProperty(u, ScheduleDefectTypeId);
+const scheduleDefectWrap = self => catchAll(self, e => die(new ScheduleDefect(e)));
+/** @internal */
+const scheduleDefectRefailCause = cause => match$3(find(cause, _ => isDieType(_) && isScheduleDefect(_.defect) ? some(_.defect) : none$4()), {
+  onNone: () => cause,
+  onSome: error => fail$1(error.error)
+});
+/** @internal */
+const scheduleDefectRefail = effect => catchAllCause(effect, cause => failCause$1(scheduleDefectRefailCause(cause)));
+/** @internal */
+const retry_Effect = /*#__PURE__*/dual(2, (self, policy) => retryOrElse_Effect(self, policy, (e, _) => fail(e)));
+/** @internal */
+const retry_combined = /*#__PURE__*/dual(2, (self, options) => {
+  if (isSchedule(options)) {
+    return retry_Effect(self, options);
+  }
+  return scheduleDefectRefail(retry_Effect(self, fromRetryOptions(options)));
+});
+/** @internal */
+const fromRetryOptions = options => {
+  const base = options.schedule ?? forever;
+  const withWhile = options.while ? whileInputEffect(base, e => {
+    const applied = options.while(e);
+    if (typeof applied === "boolean") {
+      return succeed$3(applied);
+    }
+    return scheduleDefectWrap(applied);
+  }) : base;
+  const withUntil = options.until ? untilInputEffect(withWhile, e => {
+    const applied = options.until(e);
+    if (typeof applied === "boolean") {
+      return succeed$3(applied);
+    }
+    return scheduleDefectWrap(applied);
+  }) : withWhile;
+  return options.times ? intersect(withUntil, recurs(options.times)) : withUntil;
+};
+/** @internal */
+const retryOrElse_Effect = /*#__PURE__*/dual(3, (self, policy, orElse) => flatMap$2(driver(policy), driver => retryOrElse_EffectLoop(provideServiceEffect(self, CurrentIterationMetadata, get$1(driver.iterationMeta)), driver, (e, out) => provideServiceEffect(orElse(e, out), CurrentIterationMetadata, get$1(driver.iterationMeta)))));
+/** @internal */
+const retryOrElse_EffectLoop = (self, driver, orElse) => {
+  return catchAll(self, e => matchEffect(driver.next(e), {
+    onFailure: () => pipe(driver.last, orDie, flatMap$2(out => orElse(e, out))),
+    onSuccess: () => retryOrElse_EffectLoop(self, driver, orElse)
+  }));
+};
+/** @internal */
+const forever = /*#__PURE__*/unfold(0, n => n + 1);
 
 /**
  * Provides a way to write effectful code using generator functions, simplifying
@@ -14684,6 +15492,183 @@ const promise = promise$1;
  */
 const sync = sync$2;
 /**
+ * Catches and handles specific errors by their `_tag` field, which is used as a
+ * discriminator.
+ *
+ * **When to Use**
+ *
+ * `catchTag` is useful when your errors are tagged with a readonly `_tag` field
+ * that identifies the error type. You can use this function to handle specific
+ * error types by matching the `_tag` value. This allows for precise error
+ * handling, ensuring that only specific errors are caught and handled.
+ *
+ * The error type must have a readonly `_tag` field to use `catchTag`. This
+ * field is used to identify and match errors.
+ *
+ * **Example** (Handling Errors by Tag)
+ *
+ * ```ts
+ * import { Effect, Random } from "effect"
+ *
+ * class HttpError {
+ *   readonly _tag = "HttpError"
+ * }
+ *
+ * class ValidationError {
+ *   readonly _tag = "ValidationError"
+ * }
+ *
+ * //      ┌─── Effect<string, HttpError | ValidationError, never>
+ * //      ▼
+ * const program = Effect.gen(function* () {
+ *   const n1 = yield* Random.next
+ *   const n2 = yield* Random.next
+ *   if (n1 < 0.5) {
+ *     yield* Effect.fail(new HttpError())
+ *   }
+ *   if (n2 < 0.5) {
+ *     yield* Effect.fail(new ValidationError())
+ *   }
+ *   return "some result"
+ * })
+ *
+ * //      ┌─── Effect<string, ValidationError, never>
+ * //      ▼
+ * const recovered = program.pipe(
+ *   // Only handle HttpError errors
+ *   Effect.catchTag("HttpError", (_HttpError) =>
+ *     Effect.succeed("Recovering from HttpError")
+ *   )
+ * )
+ * ```
+ *
+ * @see {@link catchTags} for a version that allows you to handle multiple error
+ * types at once.
+ *
+ * @since 2.0.0
+ * @category Error handling
+ */
+const catchTag = catchTag$1;
+/**
+ * Retries a failing effect based on a defined retry policy.
+ *
+ * **Details**
+ *
+ * The `Effect.retry` function takes an effect and a {@link Schedule} policy,
+ * and will automatically retry the effect if it fails, following the rules of
+ * the policy.
+ *
+ * If the effect ultimately succeeds, the result will be returned.
+ *
+ * If the maximum retries are exhausted and the effect still fails, the failure
+ * is propagated.
+ *
+ * **When to Use**
+ *
+ * This can be useful when dealing with intermittent failures, such as network
+ * issues or temporary resource unavailability. By defining a retry policy, you
+ * can control the number of retries, the delay between them, and when to stop
+ * retrying.
+ *
+ * **Example** (Retrying with a Fixed Delay)
+ *
+ * ```ts
+ * import { Effect, Schedule } from "effect"
+ *
+ * let count = 0
+ *
+ * // Simulates an effect with possible failures
+ * const task = Effect.async<string, Error>((resume) => {
+ *   if (count <= 2) {
+ *     count++
+ *     console.log("failure")
+ *     resume(Effect.fail(new Error()))
+ *   } else {
+ *     console.log("success")
+ *     resume(Effect.succeed("yay!"))
+ *   }
+ * })
+ *
+ * // Define a repetition policy using a fixed delay between retries
+ * const policy = Schedule.fixed("100 millis")
+ *
+ * const repeated = Effect.retry(task, policy)
+ *
+ * Effect.runPromise(repeated).then(console.log)
+ * // Output:
+ * // failure
+ * // failure
+ * // failure
+ * // success
+ * // yay!
+ * ```
+ *
+ * **Example** (Retrying a Task up to 5 times)
+ *
+ * ```ts
+ * import { Effect } from "effect"
+ *
+ * let count = 0
+ *
+ * // Simulates an effect with possible failures
+ * const task = Effect.async<string, Error>((resume) => {
+ *   if (count <= 2) {
+ *     count++
+ *     console.log("failure")
+ *     resume(Effect.fail(new Error()))
+ *   } else {
+ *     console.log("success")
+ *     resume(Effect.succeed("yay!"))
+ *   }
+ * })
+ *
+ * // Retry the task up to 5 times
+ * Effect.runPromise(Effect.retry(task, { times: 5 })).then(console.log)
+ * // Output:
+ * // failure
+ * // failure
+ * // failure
+ * // success
+ * ```
+ *
+ * **Example** (Retrying Until a Specific Condition is Met)
+ *
+ * ```ts
+ * import { Effect } from "effect"
+ *
+ * let count = 0
+ *
+ * // Define an effect that simulates varying error on each invocation
+ * const action = Effect.failSync(() => {
+ *   console.log(`Action called ${++count} time(s)`)
+ *   return `Error ${count}`
+ * })
+ *
+ * // Retry the action until a specific condition is met
+ * const program = Effect.retry(action, {
+ *   until: (err) => err === "Error 3"
+ * })
+ *
+ * Effect.runPromiseExit(program).then(console.log)
+ * // Output:
+ * // Action called 1 time(s)
+ * // Action called 2 time(s)
+ * // Action called 3 time(s)
+ * // {
+ * //   _id: 'Exit',
+ * //   _tag: 'Failure',
+ * //   cause: { _id: 'Cause', _tag: 'Fail', failure: 'Error 3' }
+ * // }
+ * ```
+ *
+ * @see {@link retryOrElse} for a version that allows you to run a fallback.
+ * @see {@link repeat} if your retry condition is based on successful outcomes rather than errors.
+ *
+ * @since 2.0.0
+ * @category Error handling
+ */
+const retry = retry_combined;
+/**
  * Transforms the value inside an effect by applying a function to it.
  *
  * **Syntax**
@@ -14731,6 +15716,62 @@ const sync = sync$2;
  * @category Mapping
  */
 const map$2 = map$3;
+/**
+ * Adds a time limit to an effect, triggering a timeout if the effect exceeds
+ * the duration.
+ *
+ * **Details**
+ *
+ * This function allows you to enforce a time limit on the execution of an
+ * effect. If the effect does not complete within the given duration, it fails
+ * with a `TimeoutException`. This is useful for preventing tasks from hanging
+ * indefinitely, especially in scenarios where responsiveness or resource limits
+ * are critical.
+ *
+ * The returned effect will either:
+ * - Succeed with the original effect's result if it completes within the
+ *   specified duration.
+ * - Fail with a `TimeoutException` if the time limit is exceeded.
+ *
+ * **Example**
+ *
+ * ```ts
+ * import { Effect } from "effect"
+ *
+ * const task = Effect.gen(function* () {
+ *   console.log("Start processing...")
+ *   yield* Effect.sleep("2 seconds") // Simulates a delay in processing
+ *   console.log("Processing complete.")
+ *   return "Result"
+ * })
+ *
+ * // Output will show a TimeoutException as the task takes longer
+ * // than the specified timeout duration
+ * const timedEffect = task.pipe(Effect.timeout("1 second"))
+ *
+ * Effect.runPromiseExit(timedEffect).then(console.log)
+ * // Output:
+ * // Start processing...
+ * // {
+ * //   _id: 'Exit',
+ * //   _tag: 'Failure',
+ * //   cause: {
+ * //     _id: 'Cause',
+ * //     _tag: 'Fail',
+ * //     failure: { _tag: 'TimeoutException' }
+ * //   }
+ * // }
+ * ```
+ *
+ * @see {@link timeoutFail} for a version that raises a custom error.
+ * @see {@link timeoutFailCause} for a version that raises a custom defect.
+ * @see {@link timeoutTo} for a version that allows specifying both success and
+ * timeout handlers.
+ *
+ * @since 2.0.0
+ * @category Delays & Timeouts
+ */
+const timeout = timeout$1;
 /**
  * Provides necessary dependencies to an effect, removing its environmental
  * requirements.
@@ -14789,62 +15830,252 @@ const map$2 = map$3;
  */
 const provide = effect_provide;
 /**
- * Runs an effect and returns a `Promise` that resolves to an `Exit`,
- * representing the outcome.
+ * Chains effects to produce new `Effect` instances, useful for combining
+ * operations that depend on previous results.
+ *
+ * **Syntax**
+ *
+ * ```ts skip-type-checking
+ * const flatMappedEffect = pipe(myEffect, Effect.flatMap(transformation))
+ * // or
+ * const flatMappedEffect = Effect.flatMap(myEffect, transformation)
+ * // or
+ * const flatMappedEffect = myEffect.pipe(Effect.flatMap(transformation))
+ * ```
  *
  * **Details**
  *
- * This function executes an effect and resolves to an `Exit` object. The `Exit`
- * type provides detailed information about the result of the effect:
- * - If the effect succeeds, the `Exit` will be of type `Success` and include
- *   the value produced by the effect.
- * - If the effect fails, the `Exit` will be of type `Failure` and contain a
- *   `Cause` object, detailing the failure.
+ * `flatMap` lets you sequence effects so that the result of one effect can be
+ * used in the next step. It is similar to `flatMap` used with arrays but works
+ * specifically with `Effect` instances, allowing you to avoid deeply nested
+ * effect structures.
  *
- * Using this function allows you to examine both successful results and failure
- * cases in a unified way, while still leveraging `Promise` for handling the
- * asynchronous behavior of the effect.
+ * Since effects are immutable, `flatMap` always returns a new effect instead of
+ * changing the original one.
  *
  * **When to Use**
  *
- * Use this function when you need to understand the outcome of an effect,
- * whether it succeeded or failed, and want to work with this result using
- * `Promise` syntax. This is particularly useful when integrating with systems
- * that rely on promises but need more detailed error handling than a simple
- * rejection.
+ * Use `flatMap` when you need to chain multiple effects, ensuring that each
+ * step produces a new `Effect` while flattening any nested effects that may
+ * occur.
  *
- * **Example** (Handling Results as Exit)
+ * **Example**
+ *
+ * ```ts
+ * import { pipe, Effect } from "effect"
+ *
+ * // Function to apply a discount safely to a transaction amount
+ * const applyDiscount = (
+ *   total: number,
+ *   discountRate: number
+ * ): Effect.Effect<number, Error> =>
+ *   discountRate === 0
+ *     ? Effect.fail(new Error("Discount rate cannot be zero"))
+ *     : Effect.succeed(total - (total * discountRate) / 100)
+ *
+ * // Simulated asynchronous task to fetch a transaction amount from database
+ * const fetchTransactionAmount = Effect.promise(() => Promise.resolve(100))
+ *
+ * // Chaining the fetch and discount application using `flatMap`
+ * const finalAmount = pipe(
+ *   fetchTransactionAmount,
+ *   Effect.flatMap((amount) => applyDiscount(amount, 5))
+ * )
+ *
+ * Effect.runPromise(finalAmount).then(console.log)
+ * // Output: 95
+ * ```
+ *
+ * @see {@link tap} for a version that ignores the result of the effect.
+ *
+ * @since 2.0.0
+ * @category Sequencing
+ */
+const flatMap = flatMap$2;
+/**
+ * Runs a side effect with the result of an effect without changing the original
+ * value.
+ *
+ * **Details**
+ *
+ * This function works similarly to `flatMap`, but it ignores the result of the
+ * function passed to it. The value from the previous effect remains available
+ * for the next part of the chain. Note that if the side effect fails, the
+ * entire chain will fail too.
+ *
+ * **When to Use**
+ *
+ * Use this function when you want to perform a side effect, like logging or
+ * tracking, without modifying the main value. This is useful when you need to
+ * observe or record an action but want the original value to be passed to the
+ * next step.
+ *
+ * **Example** (Logging a step in a pipeline)
+ *
+ * ```ts
+ * import { Console, Effect, pipe } from "effect"
+ *
+ * // Function to apply a discount safely to a transaction amount
+ * const applyDiscount = (
+ *   total: number,
+ *   discountRate: number
+ * ): Effect.Effect<number, Error> =>
+ *   discountRate === 0
+ *     ? Effect.fail(new Error("Discount rate cannot be zero"))
+ *     : Effect.succeed(total - (total * discountRate) / 100)
+ *
+ * // Simulated asynchronous task to fetch a transaction amount from database
+ * const fetchTransactionAmount = Effect.promise(() => Promise.resolve(100))
+ *
+ * const finalAmount = pipe(
+ *   fetchTransactionAmount,
+ *   // Log the fetched transaction amount
+ *   Effect.tap((amount) => Console.log(`Apply a discount to: ${amount}`)),
+ *   // `amount` is still available!
+ *   Effect.flatMap((amount) => applyDiscount(amount, 5))
+ * )
+ *
+ * Effect.runPromise(finalAmount).then(console.log)
+ * // Output:
+ * // Apply a discount to: 100
+ * // 95
+ * ```
+ *
+ * @see {@link flatMap} for a version that allows you to change the value.
+ *
+ * @since 2.0.0
+ * @category Sequencing
+ */
+const tap = tap$1;
+/**
+ * Execute a side effect on failure without modifying the original effect.
+ *
+ * **Details**
+ *
+ * This function allows you to inspect and react to the failure of an effect by
+ * executing an additional effect. The failure value is passed to the provided
+ * function, enabling you to log it, track it, or perform any other operation.
+ * Importantly, the original failure remains intact and is re-propagated, so the
+ * effect's behavior is unchanged.
+ *
+ * The side effect you provide is only executed when the effect fails. If the
+ * effect succeeds, the function is ignored, and the success value is propagated
+ * as usual.
+ *
+ * **Example**
+ *
+ * ```ts
+ * import { Effect, Console } from "effect"
+ *
+ * // Simulate a task that fails with an error
+ * const task: Effect.Effect<number, string> = Effect.fail("NetworkError")
+ *
+ * // Use tapError to log the error message when the task fails
+ * const tapping = Effect.tapError(task, (error) =>
+ *   Console.log(`expected error: ${error}`)
+ * )
+ *
+ * Effect.runFork(tapping)
+ * // Output:
+ * // expected error: NetworkError
+ * ```
+ *
+ * @since 2.0.0
+ * @category Sequencing
+ */
+const tapError = tapError$1;
+/**
+ * Inspect errors matching a specific tag without altering the original effect.
+ *
+ * **Details**
+ *
+ * This function allows you to inspect and handle specific error types based on
+ * their `_tag` property. It is particularly useful in applications where errors
+ * are modeled with tagged types (e.g., union types with discriminating tags).
+ * By targeting errors with a specific `_tag`, you can log or perform actions on
+ * them while leaving the error channel and overall effect unchanged.
+ *
+ * If the error doesn't match the specified tag, this function does nothing, and
+ * the effect proceeds as usual.
+ *
+ * **Example**
+ *
+ * ```ts
+ * import { Effect, Console } from "effect"
+ *
+ * class NetworkError {
+ *   readonly _tag = "NetworkError"
+ *   constructor(readonly statusCode: number) {}
+ * }
+ *
+ * class ValidationError {
+ *   readonly _tag = "ValidationError"
+ *   constructor(readonly field: string) {}
+ * }
+ *
+ * // Create a task that fails with a NetworkError
+ * const task: Effect.Effect<number, NetworkError | ValidationError> =
+ *   Effect.fail(new NetworkError(504))
+ *
+ * // Use tapErrorTag to inspect only NetworkError types and log the status code
+ * const tapping = Effect.tapErrorTag(task, "NetworkError", (error) =>
+ *   Console.log(`expected error: ${error.statusCode}`)
+ * )
+ *
+ * Effect.runFork(tapping)
+ * // Output:
+ * // expected error: 504
+ * ```
+ *
+ * @since 2.0.0
+ * @category Sequencing
+ */
+const tapErrorTag = tapErrorTag$1;
+/**
+ * Executes an effect and returns the result as a `Promise`.
+ *
+ * **Details**
+ *
+ * This function runs an effect and converts its result into a `Promise`. If the
+ * effect succeeds, the `Promise` will resolve with the successful result. If
+ * the effect fails, the `Promise` will reject with an error, which includes the
+ * failure details of the effect.
+ *
+ * The optional `options` parameter allows you to pass an `AbortSignal` for
+ * cancellation, enabling more fine-grained control over asynchronous tasks.
+ *
+ * **When to Use**
+ *
+ * Use this function when you need to execute an effect and work with its result
+ * in a promise-based system, such as when integrating with third-party
+ * libraries that expect `Promise` results.
+ *
+ * **Example** (Running a Successful Effect as a Promise)
  *
  * ```ts
  * import { Effect } from "effect"
  *
- * // Execute a successful effect and get the Exit result as a Promise
- * Effect.runPromiseExit(Effect.succeed(1)).then(console.log)
- * // Output:
- * // {
- * //   _id: "Exit",
- * //   _tag: "Success",
- * //   value: 1
- * // }
- *
- * // Execute a failing effect and get the Exit result as a Promise
- * Effect.runPromiseExit(Effect.fail("my error")).then(console.log)
- * // Output:
- * // {
- * //   _id: "Exit",
- * //   _tag: "Failure",
- * //   cause: {
- * //     _id: "Cause",
- * //     _tag: "Fail",
- * //     failure: "my error"
- * //   }
- * // }
+ * Effect.runPromise(Effect.succeed(1)).then(console.log)
+ * // Output: 1
  * ```
+ *
+ * **Example** (Handling a Failing Effect as a Rejected Promise)
+ *
+ * ```ts
+ * import { Effect } from "effect"
+ *
+ * Effect.runPromise(Effect.fail("my error")).catch(console.error)
+ * // Output:
+ * // (FiberFailure) Error: my error
+ * ```
+ *
+ * @see {@link runPromiseExit} for a version that returns an `Exit` type instead
+ * of rejecting.
  *
  * @since 2.0.0
  * @category Running Effects
  */
-const runPromiseExit = unsafeRunPromiseExitEffect;
+const runPromise = unsafeRunPromiseEffect;
 const makeTagProxy = TagClass => {
   const cache = new Map();
   return new Proxy(TagClass, {
@@ -15026,6 +16257,298 @@ const Service = function () {
     return proxy === true ? makeTagProxy(TagClass) : TagClass;
   };
 };
+
+/**
+ * Creates a schedule that recurs at a fixed interval.
+ *
+ * **Details**
+ *
+ * This schedule executes at regular, evenly spaced intervals, returning the
+ * number of times it has run so far. If the action being executed takes longer
+ * than the interval, the next execution will happen immediately to prevent
+ * "pile-ups," ensuring that the schedule remains consistent without overlapping
+ * executions.
+ *
+ * ```text
+ * |-----interval-----|-----interval-----|-----interval-----|
+ * |---------action--------||action|-----|action|-----------|
+ * ```
+ *
+ * @see {@link spaced} If you need to run from the end of the last execution.
+ *
+ * @since 2.0.0
+ * @category Constructors
+ */
+const fixed = fixed$1;
+
+/**
+ * Returns `true` if the specified `ConfigError` contains only `MissingData` errors, `false` otherwise.
+ *
+ * @since 2.0.0
+ * @categer getters
+ */
+const isMissingDataOnly = isMissingDataOnly$1;
+
+/** @internal */
+const RedactedSymbolKey = "effect/Redacted";
+/** @internal */
+const redactedRegistry = /*#__PURE__*/globalValue("effect/Redacted/redactedRegistry", () => new WeakMap());
+/** @internal */
+const RedactedTypeId = /*#__PURE__*/Symbol.for(RedactedSymbolKey);
+/** @internal */
+const proto$1 = {
+  [RedactedTypeId]: {
+    _A: _ => _
+  },
+  pipe() {
+    return pipeArguments(this, arguments);
+  },
+  toString() {
+    return "<redacted>";
+  },
+  toJSON() {
+    return "<redacted>";
+  },
+  [NodeInspectSymbol]() {
+    return "<redacted>";
+  },
+  [symbol$1]() {
+    return pipe(hash(RedactedSymbolKey), combine$7(hash(redactedRegistry.get(this))), cached(this));
+  },
+  [symbol](that) {
+    return isRedacted(that) && equals$1(redactedRegistry.get(this), redactedRegistry.get(that));
+  }
+};
+/** @internal */
+const isRedacted = u => hasProperty(u, RedactedTypeId);
+/** @internal */
+const make$1 = value => {
+  const redacted = Object.create(proto$1);
+  redactedRegistry.set(redacted, value);
+  return redacted;
+};
+/** @internal */
+const value$1 = self => {
+  if (redactedRegistry.has(self)) {
+    return redactedRegistry.get(self);
+  } else {
+    throw new Error("Unable to get redacted value");
+  }
+};
+
+const ConfigSymbolKey = "effect/Config";
+/** @internal */
+const ConfigTypeId = /*#__PURE__*/Symbol.for(ConfigSymbolKey);
+const configVariance = {
+  /* c8 ignore next */
+  _A: _ => _
+};
+const proto = {
+  ...CommitPrototype$1,
+  [ConfigTypeId]: configVariance,
+  commit() {
+    return config(this);
+  }
+};
+/** @internal */
+const number$1 = name => {
+  const config = primitive("a number property", text => {
+    const result = Number(text);
+    if (Number.isNaN(result)) {
+      return left(InvalidData([], `Expected a number value but received ${text}`));
+    }
+    return right(result);
+  });
+  return name === undefined ? config : nested(config, name);
+};
+/** @internal */
+const map$1 = /*#__PURE__*/dual(2, (self, f) => mapOrFail(self, a => right(f(a))));
+/** @internal */
+const mapOrFail = /*#__PURE__*/dual(2, (self, f) => {
+  const mapOrFail = Object.create(proto);
+  mapOrFail._tag = OP_MAP_OR_FAIL;
+  mapOrFail.original = self;
+  mapOrFail.mapOrFail = f;
+  return mapOrFail;
+});
+/** @internal */
+const nested = /*#__PURE__*/dual(2, (self, name) => {
+  const nested = Object.create(proto);
+  nested._tag = OP_NESTED;
+  nested.name = name;
+  nested.config = self;
+  return nested;
+});
+/** @internal */
+const orElseIf = /*#__PURE__*/dual(2, (self, options) => {
+  const fallback = Object.create(proto);
+  fallback._tag = OP_FALLBACK;
+  fallback.first = self;
+  fallback.second = suspend(options.orElse);
+  fallback.condition = options.if;
+  return fallback;
+});
+/** @internal */
+const option$1 = self => {
+  return pipe(self, map$1(some), orElseIf({
+    orElse: () => succeed(none$4()),
+    if: isMissingDataOnly
+  }));
+};
+/** @internal */
+const primitive = (description, parse) => {
+  const primitive = Object.create(proto);
+  primitive._tag = OP_PRIMITIVE;
+  primitive.description = description;
+  primitive.parse = parse;
+  return primitive;
+};
+/** @internal */
+const redacted$1 = nameOrConfig => {
+  const config = isConfig(nameOrConfig) ? nameOrConfig : string(nameOrConfig);
+  return map$1(config, make$1);
+};
+/** @internal */
+const string = name => {
+  const config = primitive("a text property", right);
+  return name === undefined ? config : nested(config, name);
+};
+/** @internal */
+const nonEmptyString$1 = name => {
+  const config = primitive("a non-empty text property", liftPredicate(text => text.length > 0, () => MissingData([], "Expected a non-empty string")));
+  return name === undefined ? config : nested(config, name);
+};
+/** @internal */
+const succeed = value => {
+  const constant = Object.create(proto);
+  constant._tag = OP_CONSTANT;
+  constant.value = value;
+  constant.parse = () => right(value);
+  return constant;
+};
+/** @internal */
+const suspend = config => {
+  const lazy = Object.create(proto);
+  lazy._tag = OP_LAZY;
+  lazy.config = config;
+  return lazy;
+};
+/** @internal */
+const isConfig = u => hasProperty(u, ConfigTypeId);
+/** @internal */
+const validate$1 = /*#__PURE__*/dual(2, (self, {
+  message,
+  validation
+}) => mapOrFail(self, a => {
+  if (validation(a)) {
+    return right(a);
+  }
+  return left(InvalidData([], message));
+}));
+/** @internal */
+const withDefault$1 = /*#__PURE__*/dual(2, (self, def) => orElseIf(self, {
+  orElse: () => succeed(def),
+  if: isMissingDataOnly
+}));
+
+/**
+ * Constructs a config for a float value.
+ *
+ * @since 2.0.0
+ * @category constructors
+ */
+const number = number$1;
+/**
+ * Returns a  config whose structure is the same as this one, but which produces
+ * a different value, constructed using the specified function.
+ *
+ * @since 2.0.0
+ * @category mapping
+ */
+const map = map$1;
+/**
+ * Returns an optional version of this config, which will be `None` if the
+ * data is missing from configuration, and `Some` otherwise.
+ *
+ * @since 2.0.0
+ * @category utils
+ */
+const option = option$1;
+/**
+ * Constructs a config for a redacted value.
+ *
+ * @since 2.0.0
+ * @category constructors
+ */
+const redacted = redacted$1;
+/**
+ * Constructs a config for a non-empty string value.
+ *
+ * @since 3.7.0
+ * @category constructors
+ */
+const nonEmptyString = nonEmptyString$1;
+/**
+ * Returns a config that describes the same structure as this one, but which
+ * performs validation during loading.
+ *
+ * @since 2.0.0
+ * @category utils
+ */
+const validate = validate$1;
+/**
+ * Returns a config that describes the same structure as this one, but has the
+ * specified default value in case the information cannot be found.
+ *
+ * @since 2.0.0
+ * @category utils
+ */
+const withDefault = withDefault$1;
+
+({
+  ...CommitPrototype});
+
+/**
+ * This function creates a `Redacted<A>` instance from a given value `A`,
+ * securely hiding its content.
+ *
+ * @example
+ * ```ts
+ * import { Redacted } from "effect"
+ *
+ * const API_KEY = Redacted.make("1234567890")
+ * ```
+ *
+ * @since 3.3.0
+ * @category constructors
+ */
+const make = make$1;
+/**
+ * Retrieves the original value from a `Redacted` instance. Use this function
+ * with caution, as it exposes the sensitive data.
+ *
+ * @example
+ * ```ts
+ * import * as assert from "node:assert"
+ * import { Redacted } from "effect"
+ *
+ * const API_KEY = Redacted.make("1234567890")
+ *
+ * assert.equal(Redacted.value(API_KEY), "1234567890")
+ * ```
+ *
+ * @since 3.3.0
+ * @category getters
+ */
+const value = value$1;
+
+/** @internal  */
+({
+  ...CommitPrototype$1});
+
+/** @internal  */
+({
+  ...CommitPrototype$1});
 
 var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
 
@@ -42287,12 +43810,265 @@ function requireCore () {
 
 var coreExports = requireCore();
 
+// State
+const saveState = (name, value) => sync(() => coreExports.saveState(name, value));
 const getState = (name) => sync(() => coreExports.getState(name));
 // Inputs
 const getInput = (name, options) => sync(() => coreExports.getInput(name, options));
+const getBooleanInput = (name, options) => sync(() => coreExports.getBooleanInput(name, options));
+const getPositiveNumber = (input, options) => sync(() => {
+    const value = coreExports.getInput(input, options);
+    const number = parseFloat(value);
+    if (Number.isNaN(number) || number <= 0) {
+        throw new Error(`Invalid ${input}: ${value}`);
+    }
+    return number;
+});
+const getCommaSeparatedWords = (input, options) => sync(() => {
+    return coreExports.getInput(input, options)
+        .split(",")
+        .map((w) => (w.trim() ))
+        .filter((w) => (w.length > 0 ));
+});
+// Outputs
+const setOutput = (name, value) => sync(() => coreExports.setOutput(name, value));
+const setFailed = (message) => sync(() => coreExports.setFailed(message));
 // Logs
 const debug = (message) => sync(() => coreExports.debug(message));
 const info = (message) => sync(() => coreExports.info(message));
+const error = (message) => sync(() => coreExports.error(message));
+
+class Environment extends Service()("Environment", {
+    accessors: true,
+    effect: gen(function* () {
+        const env = yield* redacted("GITHUB_TOKEN").pipe(option);
+        const token = isSome(env)
+            ? env.value
+            : yield* getInput("github-token", { required: true }).pipe(map$2(make));
+        const [owner, repo] = yield* nonEmptyString("GITHUB_REPOSITORY").pipe(validate({
+            message: "Expected a string with format 'owner/repo'",
+            validation: (s) => /^[a-zA-Z0-9_-]+\/[a-zA-Z0-9_-]+$/.test(s),
+        }), map((s) => s.split("/")));
+        const eventName = yield* nonEmptyString("GITHUB_EVENT_NAME") //
+            .pipe(withDefault("undefined-event"));
+        const workflowName = yield* nonEmptyString("GITHUB_WORKFLOW") //
+            .pipe(withDefault("undefined-workflow"));
+        // Technically, would be nice to get the actual job name,
+        // but it seems to be impossible to get it from the API.
+        const jobId = yield* nonEmptyString("GITHUB_JOB") //
+            .pipe(withDefault("undefined-job")); // ID defined in the workflow file!
+        const runId = yield* number("GITHUB_RUN_ID") //
+            .pipe(withDefault(0));
+        const actionId = yield* nonEmptyString("GITHUB_ACTION") //
+            .pipe(withDefault("undefined-action"));
+        const actor = yield* nonEmptyString("GITHUB_ACTOR") //
+            .pipe(withDefault("undefined-actor"));
+        const res = {
+            token, // FIXME: Change to NonEmptyString
+            owner, // FIXME: Change to NonEmptyString
+            repo, // FIXME: Change to NonEmptyString
+            eventName,
+            workflowName,
+            jobName: jobId,
+            runId,
+            actionId,
+            actor,
+        };
+        debug(`GitHub environment: ${JSON.stringify(res)}`);
+        return res;
+    }),
+}) {
+}
+
+class Inputs extends Service()("Inputs", {
+    accessors: true,
+    effect: gen(function* () {
+        const parseKeywords = (inputName, defaultKeywords = []) => getCommaSeparatedWords(inputName) //
+            .pipe(map$2((l) => l.map((w) => w.toLowerCase())))
+            .pipe(map$2((l) => (l.length > 0 ? l : defaultKeywords)));
+        const approvalKeywords = yield* parseKeywords("approval-keywords", ["approved!"]);
+        const rejectionKeywords = yield* parseKeywords("rejections-keywords", []); // no default!
+        const failOnRejection = yield* getBooleanInput("fail-on-rejection");
+        const failOnTimeout = yield* getBooleanInput("fail-on-timeout");
+        const issueTitle = yield* getInput("issue-title");
+        const issueBody = yield* getInput("issue-body");
+        const timeoutSeconds = yield* getPositiveNumber("timeout-seconds");
+        const pollIntervalSeconds = yield* getPositiveNumber("poll-interval-seconds");
+        return {
+            timeoutSeconds,
+            approvalKeywords,
+            rejectionKeywords,
+            failOnRejection,
+            failOnTimeout,
+            issueTitle,
+            issueBody,
+            pollIntervalSeconds,
+        };
+    }),
+}) {
+}
+
+// Whitelist of allowed GitHub context variables
+const ALLOWED_GITHUB_CONTEXT_VARIABLES = new Set([
+    "workflow", // GITHUB_WORKFLOW
+    "job", // GITHUB_JOB
+    "action", // GITHUB_ACTION
+    "actor", // GITHUB_ACTOR
+    "repository", // GITHUB_REPOSITORY
+    "event_name", // GITHUB_EVENT_NAME
+    "ref", // GITHUB_REF
+    "sha", // GITHUB_SHA
+    "run_id", // GITHUB_RUN_ID
+    "run_number", // GITHUB_RUN_NUMBER
+    "run_attempt", // GITHUB_RUN_ATTEMPT
+    "head_ref", // GITHUB_HEAD_REF
+    "base_ref", // GITHUB_BASE_REF
+    "server_url", // GITHUB_SERVER_URL
+    "api_url", // GITHUB_API_URL
+    "graphql_url", // GITHUB_GRAPHQL_URL
+]);
+function formatArray(array, tags) {
+    if (!Array.isArray(array) || array.length === 0) {
+        return "";
+    }
+    let items = [...array]; // Create a copy to avoid mutating original
+    // Apply code formatting if <code> tag is present
+    if (tags.includes("code")) {
+        items = items.map((item) => `\`${item}\``);
+    }
+    // Apply list formatting - ol takes precedence over ul if both are present
+    if (tags.includes("ol")) {
+        return items.map((item, index) => `${index + 1}. ${item}`).join("\n");
+    }
+    else if (tags.includes("ul")) {
+        return items.map((item) => `- ${item}`).join("\n");
+    }
+    else {
+        // Default: comma-separated
+        return items.join(", ");
+    }
+}
+function processFormattedVariables(template, variables) {
+    // Pattern to match {{ ...content... }} where content may include HTML tags and variable name
+    const formattedPattern = /{{[\s]*([^}]+)[\s]*}}/g;
+    return template.replace(formattedPattern, (match, content) => {
+        // Extract variable name - look for kebab-case variable names that aren't inside angle brackets
+        const variableMatch = content.match(/([\w-]+)(?![^<]*>)/);
+        if (!variableMatch) {
+            return match; // Can't find variable name
+        }
+        const variableName = variableMatch[1].trim();
+        const value = variables[variableName];
+        if (value === undefined) {
+            coreExports.debug(`Template variable not found: ${variableName}`);
+            return match; // Return original if variable not found
+        }
+        // If it's not an array, treat as simple variable
+        if (!Array.isArray(value)) {
+            coreExports.debug(`Replacing formatted variable (non-array): ${variableName} -> ${value}`);
+            return String(value);
+        }
+        // Extract all opening tags (handle tags with or without attributes)
+        const tagMatches = content.match(/<(\w+)(?:\s[^>]*)?>|<(\w+)$/g);
+        const tags = [];
+        if (tagMatches) {
+            tagMatches.forEach((tag) => {
+                // Extract just the tag name, ignoring attributes and malformed tags
+                const tagNameMatch = tag.match(/<(\w+)/);
+                if (tagNameMatch) {
+                    tags.push(tagNameMatch[1]);
+                }
+            });
+        }
+        const formatted = formatArray(value, tags);
+        coreExports.debug(`Replacing formatted variable (array): ${variableName} with tags [${tags.join(", ")}] -> ${formatted}`);
+        return formatted;
+    });
+}
+function processTemplate(template, variables) {
+    coreExports.debug(`Processing template with variables: ${JSON.stringify(variables)}`);
+    let result = template;
+    // Replace {{ <tag>variable</tag> }} patterns with HTML formatting
+    result = processFormattedVariables(result, variables);
+    // Replace {{ variable }} patterns
+    Object.entries(variables).forEach(([key, value]) => {
+        const pattern = new RegExp(`{{\\s*${key}\\s*}}`, "g");
+        const replacements = result.match(pattern);
+        const occurrences = replacements?.length || 0;
+        if (replacements) {
+            coreExports.debug(`Replacing template variable (${occurrences} occurrences): ${key} -> ${value}`);
+            result = result.replace(pattern, String(value));
+        }
+    });
+    // Replace GitHub context variables like ${{ github.workflow }}
+    const githubContextPattern = /\${{[\s]*github\.([\w]+)[\s]*}}/g;
+    result = result.replace(githubContextPattern, (match, property) => {
+        if (!ALLOWED_GITHUB_CONTEXT_VARIABLES.has(property.toLowerCase())) {
+            coreExports.warning(`Blocked access to potentially sensitive GitHub context variable: ${property}`);
+            return match;
+        }
+        const envVar = `GITHUB_${property.toUpperCase()}`;
+        const value = process.env[envVar] || match;
+        coreExports.debug(`Replacing GitHub context variable: ${match} -> ${value}`);
+        return value;
+    });
+    coreExports.debug(`Template processing completed (result length: ${result.length})`);
+    return result;
+}
+
+class ContentService extends Service()("ContentService", {
+    accessors: true,
+    dependencies: [Inputs.Default, Environment.Default],
+    effect: gen(function* () {
+        const inputs = yield* Inputs;
+        const env = yield* Environment;
+        const title = getTitle(inputs, env);
+        const body = getBody(inputs, env);
+        return { title, body };
+    }),
+}) {
+}
+function getTitle(inputs, env) {
+    const { issueTitle } = inputs;
+    return issueTitle || getDefaultIssueTitle(env);
+}
+function getDefaultIssueTitle(env) {
+    const { workflowName: workflow, jobName: jobId, actionId } = env;
+    return `Approval Request: ${workflow}/${jobId}/${actionId}`;
+}
+function getBody(inputs, env) {
+    const { issueBody, timeoutSeconds, approvalKeywords, rejectionKeywords } = inputs;
+    const { workflowName, jobName, actionId, actor, owner, repo, runId } = env;
+    const templateBody = issueBody || getDefaultIssueBody(inputs, env);
+    const runUrl = `https://github.com/${owner}/${repo}/actions/runs/${runId}`;
+    const processedBody = processTemplate(templateBody, {
+        "timeout-seconds": timeoutSeconds,
+        "workflow-name": workflowName,
+        "job-id": jobName, // TODO: fix job-id vs job-name issue!
+        "action-id": actionId,
+        actor: actor,
+        "approval-keywords": approvalKeywords,
+        "rejection-keywords": rejectionKeywords,
+        "run-url": runUrl,
+    });
+    return processedBody;
+}
+function getDefaultIssueBody(inputs, env) {
+    const { owner, repo, workflowName, runId, jobName: jobId, actionId } = env;
+    const { approvalKeywords, rejectionKeywords, timeoutSeconds } = inputs;
+    const approve = approvalKeywords.join(", ") || "approved!";
+    const approveMsg = `comment with \`${approve}\``;
+    const reject = rejectionKeywords.join(", ");
+    const rejectMsg = `${reject ? `comment with \`${reject}\` or ` : ""}simply close the issue!`;
+    const runUrl = `https://github.com/${owner}/${repo}/actions/runs/${runId}`;
+    return `
+**Manual approval required:** [\`${workflowName}\`/\`${jobId}\`/\`${actionId}\`](${runUrl})
+✅ To approve, ${approveMsg}
+❌ To reject, ${rejectMsg}
+
+This request will timeout in ${timeoutSeconds} seconds.
+`.trim();
+}
 
 var github = {};
 
@@ -46256,332 +48032,15 @@ function requireGithub () {
 
 var githubExports = requireGithub();
 
-/**
- * Returns `true` if the specified `ConfigError` contains only `MissingData` errors, `false` otherwise.
- *
- * @since 2.0.0
- * @categer getters
- */
-const isMissingDataOnly = isMissingDataOnly$1;
-
-/** @internal */
-const RedactedSymbolKey = "effect/Redacted";
-/** @internal */
-const redactedRegistry = /*#__PURE__*/globalValue("effect/Redacted/redactedRegistry", () => new WeakMap());
-/** @internal */
-const RedactedTypeId = /*#__PURE__*/Symbol.for(RedactedSymbolKey);
-/** @internal */
-const proto$1 = {
-  [RedactedTypeId]: {
-    _A: _ => _
-  },
-  pipe() {
-    return pipeArguments(this, arguments);
-  },
-  toString() {
-    return "<redacted>";
-  },
-  toJSON() {
-    return "<redacted>";
-  },
-  [NodeInspectSymbol]() {
-    return "<redacted>";
-  },
-  [symbol$1]() {
-    return pipe(hash(RedactedSymbolKey), combine$5(hash(redactedRegistry.get(this))), cached(this));
-  },
-  [symbol](that) {
-    return isRedacted(that) && equals$1(redactedRegistry.get(this), redactedRegistry.get(that));
-  }
-};
-/** @internal */
-const isRedacted = u => hasProperty(u, RedactedTypeId);
-/** @internal */
-const make$1 = value => {
-  const redacted = Object.create(proto$1);
-  redactedRegistry.set(redacted, value);
-  return redacted;
-};
-/** @internal */
-const value$1 = self => {
-  if (redactedRegistry.has(self)) {
-    return redactedRegistry.get(self);
-  } else {
-    throw new Error("Unable to get redacted value");
-  }
-};
-
-const ConfigSymbolKey = "effect/Config";
-/** @internal */
-const ConfigTypeId = /*#__PURE__*/Symbol.for(ConfigSymbolKey);
-const configVariance = {
-  /* c8 ignore next */
-  _A: _ => _
-};
-const proto = {
-  ...CommitPrototype$1,
-  [ConfigTypeId]: configVariance,
-  commit() {
-    return config(this);
-  }
-};
-/** @internal */
-const number$1 = name => {
-  const config = primitive("a number property", text => {
-    const result = Number(text);
-    if (Number.isNaN(result)) {
-      return left(InvalidData([], `Expected a number value but received ${text}`));
-    }
-    return right(result);
-  });
-  return name === undefined ? config : nested(config, name);
-};
-/** @internal */
-const map$1 = /*#__PURE__*/dual(2, (self, f) => mapOrFail(self, a => right(f(a))));
-/** @internal */
-const mapOrFail = /*#__PURE__*/dual(2, (self, f) => {
-  const mapOrFail = Object.create(proto);
-  mapOrFail._tag = OP_MAP_OR_FAIL;
-  mapOrFail.original = self;
-  mapOrFail.mapOrFail = f;
-  return mapOrFail;
-});
-/** @internal */
-const nested = /*#__PURE__*/dual(2, (self, name) => {
-  const nested = Object.create(proto);
-  nested._tag = OP_NESTED;
-  nested.name = name;
-  nested.config = self;
-  return nested;
-});
-/** @internal */
-const orElseIf = /*#__PURE__*/dual(2, (self, options) => {
-  const fallback = Object.create(proto);
-  fallback._tag = OP_FALLBACK;
-  fallback.first = self;
-  fallback.second = suspend(options.orElse);
-  fallback.condition = options.if;
-  return fallback;
-});
-/** @internal */
-const option$1 = self => {
-  return pipe(self, map$1(some), orElseIf({
-    orElse: () => succeed(none$4()),
-    if: isMissingDataOnly
-  }));
-};
-/** @internal */
-const primitive = (description, parse) => {
-  const primitive = Object.create(proto);
-  primitive._tag = OP_PRIMITIVE;
-  primitive.description = description;
-  primitive.parse = parse;
-  return primitive;
-};
-/** @internal */
-const redacted$1 = nameOrConfig => {
-  const config = isConfig(nameOrConfig) ? nameOrConfig : string(nameOrConfig);
-  return map$1(config, make$1);
-};
-/** @internal */
-const string = name => {
-  const config = primitive("a text property", right);
-  return name === undefined ? config : nested(config, name);
-};
-/** @internal */
-const nonEmptyString$1 = name => {
-  const config = primitive("a non-empty text property", liftPredicate(text => text.length > 0, () => MissingData([], "Expected a non-empty string")));
-  return name === undefined ? config : nested(config, name);
-};
-/** @internal */
-const succeed = value => {
-  const constant = Object.create(proto);
-  constant._tag = OP_CONSTANT;
-  constant.value = value;
-  constant.parse = () => right(value);
-  return constant;
-};
-/** @internal */
-const suspend = config => {
-  const lazy = Object.create(proto);
-  lazy._tag = OP_LAZY;
-  lazy.config = config;
-  return lazy;
-};
-/** @internal */
-const isConfig = u => hasProperty(u, ConfigTypeId);
-/** @internal */
-const validate$1 = /*#__PURE__*/dual(2, (self, {
-  message,
-  validation
-}) => mapOrFail(self, a => {
-  if (validation(a)) {
-    return right(a);
-  }
-  return left(InvalidData([], message));
-}));
-/** @internal */
-const withDefault$1 = /*#__PURE__*/dual(2, (self, def) => orElseIf(self, {
-  orElse: () => succeed(def),
-  if: isMissingDataOnly
-}));
-
-/**
- * Constructs a config for a float value.
- *
- * @since 2.0.0
- * @category constructors
- */
-const number = number$1;
-/**
- * Returns a  config whose structure is the same as this one, but which produces
- * a different value, constructed using the specified function.
- *
- * @since 2.0.0
- * @category mapping
- */
-const map = map$1;
-/**
- * Returns an optional version of this config, which will be `None` if the
- * data is missing from configuration, and `Some` otherwise.
- *
- * @since 2.0.0
- * @category utils
- */
-const option = option$1;
-/**
- * Constructs a config for a redacted value.
- *
- * @since 2.0.0
- * @category constructors
- */
-const redacted = redacted$1;
-/**
- * Constructs a config for a non-empty string value.
- *
- * @since 3.7.0
- * @category constructors
- */
-const nonEmptyString = nonEmptyString$1;
-/**
- * Returns a config that describes the same structure as this one, but which
- * performs validation during loading.
- *
- * @since 2.0.0
- * @category utils
- */
-const validate = validate$1;
-/**
- * Returns a config that describes the same structure as this one, but has the
- * specified default value in case the information cannot be found.
- *
- * @since 2.0.0
- * @category utils
- */
-const withDefault = withDefault$1;
-
-({
-  ...CommitPrototype});
-
-/**
- * This function creates a `Redacted<A>` instance from a given value `A`,
- * securely hiding its content.
- *
- * @example
- * ```ts
- * import { Redacted } from "effect"
- *
- * const API_KEY = Redacted.make("1234567890")
- * ```
- *
- * @since 3.3.0
- * @category constructors
- */
-const make = make$1;
-/**
- * Retrieves the original value from a `Redacted` instance. Use this function
- * with caution, as it exposes the sensitive data.
- *
- * @example
- * ```ts
- * import * as assert from "node:assert"
- * import { Redacted } from "effect"
- *
- * const API_KEY = Redacted.make("1234567890")
- *
- * assert.equal(Redacted.value(API_KEY), "1234567890")
- * ```
- *
- * @since 3.3.0
- * @category getters
- */
-const value = value$1;
-
-/** @internal  */
-({
-  ...CommitPrototype$1});
-
-/** @internal  */
-({
-  ...CommitPrototype$1});
-
-class Environment extends Service()("Environment", {
-    accessors: true,
-    effect: gen(function* () {
-        const env = yield* redacted("GITHUB_TOKEN").pipe(option);
-        const token = isSome(env)
-            ? env.value
-            : yield* getInput("github-token", { required: true }).pipe(map$2(make));
-        const [owner, repo] = yield* nonEmptyString("GITHUB_REPOSITORY").pipe(validate({
-            message: "Expected a string with format 'owner/repo'",
-            validation: (s) => /^[a-zA-Z0-9_-]+\/[a-zA-Z0-9_-]+$/.test(s),
-        }), map((s) => s.split("/")));
-        const eventName = yield* nonEmptyString("GITHUB_EVENT_NAME") //
-            .pipe(withDefault("undefined-event"));
-        const workflowName = yield* nonEmptyString("GITHUB_WORKFLOW") //
-            .pipe(withDefault("undefined-workflow"));
-        // Technically, would be nice to get the actual job name,
-        // but it seems to be impossible to get it from the API.
-        const jobId = yield* nonEmptyString("GITHUB_JOB") //
-            .pipe(withDefault("undefined-job")); // ID defined in the workflow file!
-        const runId = yield* number("GITHUB_RUN_ID") //
-            .pipe(withDefault(0));
-        const actionId = yield* nonEmptyString("GITHUB_ACTION") //
-            .pipe(withDefault("undefined-action"));
-        const actor = yield* nonEmptyString("GITHUB_ACTOR") //
-            .pipe(withDefault("undefined-actor"));
-        const res = {
-            token, // FIXME: Change to NonEmptyString
-            owner, // FIXME: Change to NonEmptyString
-            repo, // FIXME: Change to NonEmptyString
-            eventName,
-            workflowName,
-            jobName: jobId,
-            runId,
-            actionId,
-            actor,
-        };
-        debug(`GitHub environment: ${JSON.stringify(res)}`);
-        return res;
-    }),
-}) {
-}
-
-class OctokitService extends Service()("OctokitService", {
-    dependencies: [Environment.Default],
-    effect: gen(function* () {
-        const token = yield* Environment.token;
-        const octokit = yield* sync(() => githubExports.getOctokit(value(token)));
-        const request = (route, options) => promise(() => octokit.request(route, options));
-        return { request };
-    }),
-}) {
-}
+const makeOctokit = (token) => sync(() => githubExports.getOctokit(value(token))).pipe(map$2((octokit) => ({
+    request: (route, options) => promise(() => octokit.request(route, options)),
+})));
 class GitHubService extends Service()("GitHubService", {
     accessors: true,
-    dependencies: [OctokitService.Default, Environment.Default],
+    dependencies: [Environment.Default],
     effect: gen(function* () {
-        const octokit = yield* OctokitService;
+        const { token } = yield* Environment;
+        const octokit = yield* makeOctokit(token);
         const { owner, repo } = yield* Environment;
         const issuesUrl = `/repos/{owner}/{repo}/issues`;
         const getIssue = (issueNumber) => gen(function* () {
@@ -46670,7 +48129,167 @@ class GitHubService extends Service()("GitHubService", {
 }) {
 }
 
-const exit = await gen(function* () {
+class NoApprovalResponseException extends TaggedError("NoApprovalResponseException") {
+}
+class ApprovalService extends Service()("ApprovalService", {
+    dependencies: [
+        Inputs.Default,
+        Environment.Default,
+        GitHubService.Default,
+        ContentService.Default,
+    ],
+    effect: gen(function* () {
+        const inputs = yield* Inputs;
+        const { timeoutSeconds, pollIntervalSeconds, approvalKeywords, rejectionKeywords } = inputs;
+        const { title, body } = yield* ContentService;
+        const github = yield* GitHubService;
+        const issue = yield* github.createIssue(title, body);
+        const request = {
+            id: issue.number,
+            issueUrl: issue.htmlUrl,
+            createdAt: new Date(),
+            expiresAt: new Date(Date.now() + timeoutSeconds * 1000),
+        };
+        yield* saveState("approval_request", JSON.stringify(request));
+        const processComment = (comment) => gen(function* () {
+            const commenter = comment.user.login;
+            const commentBody = comment.body.toLowerCase();
+            yield* debug(`Processing comment from ${commenter}: "${commentBody.substring(0, 100)}..."`);
+            // Check for rejection keywords first
+            if (rejectionKeywords.some((k) => commentBody.includes(k.toLowerCase()))) {
+                const hasPermission = yield* github.checkUserPermission(commenter);
+                yield* debug(`Rejection ignored from user ${commenter}? ${hasPermission}`);
+                if (hasPermission) {
+                    return "rejected";
+                }
+            }
+            // Check for approval keywords
+            if (approvalKeywords.some((k) => commentBody.includes(k.toLowerCase()))) {
+                const hasPermission = yield* github.checkUserPermission(commenter);
+                yield* debug(`Approval ignored from user ${commenter}? ${hasPermission}`);
+                if (hasPermission) {
+                    return "approved";
+                }
+            }
+            yield* debug(`No relevant keywords found in comment from ${commenter}`);
+            return "none";
+        });
+        const checkForResponse = () => gen(function* () {
+            const issueState = yield* github.getIssue(request.id).pipe(map$2(({ state }) => state));
+            if (issueState === "closed") {
+                // TODO: Maybe check the reason, if it's not "completed", treat as rejection?
+                yield* info("Issue was closed unexpectedly, treating as rejection");
+                return {
+                    status: "rejected",
+                    failed: true,
+                    approvers: [],
+                    issueUrl: request.issueUrl,
+                    timestamp: new Date(), // TODO: add the issue closed timestamp!
+                };
+            }
+            // Check comments for approval/rejection
+            const comments = yield* github.listIssueComments(request.id); // TODO: add since?
+            yield* debug(`Found ${comments.length} comments to process`);
+            for (const comment of comments) {
+                const result = yield* processComment(comment);
+                const base = {
+                    approvers: [comment.user.login],
+                    issueUrl: request.issueUrl,
+                    timestamp: new Date(), // TODO: add the comment timestamp!
+                };
+                if (result === "approved") {
+                    return {
+                        ...base,
+                        status: result,
+                        failed: false,
+                    };
+                }
+                else if (result === "rejected") {
+                    return {
+                        ...base,
+                        status: result,
+                        failed: true,
+                    };
+                }
+            }
+            return yield* new NoApprovalResponseException({ message: "No approval response found" });
+        });
+        const handleResponse = (res) => gen(function* () {
+            yield* debug(`Handling response: ${JSON.stringify(res)}`);
+            const { status } = res;
+            if (status === "approved") {
+                const { approvers } = res;
+                const approverText = approvers.length > 0 ? ` by @${approvers.join(", @")}` : "";
+                const msg = `✅ **Approval Received${approverText}**\n\nThe manual approval request has been approved.`;
+                yield* info(msg);
+                yield* github.addIssueComment(request.id, msg);
+                yield* github.closeIssue(request.id, "completed");
+                return res;
+            }
+            else {
+                const msg = `❌ **Approval Rejected**\n\nThe manual approval request has been rejected.`;
+                yield* info(msg);
+                yield* github.addIssueComment(request.id, msg);
+                yield* github.closeIssue(request.id, "not_planned");
+                return {
+                    ...res,
+                    failed: inputs.failOnRejection,
+                };
+            }
+        });
+        const handleTimeout = () => gen(function* () {
+            yield* info(`⏱️ Approval request timed out, handling timeout...`);
+            const result = {
+                status: "timed-out",
+                failed: inputs.failOnTimeout,
+                issueUrl: request.issueUrl,
+                timestamp: new Date(),
+            };
+            const reason = inputs.failOnTimeout ? "not_planned" : "completed";
+            const outcome = reason === "completed" ? "approved" : "timed out";
+            const msg = `⏱️ **Approval Timed Out**\n\nThe manual approval request has been ${outcome}.`;
+            yield* info(msg);
+            yield* github.addIssueComment(request.id, msg);
+            yield* github.closeIssue(request.id, reason);
+            return result;
+        });
+        return {
+            await: () => gen(function* () {
+                const { issueUrl } = request;
+                yield* debug(`Starting approval request process with ${JSON.stringify(request)}`);
+                yield* info(`Approval request created at ${issueUrl}`);
+                yield* info(`Waiting for approval at ${issueUrl}`);
+                const msgWaiting = `Still waiting for approval at ${issueUrl}`;
+                return yield* checkForResponse().pipe(flatMap((res) => handleResponse(res)), tapErrorTag("NoApprovalResponseException", () => info(msgWaiting)), retry(fixed(seconds(pollIntervalSeconds))), timeout(seconds(timeoutSeconds)), catchTag("TimeoutException", () => handleTimeout()));
+            }).pipe(tap((res) => debug(`Approval response: ${JSON.stringify(res)}`)), tapError((e) => error(`Failed to await approval: ${e}`))),
+        };
+    }),
+}) {
+}
+
+const mainProgram = gen(function* () {
+    const approvalService = yield* ApprovalService;
+    const response = yield* approvalService.await();
+    const { status, issueUrl, failed } = response;
+    const approvers = status === "timed-out" ? [] : response.approvers;
+    yield* setOutput("status", status);
+    yield* setOutput("approvers", approvers.join(","));
+    yield* setOutput("issue-url", issueUrl);
+    if (status === "approved") {
+        yield* info(`✅ Approval granted by: ${approvers.join(", ")}`);
+    }
+    else {
+        const msg = status === "rejected" //
+            ? "❌ Approval request was rejected"
+            : "⏱️ Approval request timed out";
+        yield* info(msg);
+        if (failed) {
+            yield* setFailed(msg);
+        }
+    }
+    return response;
+});
+const cleanupProgram = gen(function* () {
     const github = yield* GitHubService;
     const approvalRequest = yield* getState("approval_request");
     if (!approvalRequest) {
@@ -46679,6 +48298,9 @@ const exit = await gen(function* () {
     }
     const request = JSON.parse(approvalRequest);
     yield* github.closeIssue(request.id, "not_planned");
-}).pipe(provide(GitHubService.Default), runPromiseExit);
-console.log(exit);
+});
+mainProgram.pipe(provide(ApprovalService.Default));
+const cleanup = cleanupProgram.pipe(provide(GitHubService.Default));
+
+runPromise(cleanup).then(console.log);
 //# sourceMappingURL=cleanup.js.map

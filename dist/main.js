@@ -1976,7 +1976,7 @@ const map$7 = /*#__PURE__*/dual(2, (self, f) => isNone(self) ? none$4() : some(f
  * @category Sequencing
  * @since 2.0.0
  */
-const flatMap$3 = /*#__PURE__*/dual(2, (self, f) => isNone(self) ? none$4() : f(self.value));
+const flatMap$4 = /*#__PURE__*/dual(2, (self, f) => isNone(self) ? none$4() : f(self.value));
 /**
  * Returns a function that checks if an `Option` contains a specified value,
  * using a provided equivalence function.
@@ -2585,7 +2585,7 @@ const map$6 = /*#__PURE__*/dual(2, (self, f) => self.map(f));
  * @category sequencing
  * @since 2.0.0
  */
-const flatMap$2 = /*#__PURE__*/dual(2, (self, f) => {
+const flatMap$3 = /*#__PURE__*/dual(2, (self, f) => {
   if (isEmptyReadonlyArray(self)) {
     return [];
   }
@@ -2615,7 +2615,7 @@ const flatMap$2 = /*#__PURE__*/dual(2, (self, f) => {
  * @category sequencing
  * @since 2.0.0
  */
-const flatten$2 = /*#__PURE__*/flatMap$2(identity);
+const flatten$2 = /*#__PURE__*/flatMap$3(identity);
 /**
  * Reduces an array from the left.
  *
@@ -7669,7 +7669,7 @@ const withFiberRuntime = withRuntime => {
   return effect;
 };
 /* @internal */
-const acquireUseRelease = /*#__PURE__*/dual(3, (acquire, use, release) => uninterruptibleMask$1(restore => flatMap$1(acquire, a => flatMap$1(exit$1(suspend$2(() => restore(use(a)))), exit => {
+const acquireUseRelease = /*#__PURE__*/dual(3, (acquire, use, release) => uninterruptibleMask$1(restore => flatMap$2(acquire, a => flatMap$2(exit(suspend$2(() => restore(use(a)))), exit => {
   return suspend$2(() => release(a, exit)).pipe(matchCauseEffect$1({
     onFailure: cause => {
       switch (exit._tag) {
@@ -7683,7 +7683,7 @@ const acquireUseRelease = /*#__PURE__*/dual(3, (acquire, use, release) => uninte
   }));
 }))));
 /* @internal */
-const as = /*#__PURE__*/dual(2, (self, value) => flatMap$1(self, () => succeed$3(value)));
+const as = /*#__PURE__*/dual(2, (self, value) => flatMap$2(self, () => succeed$3(value)));
 /* @internal */
 const asVoid = self => as(self, void 0);
 /* @internal */
@@ -7819,14 +7819,14 @@ const either = self => matchEffect(self, {
   onSuccess: a => succeed$3(right(a))
 });
 /* @internal */
-const exit$1 = self => matchCause(self, {
+const exit = self => matchCause(self, {
   onFailure: exitFailCause$1,
   onSuccess: exitSucceed$1
 });
 /* @internal */
 const fail = error => isObject(error) && !(spanSymbol in error) ? withFiberRuntime(fiber => failCause$1(fail$1(capture(error, currentSpanFromFiber(fiber))))) : failCause$1(fail$1(error));
 /* @internal */
-const failSync = evaluate => flatMap$1(sync$2(evaluate), fail);
+const failSync = evaluate => flatMap$2(sync$2(evaluate), fail);
 /* @internal */
 const failCause$1 = cause => {
   const effect = new EffectPrimitiveFailure(OP_FAILURE);
@@ -7834,20 +7834,20 @@ const failCause$1 = cause => {
   return effect;
 };
 /* @internal */
-const failCauseSync = evaluate => flatMap$1(sync$2(evaluate), failCause$1);
+const failCauseSync = evaluate => flatMap$2(sync$2(evaluate), failCause$1);
 /* @internal */
 const fiberId = /*#__PURE__*/withFiberRuntime(state => succeed$3(state.id()));
 /* @internal */
 const fiberIdWith = f => withFiberRuntime(state => f(state.id()));
 /* @internal */
-const flatMap$1 = /*#__PURE__*/dual(2, (self, f) => {
+const flatMap$2 = /*#__PURE__*/dual(2, (self, f) => {
   const effect = new EffectPrimitive(OP_ON_SUCCESS);
   effect.effect_instruction_i0 = self;
   effect.effect_instruction_i1 = f;
   return effect;
 });
 /* @internal */
-const andThen = /*#__PURE__*/dual(2, (self, f) => flatMap$1(self, a => {
+const andThen = /*#__PURE__*/dual(2, (self, f) => flatMap$2(self, a => {
   const b = typeof f === "function" ? f(a) : f;
   if (isEffect(b)) {
     return b;
@@ -7865,7 +7865,7 @@ const step = self => {
   return effect;
 };
 /* @internal */
-const flatten = self => flatMap$1(self, identity);
+const flatten = self => flatMap$2(self, identity);
 /* @internal */
 const matchCause = /*#__PURE__*/dual(2, (self, options) => matchCauseEffect$1(self, {
   onFailure: cause => succeed$3(options.onFailure(cause)),
@@ -7927,7 +7927,7 @@ const interruptible$1 = self => {
   return effect;
 };
 /* @internal */
-const map$3 = /*#__PURE__*/dual(2, (self, f) => flatMap$1(self, a => sync$2(() => f(a))));
+const map$3 = /*#__PURE__*/dual(2, (self, f) => flatMap$2(self, a => sync$2(() => f(a))));
 /* @internal */
 const mapBoth = /*#__PURE__*/dual(2, (self, options) => matchEffect(self, {
   onFailure: e => failSync(() => options.onFailure(e)),
@@ -7995,7 +7995,7 @@ const sync$2 = thunk => {
   return effect;
 };
 /* @internal */
-const tap$1 = /*#__PURE__*/dual(args => args.length === 3 || args.length === 2 && !(isObject(args[1]) && "onlyEffect" in args[1]), (self, f) => flatMap$1(self, a => {
+const tap$1 = /*#__PURE__*/dual(args => args.length === 3 || args.length === 2 && !(isObject(args[1]) && "onlyEffect" in args[1]), (self, f) => flatMap$2(self, a => {
   const b = typeof f === "function" ? f(a) : f;
   if (isEffect(b)) {
     return as(b, a);
@@ -8035,7 +8035,7 @@ const updateRuntimeFlags = patch => {
   return effect;
 };
 /* @internal */
-const whenEffect = /*#__PURE__*/dual(2, (self, condition) => flatMap$1(condition, b => {
+const whenEffect = /*#__PURE__*/dual(2, (self, condition) => flatMap$2(condition, b => {
   if (b) {
     return pipe(self, map$3(some));
   }
@@ -8066,20 +8066,20 @@ const yieldNow$2 = options => {
   return typeof options?.priority !== "undefined" ? withSchedulingPriority(effect, options.priority) : effect;
 };
 /* @internal */
-const zip = /*#__PURE__*/dual(2, (self, that) => flatMap$1(self, a => map$3(that, b => [a, b])));
+const zip = /*#__PURE__*/dual(2, (self, that) => flatMap$2(self, a => map$3(that, b => [a, b])));
 /* @internal */
-const zipLeft = /*#__PURE__*/dual(2, (self, that) => flatMap$1(self, a => as(that, a)));
+const zipLeft = /*#__PURE__*/dual(2, (self, that) => flatMap$2(self, a => as(that, a)));
 /* @internal */
-const zipRight = /*#__PURE__*/dual(2, (self, that) => flatMap$1(self, () => that));
+const zipRight = /*#__PURE__*/dual(2, (self, that) => flatMap$2(self, () => that));
 /* @internal */
-const zipWith$1 = /*#__PURE__*/dual(3, (self, that, f) => flatMap$1(self, a => map$3(that, b => f(a, b))));
+const zipWith$1 = /*#__PURE__*/dual(3, (self, that, f) => flatMap$2(self, a => map$3(that, b => f(a, b))));
 // -----------------------------------------------------------------------------
 // Fiber
 // -----------------------------------------------------------------------------
 /* @internal */
-const interruptFiber = self => flatMap$1(fiberId, fiberId => pipe(self, interruptAsFiber(fiberId)));
+const interruptFiber = self => flatMap$2(fiberId, fiberId => pipe(self, interruptAsFiber(fiberId)));
 /* @internal */
-const interruptAsFiber = /*#__PURE__*/dual(2, (self, fiberId) => flatMap$1(self.interruptAsFork(fiberId), () => self.await));
+const interruptAsFiber = /*#__PURE__*/dual(2, (self, fiberId) => flatMap$2(self.interruptAsFork(fiberId), () => self.await));
 // -----------------------------------------------------------------------------
 // LogLevel
 // -----------------------------------------------------------------------------
@@ -8177,7 +8177,7 @@ const fiberRefVariance = {
 /* @internal */
 const fiberRefGet = self => withFiberRuntime(fiber => exitSucceed$1(fiber.getFiberRef(self)));
 /* @internal */
-const fiberRefGetWith = /*#__PURE__*/dual(2, (self, f) => flatMap$1(fiberRefGet(self), f));
+const fiberRefGetWith = /*#__PURE__*/dual(2, (self, f) => flatMap$2(fiberRefGet(self), f));
 /* @internal */
 const fiberRefSet = /*#__PURE__*/dual(2, (self, value) => fiberRefModify(self, () => [void 0, value]));
 /* @internal */
@@ -8505,7 +8505,7 @@ const deferredUnsafeMake = fiberId => {
   return _deferred;
 };
 /* @internal */
-const deferredMake = () => flatMap$1(fiberId, id => deferredMakeAs(id));
+const deferredMake = () => flatMap$2(fiberId, id => deferredMakeAs(id));
 /* @internal */
 const deferredMakeAs = fiberId => sync$2(() => deferredUnsafeMake(fiberId));
 /* @internal */
@@ -8573,7 +8573,7 @@ const constContext = /*#__PURE__*/withFiberRuntime(fiber => exitSucceed$1(fiber.
 /* @internal */
 const context$2 = () => constContext;
 /* @internal */
-const contextWithEffect = f => flatMap$1(context$2(), f);
+const contextWithEffect = f => flatMap$2(context$2(), f);
 /* @internal */
 const provideContext$1 = /*#__PURE__*/dual(2, (self, context) => fiberRefLocally(currentContext, context)(self));
 /* @internal */
@@ -9142,7 +9142,7 @@ const makeFlat = options => ({
 });
 /** @internal */
 const fromFlat = flat => make$e({
-  load: config => flatMap$1(fromFlatLoop(flat, empty$l(), config, false), chunk => match$3(head$1(chunk), {
+  load: config => flatMap$2(fromFlatLoop(flat, empty$l(), config, false), chunk => match$3(head$1(chunk), {
     onNone: () => fail(MissingData(empty$l(), `Expected a single value having structure: ${config}`)),
     onSome: succeed$3
   })),
@@ -9164,7 +9164,7 @@ const fromEnv = options => {
     const pathString = makePathString(path);
     const current = getEnv();
     const valueOpt = pathString in current ? some(current[pathString]) : none$4();
-    return pipe(valueOpt, mapError(() => MissingData(path, `Expected ${pathString} to exist in the process context`)), flatMap$1(value => parsePrimitive(value, path, primitive, seqDelim, split)));
+    return pipe(valueOpt, mapError(() => MissingData(path, `Expected ${pathString} to exist in the process context`)), flatMap$2(value => parsePrimitive(value, path, primitive, seqDelim, split)));
   };
   const enumerateChildren = path => sync$2(() => {
     const current = getEnv();
@@ -9237,7 +9237,7 @@ const fromFlatLoop = (flat, prefix, config, split) => {
       }
     case OP_MAP_OR_FAIL:
       {
-        return suspend$2(() => pipe(fromFlatLoop(flat, prefix, op.original, split), flatMap$1(forEachSequential(a => pipe(op.mapOrFail(a), mapError(prefixed(appendConfigPath(prefix, op.original))))))));
+        return suspend$2(() => pipe(fromFlatLoop(flat, prefix, op.original, split), flatMap$2(forEachSequential(a => pipe(op.mapOrFail(a), mapError(prefixed(appendConfigPath(prefix, op.original))))))));
       }
     case OP_NESTED:
       {
@@ -9245,7 +9245,7 @@ const fromFlatLoop = (flat, prefix, config, split) => {
       }
     case OP_PRIMITIVE:
       {
-        return pipe(patch$3(prefix, flat.patch), flatMap$1(prefix => pipe(flat.load(prefix, op, split), flatMap$1(values => {
+        return pipe(patch$3(prefix, flat.patch), flatMap$2(prefix => pipe(flat.load(prefix, op, split), flatMap$2(values => {
           if (values.length === 0) {
             const name = pipe(last(prefix), getOrElse(() => "<n/a>"));
             return fail(MissingData([], `Expected ${op.description} with name ${name}`));
@@ -9255,7 +9255,7 @@ const fromFlatLoop = (flat, prefix, config, split) => {
       }
     case OP_SEQUENCE:
       {
-        return pipe(patch$3(prefix, flat.patch), flatMap$1(patchedPrefix => pipe(flat.enumerateChildren(patchedPrefix), flatMap$1(indicesFrom), flatMap$1(indices => {
+        return pipe(patch$3(prefix, flat.patch), flatMap$2(patchedPrefix => pipe(flat.enumerateChildren(patchedPrefix), flatMap$2(indicesFrom), flatMap$2(indices => {
           if (indices.length === 0) {
             return suspend$2(() => map$3(fromFlatLoop(flat, prefix, op.config, true), of$2));
           }
@@ -9270,7 +9270,7 @@ const fromFlatLoop = (flat, prefix, config, split) => {
       }
     case OP_HASHMAP:
       {
-        return suspend$2(() => pipe(patch$3(prefix, flat.patch), flatMap$1(prefix => pipe(flat.enumerateChildren(prefix), flatMap$1(keys => {
+        return suspend$2(() => pipe(patch$3(prefix, flat.patch), flatMap$2(prefix => pipe(flat.enumerateChildren(prefix), flatMap$2(keys => {
           return pipe(keys, forEachSequential(key => fromFlatLoop(flat, concat(prefix, of$2(key)), op.valueConfig, split)), map$3(matrix => {
             if (matrix.length === 0) {
               return of$2(empty$d());
@@ -9281,7 +9281,7 @@ const fromFlatLoop = (flat, prefix, config, split) => {
       }
     case OP_ZIP_WITH$1:
       {
-        return suspend$2(() => pipe(fromFlatLoop(flat, prefix, op.left, split), either, flatMap$1(left => pipe(fromFlatLoop(flat, prefix, op.right, split), either, flatMap$1(right$1 => {
+        return suspend$2(() => pipe(fromFlatLoop(flat, prefix, op.left, split), either, flatMap$2(left => pipe(fromFlatLoop(flat, prefix, op.right, split), either, flatMap$2(right$1 => {
           if (isLeft(left) && isLeft(right$1)) {
             return fail(And(left.left, right$1.left));
           }
@@ -9328,7 +9328,7 @@ const parseQuotedIndex = str => {
   const match = str.match(QUOTED_INDEX_REGEX);
   if (match !== null) {
     const matchedIndex = match[2];
-    return pipe(matchedIndex !== undefined && matchedIndex.length > 0 ? some(matchedIndex) : none$4(), flatMap$3(parseInteger));
+    return pipe(matchedIndex !== undefined && matchedIndex.length > 0 ? some(matchedIndex) : none$4(), flatMap$4(parseInteger));
   }
   return none$4();
 };
@@ -9462,7 +9462,7 @@ class RandomImpl {
   }
 }
 const shuffleWith = (elements, nextIntBounded) => {
-  return suspend$2(() => pipe(sync$2(() => Array.from(elements)), flatMap$1(buffer => {
+  return suspend$2(() => pipe(sync$2(() => Array.from(elements)), flatMap$2(buffer => {
     const numbers = [];
     for (let i = buffer.length; i >= 2; i = i - 1) {
       numbers.push(i);
@@ -10301,7 +10301,7 @@ class MicroFiberImpl {
     // tree-shaken if not used
     const interruptChildren = fiberMiddleware.interruptChildren && fiberMiddleware.interruptChildren(this);
     if (interruptChildren !== undefined) {
-      return this.evaluate(flatMap(interruptChildren, () => exit));
+      return this.evaluate(flatMap$1(interruptChildren, () => exit));
     }
     this._exit = exit;
     for (let i = 0; i < this._observers.length; i++) {
@@ -10319,7 +10319,7 @@ class MicroFiberImpl {
         if (!yielding && this.getRef(CurrentScheduler).shouldYield(this)) {
           yielding = true;
           const prev = current;
-          current = flatMap(yieldNow$1, () => prev);
+          current = flatMap$1(yieldNow$1, () => prev);
         }
         current = current[evaluate](this);
         if (current === Yield) {
@@ -10535,7 +10535,7 @@ const withMicroFiber = /*#__PURE__*/makePrimitive({
  * @experimental
  * @category mapping & sequencing
  */
-const flatMap = /*#__PURE__*/dual(2, (self, f) => {
+const flatMap$1 = /*#__PURE__*/dual(2, (self, f) => {
   const onSuccess = Object.create(OnSuccessProto);
   onSuccess[args] = self;
   onSuccess[successCont] = f;
@@ -10708,8 +10708,8 @@ const OnSuccessAndFailureProto = /*#__PURE__*/makePrimitiveProto({
  * @category resources & finalization
  */
 const onExit = /*#__PURE__*/dual(2, (self, f) => uninterruptibleMask(restore => matchCauseEffect(restore(self), {
-  onFailure: cause => flatMap(f(exitFailCause(cause)), () => failCause(cause)),
-  onSuccess: a => flatMap(f(exitSucceed(a)), () => succeed$2(a))
+  onFailure: cause => flatMap$1(f(exitFailCause(cause)), () => failCause(cause)),
+  onSuccess: a => flatMap$1(f(exitSucceed(a)), () => succeed$2(a))
 })));
 const setInterruptible = /*#__PURE__*/makePrimitive({
   op: "SetInterruptible",
@@ -11074,13 +11074,13 @@ const promise$1 = evaluate => evaluate.length >= 1 ? async_((resolve, signal) =>
 /* @internal */
 const provideService = /*#__PURE__*/dual(3, (self, tag, service) => contextWithEffect(env => provideContext$1(self, add$1(env, tag, service))));
 /* @internal */
-const provideServiceEffect = /*#__PURE__*/dual(3, (self, tag, effect) => contextWithEffect(env => flatMap$1(effect, service => provideContext$1(self, pipe(env, add$1(tag, service))))));
+const provideServiceEffect = /*#__PURE__*/dual(3, (self, tag, effect) => contextWithEffect(env => flatMap$2(effect, service => provideContext$1(self, pipe(env, add$1(tag, service))))));
 /* @internal */
 const sleep = sleep$1;
 /* @internal */
 const succeedNone = /*#__PURE__*/succeed$3(/*#__PURE__*/none$4());
 /* @internal */
-const summarized = /*#__PURE__*/dual(3, (self, summary, f) => flatMap$1(summary, start => flatMap$1(self, value => map$3(summary, end => [f(start, end), value]))));
+const summarized = /*#__PURE__*/dual(3, (self, summary, f) => flatMap$2(summary, start => flatMap$2(self, value => map$3(summary, end => [f(start, end), value]))));
 /* @internal */
 const tapError$1 = /*#__PURE__*/dual(2, (self, f) => matchCauseEffect$1(self, {
   onFailure: cause => {
@@ -12629,7 +12629,7 @@ const drainQueueWhileRunningTable = {
     return cur;
   },
   [OP_YIELD_NOW]: (_self, _runtimeFlags, cur, _message) => {
-    return flatMap$1(yieldNow$2(), () => cur);
+    return flatMap$2(yieldNow$2(), () => cur);
   }
 };
 /**
@@ -13241,7 +13241,7 @@ class FiberRuntime extends Class {
           this.currentRuntimeFlags = pipe(this.currentRuntimeFlags, enable$1(WindDown));
           const interruption = this.interruptAllChildren();
           if (interruption !== null) {
-            effect = flatMap$1(interruption, () => exit);
+            effect = flatMap$2(interruption, () => exit);
           } else {
             if (this._queue.length === 0) {
               // No more messages to process, so we will allow the fiber to end life:
@@ -13517,7 +13517,7 @@ class FiberRuntime extends Class {
         return op.effect_instruction_i1;
       })));
     }
-    return uninterruptibleMask$1(restore => flatMap$1(forkDaemon(runRequestBlock(op.effect_instruction_i0)), () => restore(op.effect_instruction_i1)));
+    return uninterruptibleMask$1(restore => flatMap$2(forkDaemon(runRequestBlock(op.effect_instruction_i0)), () => restore(op.effect_instruction_i1)));
   }
   ["RunBlocked"](op) {
     return runBlockedRequests(op.effect_instruction_i0);
@@ -13610,7 +13610,7 @@ class FiberRuntime extends Class {
           this._isYielding = true;
           this.currentOpCount = 0;
           const oldCur = cur;
-          cur = flatMap$1(yieldNow$2({
+          cur = flatMap$2(yieldNow$2({
             priority: shouldYield
           }), () => oldCur);
         }
@@ -13710,7 +13710,7 @@ const allValidate = (effects, reconcile, options) => {
   for (const effect of effects) {
     eitherEffects.push(either(effect));
   }
-  return flatMap$1(forEach(eitherEffects, identity, {
+  return flatMap$2(forEach(eitherEffects, identity, {
     concurrency: options?.concurrency,
     batching: options?.batching,
     concurrentFinalizers: options?.concurrentFinalizers
@@ -13779,7 +13779,7 @@ const forEach = /*#__PURE__*/dual(args => isIterable(args[0]), (self, f, options
 const forEachParUnbounded = (self, f, batching) => suspend$2(() => {
   const as = fromIterable$6(self);
   const array = new Array(as.length);
-  const fn = (a, i) => flatMap$1(f(a, i), b => sync$2(() => array[i] = b));
+  const fn = (a, i) => flatMap$2(f(a, i), b => sync$2(() => array[i] = b));
   return zipRight(forEachConcurrentDiscard(as, fn, batching, false), succeed$3(array));
 });
 /** @internal */
@@ -13832,7 +13832,7 @@ const forEachConcurrentDiscard = (self, f, batching, processAll, n) => uninterru
     interrupted = true;
     interruptAll();
   };
-  const stepOrExit = batching ? step : exit$1;
+  const stepOrExit = batching ? step : exit;
   const processingFiber = runFiber(async_(resume => {
     const pushResult = (res, index) => {
       if (res._op === "Blocked") {
@@ -13854,7 +13854,7 @@ const forEachConcurrentDiscard = (self, f, batching, processAll, n) => uninterru
         const returnNextElement = () => {
           const a = todos.pop();
           index = counter++;
-          return flatMap$1(yieldNow$2(), () => flatMap$1(stepOrExit(restore(f(a, index))), onRes));
+          return flatMap$2(yieldNow$2(), () => flatMap$2(stepOrExit(restore(f(a, index))), onRes));
         };
         const onRes = res => {
           if (todos.length > 0) {
@@ -13865,7 +13865,7 @@ const forEachConcurrentDiscard = (self, f, batching, processAll, n) => uninterru
           }
           return succeed$3(res);
         };
-        const todo = flatMap$1(stepOrExit(restore(f(a, index))), onRes);
+        const todo = flatMap$2(stepOrExit(restore(f(a, index))), onRes);
         const fiber = runFiber(todo);
         startOrder.push(fiber);
         fibers.add(fiber);
@@ -13981,7 +13981,7 @@ const parallelFinalizers = self => contextWithEffect(context => match$3(getOptio
         return self;
       case "Sequential":
       case "ParallelN":
-        return flatMap$1(scopeFork(scope, parallel), inner => scopeExtend(self, inner));
+        return flatMap$2(scopeFork(scope, parallel), inner => scopeExtend(self, inner));
     }
   }
 }));
@@ -13992,7 +13992,7 @@ const parallelNFinalizers = parallelism => self => contextWithEffect(context => 
     if (scope.strategy._tag === "ParallelN" && scope.strategy.parallelism === parallelism) {
       return self;
     }
-    return flatMap$1(scopeFork(scope, parallelN(parallelism)), inner => scopeExtend(self, inner));
+    return flatMap$2(scopeFork(scope, parallelN(parallelism)), inner => scopeExtend(self, inner));
   }
 }));
 /* @internal */
@@ -14015,9 +14015,9 @@ const finalizersMaskInternal = (strategy, concurrentFinalizers) => self => conte
   }
 }));
 /* @internal */
-const scopeWith = f => flatMap$1(scopeTag, f);
+const scopeWith = f => flatMap$2(scopeTag, f);
 /** @internal */
-const scopedWith = f => flatMap$1(scopeMake(), scope => onExit$1(f(scope), exit => scope.close(exit)));
+const scopedWith = f => flatMap$2(scopeMake(), scope => onExit$1(f(scope), exit => scope.close(exit)));
 /* @internal */
 const sequentialFinalizers = self => contextWithEffect(context => match$3(getOption(context, scopeTag), {
   onNone: () => self,
@@ -14027,7 +14027,7 @@ const sequentialFinalizers = self => contextWithEffect(context => match$3(getOpt
         return self;
       case "Parallel":
       case "ParallelN":
-        return flatMap$1(scopeFork(scope, sequential), inner => scopeExtend(self, inner));
+        return flatMap$2(scopeFork(scope, sequential), inner => scopeExtend(self, inner));
     }
   }
 }));
@@ -14069,7 +14069,7 @@ const ScopeImplProto = {
       return newScope;
     });
   },
-  close(exit) {
+  close(exit$1) {
     return suspend$2(() => {
       if (this.state._tag === "Closed") {
         return void_$1;
@@ -14077,14 +14077,14 @@ const ScopeImplProto = {
       const finalizers = Array.from(this.state.finalizers.values()).reverse();
       this.state = {
         _tag: "Closed",
-        exit
+        exit: exit$1
       };
       if (finalizers.length === 0) {
         return void_$1;
       }
-      return isSequential(this.strategy) ? pipe(forEachSequential(finalizers, fin => exit$1(fin(exit))), flatMap$1(results => pipe(exitCollectAll(results), map$7(exitAsVoid), getOrElse(() => exitVoid$1)))) : isParallel(this.strategy) ? pipe(forEachParUnbounded(finalizers, fin => exit$1(fin(exit)), false), flatMap$1(results => pipe(exitCollectAll(results, {
+      return isSequential(this.strategy) ? pipe(forEachSequential(finalizers, fin => exit(fin(exit$1))), flatMap$2(results => pipe(exitCollectAll(results), map$7(exitAsVoid), getOrElse(() => exitVoid$1)))) : isParallel(this.strategy) ? pipe(forEachParUnbounded(finalizers, fin => exit(fin(exit$1)), false), flatMap$2(results => pipe(exitCollectAll(results, {
         parallel: true
-      }), map$7(exitAsVoid), getOrElse(() => exitVoid$1)))) : pipe(forEachParN(finalizers, this.strategy.parallelism, fin => exit$1(fin(exit)), false), flatMap$1(results => pipe(exitCollectAll(results, {
+      }), map$7(exitAsVoid), getOrElse(() => exitVoid$1)))) : pipe(forEachParN(finalizers, this.strategy.parallelism, fin => exit(fin(exit$1)), false), flatMap$2(results => pipe(exitCollectAll(results, {
         parallel: true
       }), map$7(exitAsVoid), getOrElse(() => exitVoid$1))));
     });
@@ -14151,7 +14151,7 @@ const ensuring = /*#__PURE__*/dual(2, (self, finalizer) => uninterruptibleMask$1
   onSuccess: a => as(finalizer, a)
 })));
 /** @internal */
-const invokeWithInterrupt = (self, entries, onInterrupt) => fiberIdWith(id => flatMap$1(flatMap$1(forkDaemon(interruptible$1(self)), processing => async_(cb => {
+const invokeWithInterrupt = (self, entries, onInterrupt) => fiberIdWith(id => flatMap$2(flatMap$2(forkDaemon(interruptible$1(self)), processing => async_(cb => {
   const counts = entries.map(_ => _.listeners.count);
   const checkDone = () => {
     if (counts.every(count => count === 0)) {
@@ -14502,7 +14502,7 @@ class Semaphore {
   }));
   release = n => this.updateTaken(taken => taken - n);
   releaseAll = /*#__PURE__*/this.updateTaken(_ => 0);
-  withPermits = n => self => uninterruptibleMask$1(restore => flatMap$1(restore(this.take(n)), permits => ensuring(restore(self), this.release(permits))));
+  withPermits = n => self => uninterruptibleMask$1(restore => flatMap$2(restore(this.take(n)), permits => ensuring(restore(self), this.release(permits))));
   withPermitsIfAvailable = n => self => uninterruptibleMask$1(restore => suspend$2(() => {
     if (this.free < n) {
       return succeedNone;
@@ -14533,18 +14533,18 @@ const timeoutTo = /*#__PURE__*/dual(2, (self, {
   onSuccess,
   onTimeout
 }) => fiberIdWith(parentFiberId => uninterruptibleMask$1(restore => raceFibersWith(restore(self), interruptible$1(sleep(duration)), {
-  onSelfWin: (winner, loser) => flatMap$1(winner.await, exit => {
+  onSelfWin: (winner, loser) => flatMap$2(winner.await, exit => {
     if (exit._tag === "Success") {
-      return flatMap$1(winner.inheritAll, () => as(interruptAsFiber(loser, parentFiberId), onSuccess(exit.value)));
+      return flatMap$2(winner.inheritAll, () => as(interruptAsFiber(loser, parentFiberId), onSuccess(exit.value)));
     } else {
-      return flatMap$1(interruptAsFiber(loser, parentFiberId), () => exitFailCause$1(exit.cause));
+      return flatMap$2(interruptAsFiber(loser, parentFiberId), () => exitFailCause$1(exit.cause));
     }
   }),
-  onOtherWin: (winner, loser) => flatMap$1(winner.await, exit => {
+  onOtherWin: (winner, loser) => flatMap$2(winner.await, exit => {
     if (exit._tag === "Success") {
-      return flatMap$1(winner.inheritAll, () => as(interruptAsFiber(loser, parentFiberId), onTimeout()));
+      return flatMap$2(winner.inheritAll, () => as(interruptAsFiber(loser, parentFiberId), onTimeout()));
     } else {
-      return flatMap$1(interruptAsFiber(loser, parentFiberId), () => exitFailCause$1(exit.cause));
+      return flatMap$2(interruptAsFiber(loser, parentFiberId), () => exitFailCause$1(exit.cause));
     }
   }),
   otherScope: globalScope
@@ -14580,7 +14580,7 @@ class SynchronizedImpl extends Class {
     return this.modifyEffect(a => succeed$3(f(a)));
   }
   modifyEffect(f) {
-    return this.withLock(pipe(flatMap$1(get$1(this.ref), f), flatMap$1(([b, a]) => as(set$1(this.ref, a), b))));
+    return this.withLock(pipe(flatMap$2(get$1(this.ref), f), flatMap$2(([b, a]) => as(set$1(this.ref, a), b))));
   }
 }
 /** @internal */
@@ -14636,7 +14636,7 @@ const unsafeFork = /*#__PURE__*/makeDual((runtime, self, options) => {
   const fiberRuntime = new FiberRuntime(fiberId, fiberRefs, runtime.runtimeFlags);
   let effect = self;
   if (options?.scope) {
-    effect = flatMap$1(fork(options.scope, sequential$1), closeableScope => zipRight(scopeAddFinalizer(closeableScope, fiberIdWith(id => equals$1(id, fiberRuntime.id()) ? void_$1 : interruptAsFiber(fiberRuntime, id))), onExit$1(self, exit => close(closeableScope, exit))));
+    effect = flatMap$2(fork(options.scope, sequential$1), closeableScope => zipRight(scopeAddFinalizer(closeableScope, fiberIdWith(id => equals$1(id, fiberRuntime.id()) ? void_$1 : interruptAsFiber(fiberRuntime, id))), onExit$1(self, exit => close(closeableScope, exit))));
   }
   const supervisor = fiberRuntime.currentSupervisor;
   // we can compare by reference here as _supervisor.none is wrapped with globalValue
@@ -14653,6 +14653,46 @@ const unsafeFork = /*#__PURE__*/makeDual((runtime, self, options) => {
   }
   return fiberRuntime;
 });
+/** @internal */
+const FiberFailureId = /*#__PURE__*/Symbol.for("effect/Runtime/FiberFailure");
+/** @internal */
+const FiberFailureCauseId = /*#__PURE__*/Symbol.for("effect/Runtime/FiberFailure/Cause");
+class FiberFailureImpl extends Error {
+  [FiberFailureId];
+  [FiberFailureCauseId];
+  constructor(cause) {
+    const head = prettyErrors(cause)[0];
+    super(head?.message || "An error has occurred");
+    this[FiberFailureId] = FiberFailureId;
+    this[FiberFailureCauseId] = cause;
+    this.name = head ? `(FiberFailure) ${head.name}` : "FiberFailure";
+    if (head?.stack) {
+      this.stack = head.stack;
+    }
+  }
+  toJSON() {
+    return {
+      _id: "FiberFailure",
+      cause: this[FiberFailureCauseId].toJSON()
+    };
+  }
+  toString() {
+    return "(FiberFailure) " + pretty(this[FiberFailureCauseId], {
+      renderErrorCause: true
+    });
+  }
+  [NodeInspectSymbol]() {
+    return this.toString();
+  }
+}
+/** @internal */
+const fiberFailure = cause => {
+  const limit = Error.stackTraceLimit;
+  Error.stackTraceLimit = 0;
+  const error = new FiberFailureImpl(cause);
+  Error.stackTraceLimit = limit;
+  return error;
+};
 const fastPath = effect => {
   const op = effect;
   switch (op._op) {
@@ -14681,6 +14721,19 @@ const fastPath = effect => {
       }
   }
 };
+/** @internal */
+const unsafeRunPromise = /*#__PURE__*/makeDual((runtime, effect, options) => unsafeRunPromiseExit(runtime, effect, options).then(result => {
+  switch (result._tag) {
+    case OP_SUCCESS:
+      {
+        return result.effect_instruction_i0;
+      }
+    case OP_FAILURE:
+      {
+        throw fiberFailure(result.effect_instruction_i0);
+      }
+  }
+}));
 /** @internal */
 const unsafeRunPromiseExit = /*#__PURE__*/makeDual((runtime, effect, options) => new Promise(resolve => {
   const op = fastPath(effect);
@@ -14728,7 +14781,7 @@ const defaultRuntime = /*#__PURE__*/make$2({
   fiberRefs: /*#__PURE__*/empty$5()
 });
 /** @internal */
-const unsafeRunPromiseExitEffect = /*#__PURE__*/unsafeRunPromiseExit(defaultRuntime);
+const unsafeRunPromiseEffect = /*#__PURE__*/unsafeRunPromise(defaultRuntime);
 
 /** @internal */
 const modifyEffect = /*#__PURE__*/dual(2, (self, f) => self.modifyEffect(f));
@@ -14787,14 +14840,14 @@ class MemoMapImpl {
       const inMap = map.get(layer);
       if (inMap !== undefined) {
         const [acquire, release] = inMap;
-        const cached = pipe(acquire, flatMap$1(([patch, b]) => pipe(patchFiberRefs(patch), as(b))), onExit$1(exitMatch({
+        const cached = pipe(acquire, flatMap$2(([patch, b]) => pipe(patchFiberRefs(patch), as(b))), onExit$1(exitMatch({
           onFailure: () => void_$1,
           onSuccess: () => scopeAddFinalizerExit(scope, release)
         })));
         return succeed$3([cached, map]);
       }
-      return pipe(make$b(0), flatMap$1(observers => pipe(deferredMake(), flatMap$1(deferred => pipe(make$b(() => void_$1), map$3(finalizerRef => {
-        const resource = uninterruptibleMask$1(restore => pipe(scopeMake(), flatMap$1(innerScope => pipe(restore(flatMap$1(makeBuilder(layer, innerScope, true), f => diffFiberRefs(f(this)))), exit$1, flatMap$1(exit => {
+      return pipe(make$b(0), flatMap$2(observers => pipe(deferredMake(), flatMap$2(deferred => pipe(make$b(() => void_$1), map$3(finalizerRef => {
+        const resource = uninterruptibleMask$1(restore => pipe(scopeMake(), flatMap$2(innerScope => pipe(restore(flatMap$2(makeBuilder(layer, innerScope, true), f => diffFiberRefs(f(this)))), exit, flatMap$2(exit => {
           switch (exit._tag) {
             case OP_FAILURE:
               {
@@ -14802,14 +14855,14 @@ class MemoMapImpl {
               }
             case OP_SUCCESS:
               {
-                return pipe(set$1(finalizerRef, exit => pipe(scopeClose(innerScope, exit), whenEffect(modify(observers, n => [n === 1, n - 1])), asVoid)), zipRight(update$1(observers, n => n + 1)), zipRight(scopeAddFinalizerExit(scope, exit => pipe(sync$2(() => map.delete(layer)), zipRight(get$1(finalizerRef)), flatMap$1(finalizer => finalizer(exit))))), zipRight(deferredSucceed(deferred, exit.effect_instruction_i0)), as(exit.effect_instruction_i0[1]));
+                return pipe(set$1(finalizerRef, exit => pipe(scopeClose(innerScope, exit), whenEffect(modify(observers, n => [n === 1, n - 1])), asVoid)), zipRight(update$1(observers, n => n + 1)), zipRight(scopeAddFinalizerExit(scope, exit => pipe(sync$2(() => map.delete(layer)), zipRight(get$1(finalizerRef)), flatMap$2(finalizer => finalizer(exit))))), zipRight(deferredSucceed(deferred, exit.effect_instruction_i0)), as(exit.effect_instruction_i0[1]));
               }
           }
         })))));
         const memoized = [pipe(deferredAwait(deferred), onExit$1(exitMatchEffect({
           onFailure: () => void_$1,
           onSuccess: () => update$1(observers, n => n + 1)
-        }))), exit => pipe(get$1(finalizerRef), flatMap$1(finalizer => finalizer(exit)))];
+        }))), exit => pipe(get$1(finalizerRef), flatMap$2(finalizer => finalizer(exit)))];
         return [resource, isFresh(layer) ? map : map.set(layer, memoized)];
       }))))));
     }), flatten);
@@ -14820,9 +14873,9 @@ const makeMemoMap = /*#__PURE__*/suspend$2(() => map$3(makeSynchronized(new Map(
 /** @internal */
 const unsafeMakeMemoMap = () => new MemoMapImpl(unsafeMakeSynchronized(new Map()));
 /** @internal */
-const buildWithScope = /*#__PURE__*/dual(2, (self, scope) => flatMap$1(makeMemoMap, memoMap => buildWithMemoMap(self, memoMap, scope)));
+const buildWithScope = /*#__PURE__*/dual(2, (self, scope) => flatMap$2(makeMemoMap, memoMap => buildWithMemoMap(self, memoMap, scope)));
 /** @internal */
-const buildWithMemoMap = /*#__PURE__*/dual(3, (self, memoMap, scope) => flatMap$1(makeBuilder(self, scope), run => provideService(run(memoMap), CurrentMemoMap, memoMap)));
+const buildWithMemoMap = /*#__PURE__*/dual(3, (self, memoMap, scope) => flatMap$2(makeBuilder(self, scope), run => provideService(run(memoMap), CurrentMemoMap, memoMap)));
 const makeBuilder = (self, scope, inMemoMap = false) => {
   const op = self;
   switch (op._op_layer) {
@@ -14851,7 +14904,7 @@ const makeBuilder = (self, scope, inMemoMap = false) => {
       }
     case "Provide":
       {
-        return sync$2(() => memoMap => pipe(memoMap.getOrElseMemoize(op.first, scope), flatMap$1(env => pipe(memoMap.getOrElseMemoize(op.second, scope), provideContext$1(env)))));
+        return sync$2(() => memoMap => pipe(memoMap.getOrElseMemoize(op.first, scope), flatMap$2(env => pipe(memoMap.getOrElseMemoize(op.second, scope), provideContext$1(env)))));
       }
     case "Scoped":
       {
@@ -14967,7 +15020,7 @@ const zipWith = /*#__PURE__*/dual(3, (self, that, f) => suspend$1(() => {
   return zipWith;
 }));
 // circular with Effect
-const provideSomeLayer = /*#__PURE__*/dual(2, (self, layer) => scopedWith(scope => flatMap$1(buildWithScope(layer, scope), context => provideSomeContext(self, context))));
+const provideSomeLayer = /*#__PURE__*/dual(2, (self, layer) => scopedWith(scope => flatMap$2(buildWithScope(layer, scope), context => provideSomeContext(self, context))));
 const provideSomeRuntime = /*#__PURE__*/dual(2, (self, rt) => {
   const patchRefs = diff$1(defaultRuntime.fiberRefs, rt.fiberRefs);
   const patchFlags = diff$3(defaultRuntime.runtimeFlags, rt.runtimeFlags);
@@ -14998,7 +15051,7 @@ const effect_provide = /*#__PURE__*/dual(2, (self, source) => {
   } else if (isContext(source)) {
     return provideSomeContext(self, source);
   } else if (TypeId in source) {
-    return flatMap$1(source.runtimeEffect, rt => provideSomeRuntime(self, rt));
+    return flatMap$2(source.runtimeEffect, rt => provideSomeRuntime(self, rt));
   } else {
     return provideSomeRuntime(self, source);
   }
@@ -15135,7 +15188,7 @@ class ScheduleDriverImpl {
     return map$3(get$1(this.ref), tuple => tuple[1]);
   }
   get last() {
-    return flatMap$1(get$1(this.ref), ([element, _]) => {
+    return flatMap$2(get$1(this.ref), ([element, _]) => {
       switch (element._tag) {
         case "None":
           {
@@ -15153,7 +15206,7 @@ class ScheduleDriverImpl {
     return set$1(this.ref, [none$4(), this.schedule.initial]).pipe(zipLeft(set$1(this.iterationMeta, defaultIterationMetadata)));
   }
   next(input) {
-    return pipe(map$3(get$1(this.ref), tuple => tuple[1]), flatMap$1(state => pipe(currentTimeMillis, flatMap$1(now => pipe(suspend$2(() => this.schedule.step(now, input, state)), flatMap$1(([state, out, decision]) => {
+    return pipe(map$3(get$1(this.ref), tuple => tuple[1]), flatMap$2(state => pipe(currentTimeMillis, flatMap$2(now => pipe(suspend$2(() => this.schedule.step(now, input, state)), flatMap$2(([state, out, decision]) => {
       const setState = set$1(this.ref, [some(out), state]);
       if (isDone(decision)) {
         return setState.pipe(zipRight(fail(none$4())));
@@ -15172,7 +15225,7 @@ const makeWithState = (initial, step) => new ScheduleImpl(initial, step);
 /** @internal */
 const check = /*#__PURE__*/dual(2, (self, test) => checkEffect(self, (input, out) => sync$2(() => test(input, out))));
 /** @internal */
-const checkEffect = /*#__PURE__*/dual(2, (self, test) => makeWithState(self.initial, (now, input, state) => flatMap$1(self.step(now, input, state), ([state, out, decision]) => {
+const checkEffect = /*#__PURE__*/dual(2, (self, test) => makeWithState(self.initial, (now, input, state) => flatMap$2(self.step(now, input, state), ([state, out, decision]) => {
   if (isDone(decision)) {
     return succeed$3([state, out, done]);
   }
@@ -15205,7 +15258,7 @@ const fixed$1 = intervalInput => {
 /** @internal */
 const intersect = /*#__PURE__*/dual(2, (self, that) => intersectWith(self, that, intersect$1));
 /** @internal */
-const intersectWith = /*#__PURE__*/dual(3, (self, that, f) => makeWithState([self.initial, that.initial], (now, input, state) => pipe(zipWith$1(self.step(now, input, state[0]), that.step(now, input, state[1]), (a, b) => [a, b]), flatMap$1(([[lState, out, lDecision], [rState, out2, rDecision]]) => {
+const intersectWith = /*#__PURE__*/dual(3, (self, that, f) => makeWithState([self.initial, that.initial], (now, input, state) => pipe(zipWith$1(self.step(now, input, state[0]), that.step(now, input, state[1]), (a, b) => [a, b]), flatMap$2(([[lState, out, lDecision], [rState, out2, rDecision]]) => {
   if (isContinue(lDecision) && isContinue(rDecision)) {
     return intersectWithLoop(self, that, input, lState, out, lDecision.intervals, rState, out2, rDecision.intervals, f);
   }
@@ -15218,14 +15271,14 @@ const intersectWithLoop = (self, that, input, lState, out, lInterval, rState, ou
     return succeed$3([[lState, rState], [out, out2], _continue(combined)]);
   }
   if (pipe(lInterval, lessThan(rInterval))) {
-    return flatMap$1(self.step(end(lInterval), input, lState), ([lState, out, decision]) => {
+    return flatMap$2(self.step(end(lInterval), input, lState), ([lState, out, decision]) => {
       if (isDone(decision)) {
         return succeed$3([[lState, rState], [out, out2], done]);
       }
       return intersectWithLoop(self, that, input, lState, out, decision.intervals, rState, out2, rInterval, f);
     });
   }
-  return flatMap$1(that.step(end(rInterval), input, rState), ([rState, out2, decision]) => {
+  return flatMap$2(that.step(end(rInterval), input, rState), ([rState, out2, decision]) => {
     if (isDone(decision)) {
       return succeed$3([[lState, rState], [out, out2], done]);
     }
@@ -15290,11 +15343,11 @@ const fromRetryOptions = options => {
   return options.times ? intersect(withUntil, recurs(options.times)) : withUntil;
 };
 /** @internal */
-const retryOrElse_Effect = /*#__PURE__*/dual(3, (self, policy, orElse) => flatMap$1(driver(policy), driver => retryOrElse_EffectLoop(provideServiceEffect(self, CurrentIterationMetadata, get$1(driver.iterationMeta)), driver, (e, out) => provideServiceEffect(orElse(e, out), CurrentIterationMetadata, get$1(driver.iterationMeta)))));
+const retryOrElse_Effect = /*#__PURE__*/dual(3, (self, policy, orElse) => flatMap$2(driver(policy), driver => retryOrElse_EffectLoop(provideServiceEffect(self, CurrentIterationMetadata, get$1(driver.iterationMeta)), driver, (e, out) => provideServiceEffect(orElse(e, out), CurrentIterationMetadata, get$1(driver.iterationMeta)))));
 /** @internal */
 const retryOrElse_EffectLoop = (self, driver, orElse) => {
   return catchAll(self, e => matchEffect(driver.next(e), {
-    onFailure: () => pipe(driver.last, orDie, flatMap$1(out => orElse(e, out))),
+    onFailure: () => pipe(driver.last, orDie, flatMap$2(out => orElse(e, out))),
     onSuccess: () => retryOrElse_EffectLoop(self, driver, orElse)
   }));
 };
@@ -15777,6 +15830,69 @@ const timeout = timeout$1;
  */
 const provide = effect_provide;
 /**
+ * Chains effects to produce new `Effect` instances, useful for combining
+ * operations that depend on previous results.
+ *
+ * **Syntax**
+ *
+ * ```ts skip-type-checking
+ * const flatMappedEffect = pipe(myEffect, Effect.flatMap(transformation))
+ * // or
+ * const flatMappedEffect = Effect.flatMap(myEffect, transformation)
+ * // or
+ * const flatMappedEffect = myEffect.pipe(Effect.flatMap(transformation))
+ * ```
+ *
+ * **Details**
+ *
+ * `flatMap` lets you sequence effects so that the result of one effect can be
+ * used in the next step. It is similar to `flatMap` used with arrays but works
+ * specifically with `Effect` instances, allowing you to avoid deeply nested
+ * effect structures.
+ *
+ * Since effects are immutable, `flatMap` always returns a new effect instead of
+ * changing the original one.
+ *
+ * **When to Use**
+ *
+ * Use `flatMap` when you need to chain multiple effects, ensuring that each
+ * step produces a new `Effect` while flattening any nested effects that may
+ * occur.
+ *
+ * **Example**
+ *
+ * ```ts
+ * import { pipe, Effect } from "effect"
+ *
+ * // Function to apply a discount safely to a transaction amount
+ * const applyDiscount = (
+ *   total: number,
+ *   discountRate: number
+ * ): Effect.Effect<number, Error> =>
+ *   discountRate === 0
+ *     ? Effect.fail(new Error("Discount rate cannot be zero"))
+ *     : Effect.succeed(total - (total * discountRate) / 100)
+ *
+ * // Simulated asynchronous task to fetch a transaction amount from database
+ * const fetchTransactionAmount = Effect.promise(() => Promise.resolve(100))
+ *
+ * // Chaining the fetch and discount application using `flatMap`
+ * const finalAmount = pipe(
+ *   fetchTransactionAmount,
+ *   Effect.flatMap((amount) => applyDiscount(amount, 5))
+ * )
+ *
+ * Effect.runPromise(finalAmount).then(console.log)
+ * // Output: 95
+ * ```
+ *
+ * @see {@link tap} for a version that ignores the result of the effect.
+ *
+ * @since 2.0.0
+ * @category Sequencing
+ */
+const flatMap = flatMap$2;
+/**
  * Runs a side effect with the result of an effect without changing the original
  * value.
  *
@@ -15916,62 +16032,50 @@ const tapError = tapError$1;
  */
 const tapErrorTag = tapErrorTag$1;
 /**
- * Runs an effect and returns a `Promise` that resolves to an `Exit`,
- * representing the outcome.
+ * Executes an effect and returns the result as a `Promise`.
  *
  * **Details**
  *
- * This function executes an effect and resolves to an `Exit` object. The `Exit`
- * type provides detailed information about the result of the effect:
- * - If the effect succeeds, the `Exit` will be of type `Success` and include
- *   the value produced by the effect.
- * - If the effect fails, the `Exit` will be of type `Failure` and contain a
- *   `Cause` object, detailing the failure.
+ * This function runs an effect and converts its result into a `Promise`. If the
+ * effect succeeds, the `Promise` will resolve with the successful result. If
+ * the effect fails, the `Promise` will reject with an error, which includes the
+ * failure details of the effect.
  *
- * Using this function allows you to examine both successful results and failure
- * cases in a unified way, while still leveraging `Promise` for handling the
- * asynchronous behavior of the effect.
+ * The optional `options` parameter allows you to pass an `AbortSignal` for
+ * cancellation, enabling more fine-grained control over asynchronous tasks.
  *
  * **When to Use**
  *
- * Use this function when you need to understand the outcome of an effect,
- * whether it succeeded or failed, and want to work with this result using
- * `Promise` syntax. This is particularly useful when integrating with systems
- * that rely on promises but need more detailed error handling than a simple
- * rejection.
+ * Use this function when you need to execute an effect and work with its result
+ * in a promise-based system, such as when integrating with third-party
+ * libraries that expect `Promise` results.
  *
- * **Example** (Handling Results as Exit)
+ * **Example** (Running a Successful Effect as a Promise)
  *
  * ```ts
  * import { Effect } from "effect"
  *
- * // Execute a successful effect and get the Exit result as a Promise
- * Effect.runPromiseExit(Effect.succeed(1)).then(console.log)
- * // Output:
- * // {
- * //   _id: "Exit",
- * //   _tag: "Success",
- * //   value: 1
- * // }
- *
- * // Execute a failing effect and get the Exit result as a Promise
- * Effect.runPromiseExit(Effect.fail("my error")).then(console.log)
- * // Output:
- * // {
- * //   _id: "Exit",
- * //   _tag: "Failure",
- * //   cause: {
- * //     _id: "Cause",
- * //     _tag: "Fail",
- * //     failure: "my error"
- * //   }
- * // }
+ * Effect.runPromise(Effect.succeed(1)).then(console.log)
+ * // Output: 1
  * ```
+ *
+ * **Example** (Handling a Failing Effect as a Rejected Promise)
+ *
+ * ```ts
+ * import { Effect } from "effect"
+ *
+ * Effect.runPromise(Effect.fail("my error")).catch(console.error)
+ * // Output:
+ * // (FiberFailure) Error: my error
+ * ```
+ *
+ * @see {@link runPromiseExit} for a version that returns an `Exit` type instead
+ * of rejecting.
  *
  * @since 2.0.0
  * @category Running Effects
  */
-const runPromiseExit = unsafeRunPromiseExitEffect;
+const runPromise = unsafeRunPromiseEffect;
 const makeTagProxy = TagClass => {
   const cache = new Map();
   return new Proxy(TagClass, {
@@ -18169,7 +18273,7 @@ function requireTimers () {
 	return timers;
 }
 
-var main = {exports: {}};
+var main$1 = {exports: {}};
 
 const require$3 = createRequire(import.meta.url);
 function __require$2() { return require$3("node:stream"); }
@@ -19716,7 +19820,7 @@ function requireUrlencoded () {
 var hasRequiredMain;
 
 function requireMain () {
-	if (hasRequiredMain) return main.exports;
+	if (hasRequiredMain) return main$1.exports;
 	hasRequiredMain = 1;
 
 	const WritableStream = __require$2().Writable;
@@ -19797,12 +19901,12 @@ function requireMain () {
 	  this._parser.write(chunk, cb);
 	};
 
-	main.exports = Busboy;
-	main.exports.default = Busboy;
-	main.exports.Busboy = Busboy;
+	main$1.exports = Busboy;
+	main$1.exports.default = Busboy;
+	main$1.exports.Busboy = Busboy;
 
-	main.exports.Dicer = Dicer;
-	return main.exports;
+	main$1.exports.Dicer = Dicer;
+	return main$1.exports;
 }
 
 var constants$3;
@@ -43708,6 +43812,7 @@ var coreExports = requireCore();
 
 // State
 const saveState = (name, value) => sync(() => coreExports.saveState(name, value));
+const getState = (name) => sync(() => coreExports.getState(name));
 // Inputs
 const getInput = (name, options) => sync(() => coreExports.getInput(name, options));
 const getBooleanInput = (name, options) => sync(() => coreExports.getBooleanInput(name, options));
@@ -47927,21 +48032,15 @@ function requireGithub () {
 
 var githubExports = requireGithub();
 
-class OctokitService extends Service()("OctokitService", {
-    dependencies: [Environment.Default],
-    effect: gen(function* () {
-        const token = yield* Environment.token;
-        const octokit = yield* sync(() => githubExports.getOctokit(value(token)));
-        const request = (route, options) => promise(() => octokit.request(route, options));
-        return { request };
-    }),
-}) {
-}
+const makeOctokit = (token) => sync(() => githubExports.getOctokit(value(token))).pipe(map$2((octokit) => ({
+    request: (route, options) => promise(() => octokit.request(route, options)),
+})));
 class GitHubService extends Service()("GitHubService", {
     accessors: true,
-    dependencies: [OctokitService.Default, Environment.Default],
+    dependencies: [Environment.Default],
     effect: gen(function* () {
-        const octokit = yield* OctokitService;
+        const { token } = yield* Environment;
+        const octokit = yield* makeOctokit(token);
         const { owner, repo } = yield* Environment;
         const issuesUrl = `/repos/{owner}/{repo}/issues`;
         const getIssue = (issueNumber) => gen(function* () {
@@ -48059,21 +48158,17 @@ class ApprovalService extends Service()("ApprovalService", {
             // Check for rejection keywords first
             if (rejectionKeywords.some((k) => commentBody.includes(k.toLowerCase()))) {
                 const hasPermission = yield* github.checkUserPermission(commenter);
+                yield* debug(`Rejection ignored from user ${commenter}? ${hasPermission}`);
                 if (hasPermission) {
                     return "rejected";
-                }
-                else {
-                    yield* debug(`Rejection ignored from unauthorized user ${commenter}`);
                 }
             }
             // Check for approval keywords
             if (approvalKeywords.some((k) => commentBody.includes(k.toLowerCase()))) {
                 const hasPermission = yield* github.checkUserPermission(commenter);
+                yield* debug(`Approval ignored from user ${commenter}? ${hasPermission}`);
                 if (hasPermission) {
                     return "approved";
-                }
-                else {
-                    yield* debug(`Approval ignored from unauthorized user ${commenter}`);
                 }
             }
             yield* debug(`No relevant keywords found in comment from ${commenter}`);
@@ -48119,7 +48214,6 @@ class ApprovalService extends Service()("ApprovalService", {
             }
             return yield* new NoApprovalResponseException({ message: "No approval response found" });
         });
-        // TODO: You can split this into three functions!
         const handleResponse = (res) => gen(function* () {
             yield* debug(`Handling response: ${JSON.stringify(res)}`);
             const { status } = res;
@@ -48166,14 +48260,14 @@ class ApprovalService extends Service()("ApprovalService", {
                 yield* info(`Approval request created at ${issueUrl}`);
                 yield* info(`Waiting for approval at ${issueUrl}`);
                 const msgWaiting = `Still waiting for approval at ${issueUrl}`;
-                return yield* checkForResponse().pipe(tap((res) => handleResponse(res)), tapErrorTag("NoApprovalResponseException", () => info(msgWaiting)), retry(fixed(seconds(pollIntervalSeconds))), timeout(seconds(timeoutSeconds)), catchTag("TimeoutException", () => handleTimeout()));
+                return yield* checkForResponse().pipe(flatMap((res) => handleResponse(res)), tapErrorTag("NoApprovalResponseException", () => info(msgWaiting)), retry(fixed(seconds(pollIntervalSeconds))), timeout(seconds(timeoutSeconds)), catchTag("TimeoutException", () => handleTimeout()));
             }).pipe(tap((res) => debug(`Approval response: ${JSON.stringify(res)}`)), tapError((e) => error(`Failed to await approval: ${e}`))),
         };
     }),
 }) {
 }
 
-const exit = await gen(function* () {
+const mainProgram = gen(function* () {
     const approvalService = yield* ApprovalService;
     const response = yield* approvalService.await();
     const { status, issueUrl, failed } = response;
@@ -48194,6 +48288,19 @@ const exit = await gen(function* () {
         }
     }
     return response;
-}).pipe(provide(ApprovalService.Default), runPromiseExit);
-console.log(exit);
+});
+const cleanupProgram = gen(function* () {
+    const github = yield* GitHubService;
+    const approvalRequest = yield* getState("approval_request");
+    if (!approvalRequest) {
+        yield* info("No approval request found for cleanup");
+        return;
+    }
+    const request = JSON.parse(approvalRequest);
+    yield* github.closeIssue(request.id, "not_planned");
+});
+const main = mainProgram.pipe(provide(ApprovalService.Default));
+cleanupProgram.pipe(provide(GitHubService.Default));
+
+runPromise(main).then(console.log);
 //# sourceMappingURL=main.js.map

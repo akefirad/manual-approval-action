@@ -83,6 +83,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.5",
+    "@effect/vitest": "^0.26.0",
     "@eslint/compat": "^1.0.0",
     "@github/local-action": "^6.0.0",
     "@rollup/plugin-commonjs": "^28.0.0",
