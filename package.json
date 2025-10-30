@@ -26,7 +26,7 @@
   "scripts": {
     "biome": "npx biome check .",
     "build": "wireit",
-    "format": "npx prettier --write .",
+    "format": "wireit",
     "lint": "eslint --color --cache --cache-location .wireit/.eslintcache .",
     "local-action": "npx @github/local-action . src/main.ts .env",
     "package": "npx rollup --config rollup.config.ts --configPlugin @rollup/plugin-typescript",
@@ -37,6 +37,13 @@
     "test:int": "act -s INTEGRATION_TEST_APPROVER_TOKEN=$(gh auth token) -j int-tests"
   },
   "wireit": {
+    "format": {
+      "command": "npx biome format --write .",
+      "files": [
+        "**/*.ts",
+        "**/*.json"
+      ]
+    },
     "build": {
       "command": "npm run package",
       "dependencies": [
@@ -71,10 +78,12 @@
   },
   "dependencies": {
     "@actions/core": "^1.0.0",
-    "@actions/github": "^6.0.0"
+    "@actions/github": "^6.0.0",
+    "effect": "^3.0.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.2.4",
+    "@biomejs/biome": "2.2.5",
+    "@effect/vitest": "^0.26.0",
     "@eslint/compat": "^1.0.0",
     "@github/local-action": "^6.0.0",
     "@rollup/plugin-commonjs": "^28.0.0",

@@ -77,8 +77,9 @@ export default [
       "no-console": "off",
       "no-shadow": "off",
       "no-unused-vars": "off",
-      "prettier/prettier": "error",
+      "prettier/prettier": "warn",
       "vitest/prefer-called-exactly-once-with": "off",
+      "@typescript-eslint/no-empty-object-type": "off",
       "@typescript-eslint/no-unused-vars": [
         "warn",
         {

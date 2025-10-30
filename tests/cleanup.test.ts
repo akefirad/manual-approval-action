@@ -1,4 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { it } from "@effect/vitest";
+import * as E from "effect/Effect";
+import * as Exit from "effect/Exit";
+import { beforeEach, describe, expect, vi } from "vitest";
 
 // Create mock functions
 const mockGetInput = vi.fn<(name: string, _options?: object) => string>();
@@ -76,9 +79,15 @@ describe("Cleanup Phase", () => {
 
     mockGetOctokit.mockReturnValue(mockOctokit);
 
-    // Import and run the cleanup
-    const { run } = await import("../src/cleanup.js");
-    await run();
+    // Import and run the cleanup program
+    const { cleanup } = await import("../src/program.js");
+    const exit = await E.runPromiseExit(cleanup);
+
+    // Verify the exit result
+    expect(Exit.isSuccess(exit)).toBe(true);
+    if (Exit.isSuccess(exit)) {
+      expect(exit.value).toBeUndefined();
+    }
 
     // Verify the issue was closed
     expect(mockOctokit.request).toHaveBeenCalledWith(
@@ -90,8 +99,6 @@ describe("Cleanup Phase", () => {
         state: "closed",
       }),
     );
-
-    expect(mockInfo).toHaveBeenCalledWith("Issue #123 closed successfully");
   });
 
   it("should handle error when no GitHub token provided", async () => {
@@ -103,10 +110,12 @@ describe("Cleanup Phase", () => {
       return "";
     });
 
-    const { run } = await import("../src/cleanup.js");
-    await run();
+    // Import and run the cleanup program
+    const { cleanup } = await import("../src/program.js");
+    const exit = await E.runPromiseExit(cleanup);
 
-    expect(mockWarning).toHaveBeenCalledWith(expect.stringContaining("Post-phase cleanup failed:"));
+    // Verify the exit result - should fail when token is not provided
+    expect(Exit.isFailure(exit)).toBe(true);
     expect(mockOctokit.request).not.toHaveBeenCalled();
   });
 
@@ -118,8 +127,15 @@ describe("Cleanup Phase", () => {
 
     mockGetState.mockImplementation(() => "");
 
-    const { run } = await import("../src/cleanup.js");
-    await run();
+    // Import and run the cleanup program
+    const { cleanup } = await import("../src/program.js");
+    const exit = await E.runPromiseExit(cleanup);
+
+    // Verify the exit result
+    expect(Exit.isSuccess(exit)).toBe(true);
+    if (Exit.isSuccess(exit)) {
+      expect(exit.value).toBeUndefined();
+    }
 
     expect(mockOctokit.request).not.toHaveBeenCalled();
   });
@@ -146,11 +162,11 @@ describe("Cleanup Phase", () => {
     mockOctokit.request.mockRejectedValue(new Error("API Error"));
     mockGetOctokit.mockReturnValue(mockOctokit);
 
-    const { run } = await import("../src/cleanup.js");
-    await run();
+    // Import and run the cleanup program
+    const { cleanup } = await import("../src/program.js");
+    const exit = await E.runPromiseExit(cleanup);
 
-    expect(mockWarning).toHaveBeenCalledWith(
-      expect.stringContaining("Failed to close issue #123:"),
-    );
+    // Verify the exit result - should fail when API call fails
+    expect(Exit.isFailure(exit)).toBe(true);
   });
 });
