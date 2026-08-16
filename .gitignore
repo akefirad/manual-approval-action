@@ -53,7 +53,7 @@ typings/
 # Optional npm cache directory
 .npm
 
-# Optional eslint cache
+# Optional linter cache
 .eslintcache
 
 # Optional REPL history
@@ -100,6 +100,3 @@ __tests__/runner/*
 # IDE files
 .idea
 *.code-workspace
-
-# Wireit
-.wireit

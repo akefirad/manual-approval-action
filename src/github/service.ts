@@ -8,7 +8,7 @@ import { Environment } from "./environment.js";
 import type { Comment, Issue } from "./types.js";
 
 type GitHubResponse = {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // oxlint-disable-next-line typescript/no-explicit-any
   readonly data: any; // FIXME: This is a hack!
 };
 
@@ -33,7 +33,7 @@ export interface IGitHubService {
   closeIssue(issueNumber: number, stateReason?: "completed" | "not_planned"): Result<void>;
   listIssueComments(issueNumber: number, since?: Date): Result<Comment[]>;
   addIssueComment(issueNumber: number, body: string): Result<void>;
-  checkUserPermission(username: string): Result<boolean>; // TODO: should return the permisison!
+  checkUserPermission(username: string): Result<boolean>; // TODO: should return the permission!
   checkTeamMembership(teamSlug: string, username: string): Result<boolean>;
 }
 

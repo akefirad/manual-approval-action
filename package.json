@@ -1,127 +1,73 @@
 {
   "name": "manual-approval-action",
-  "description": "Manual Approval GitHub Action",
   "version": "1.1.0",
-  "author": "Rad Akefirad",
-  "type": "module",
-  "license": "MIT",
   "private": false,
+  "description": "Manual Approval GitHub Action",
+  "keywords": [
+    "actions"
+  ],
   "homepage": "https://github.com/akefirad/manual-approval-action",
+  "bugs": {
+    "url": "https://github.com/akefirad/manual-approval-action/issues"
+  },
+  "license": "MIT",
+  "author": "Rad Akefirad",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/akefirad/manual-approval-action.git"
   },
-  "bugs": {
-    "url": "https://github.com/akefirad/manual-approval-action/issues"
-  },
-  "keywords": [
-    "actions"
-  ],
+  "type": "module",
   "exports": {
     ".": "./dist/index.js"
   },
-  "engines": {
-    "node": ">=20"
-  },
   "scripts": {
-    "biome": "npx biome check .",
-    "build": "wireit",
-    "format": "wireit",
-    "lint": "eslint --color --cache --cache-location .wireit/.eslintcache .",
+    "build": "npm run format && npm run package",
+    "check:package": "npm run package && test -z \"$(git status --porcelain)\"",
+    "format": "oxfmt",
+    "format:check": "oxfmt --check",
+    "lint": "oxlint",
     "local-action": "npx @github/local-action . src/main.ts .env",
     "package": "npx rollup --config rollup.config.ts --configPlugin @rollup/plugin-typescript",
-    "pre-push": "wireit",
+    "pre-push": "npm run lint && npm run format:check && npm run check:package",
     "prepare": "is-ci || husky",
-    "prettier": "prettier . --check --cache --cache-strategy metadata --cache-location .wireit/.prettiercache",
-    "test": "wireit",
+    "test": "NODE_NO_WARNINGS=1 vitest run",
     "test:int": "act -s INTEGRATION_TEST_APPROVER_TOKEN=$(gh auth token) -j int-tests"
   },
-  "wireit": {
-    "format": {
-      "command": "npx biome format --write .",
-      "files": [
-        "**/*.ts",
-        "**/*.json"
-      ]
-    },
-    "build": {
-      "command": "npm run package",
-      "dependencies": [
-        "format"
-      ]
-    },
-    "pre-push": {
-      "dependencies": [
-        "lint",
-        "prettier",
-        "check:package"
-      ]
-    },
-    "coverage": {
-      "command": "npx make-coverage-badge --output-path ./badges/coverage.svg",
-      "dependencies": [
-        "test"
-      ]
-    },
-    "check:package": {
-      "command": "test -z \"$(git status --porcelain)\"",
-      "dependencies": [
-        "package"
-      ]
-    },
-    "test": {
-      "command": "npx vitest run",
-      "env": {
-        "NODE_NO_WARNINGS": "1"
-      }
-    }
-  },
   "dependencies": {
-    "@actions/core": "^1.0.0",
-    "@actions/github": "^6.0.0",
-    "effect": "^3.0.0"
+    "@actions/core": "^3.0.0",
+    "@actions/github": "^9.0.0",
+    "effect": "^3.20.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.2.5",
-    "@effect/vitest": "^0.26.0",
-    "@eslint/compat": "^1.0.0",
-    "@github/local-action": "^6.0.0",
+    "@effect/vitest": "^0.30.0",
+    "@github/local-action": "^7.0.0",
     "@rollup/plugin-commonjs": "^28.0.0",
     "@rollup/plugin-node-resolve": "^16.0.0",
     "@rollup/plugin-typescript": "^12.0.0",
-    "@types/node": "^20.0.0",
-    "@typescript-eslint/eslint-plugin": "^8.0.0",
-    "@typescript-eslint/parser": "^8.0.0",
+    "@types/node": "^24.0.0",
     "@vitest/coverage-v8": "^3.0.0",
-    "@vitest/eslint-plugin": "^1.0.0",
-    "eslint": "^9.0.0",
-    "eslint-config-prettier": "^10.0.0",
-    "eslint-import-resolver-typescript": "^4.0.0",
-    "eslint-plugin-import": "^2.0.0",
-    "eslint-plugin-prettier": "^5.0.0",
     "husky": "^9.0.0",
     "is-ci": "^4.0.0",
     "make-coverage-badge": "^1.0.0",
-    "prettier": "^3.0.0",
-    "prettier-eslint": "^16.0.0",
+    "oxfmt": "^0.63.0",
+    "oxlint": "^1.0.0",
     "rollup": "^4.0.0",
-    "typescript": "^5.0.0",
-    "vitest": "^3.0.0",
-    "wireit": "^0.14.0"
+    "typescript": "^5.9.3",
+    "vitest": "^3.0.0"
   },
   "optionalDependencies": {
     "@rollup/rollup-linux-x64-gnu": "*"
   },
-  "prettier": {
-    "arrowParens": "always",
-    "bracketSpacing": true,
-    "printWidth": 100,
-    "proseWrap": "always",
-    "quoteProps": "as-needed",
-    "semi": true,
-    "singleQuote": false,
-    "tabWidth": 2,
-    "trailingComma": "all",
-    "useTabs": false
+  "overrides": {
+    "oxfmt": {
+      "vite-plus": "-"
+    },
+    "oxlint": {
+      "vite-plus": "-"
+    },
+    "undici": "^6.28.0"
+  },
+  "engines": {
+    "node": ">=24"
   }
 }

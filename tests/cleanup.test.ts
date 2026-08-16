@@ -35,6 +35,7 @@ describe("Cleanup Phase", () => {
     vi.clearAllMocks();
 
     // Set up environment variables
+    delete process.env.GITHUB_TOKEN;
     process.env.GITHUB_REPOSITORY = "test-owner/test-repo";
     process.env.GITHUB_WORKFLOW = "test-workflow";
     process.env.GITHUB_JOB = "test-job";
