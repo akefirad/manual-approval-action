@@ -1,9 +1,11 @@
 import * as E from "effect/Effect";
 import { Service } from "effect/Effect";
+import * as core from "../github/core.js";
 import type { IEnvironment } from "../github/environment.js";
 import { Environment } from "../github/environment.js";
 import type { IInputs } from "../github/inputs.js";
 import { Inputs } from "../github/inputs.js";
+import { fitGithubIssueBody, fitGithubIssueTitle } from "../utils/issue-size.utils.js";
 import { processTemplate } from "../utils/template.utils.js";
 
 export interface IContentService {
@@ -18,8 +20,18 @@ export class ContentService extends Service<ContentService>()("ContentService", 
     const inputs = yield* Inputs;
     const env = yield* Environment;
 
-    const title = getTitle(inputs, env);
-    const body = getBody(inputs, env);
+    const rawTitle = getTitle(inputs, env);
+    const rawBody = getBody(inputs, env);
+    const title = fitGithubIssueTitle(rawTitle);
+    const body = fitGithubIssueBody(rawBody);
+
+    if (title !== rawTitle) {
+      yield* core.warning("Issue title exceeds GitHub's 256-character limit and was truncated.");
+    }
+    if (body !== rawBody) {
+      yield* core.warning("Issue body exceeds GitHub's 65536-character limit and was truncated.");
+    }
+
     return { title, body } satisfies IContentService;
   }),
 }) {}
