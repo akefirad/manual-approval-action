@@ -21,65 +21,26 @@
     ".": "./dist/index.js"
   },
   "scripts": {
-    "build": "wireit",
-    "format": "wireit",
+    "build": "npm run format && npm run package",
+    "check:package": "npm run package && test -z \"$(git status --porcelain)\"",
+    "format": "oxfmt",
     "format:check": "oxfmt --check",
     "lint": "oxlint",
     "local-action": "npx @github/local-action . src/main.ts .env",
     "package": "npx rollup --config rollup.config.ts --configPlugin @rollup/plugin-typescript",
-    "pre-push": "wireit",
+    "pre-push": "npm run lint && npm run format:check && npm run check:package",
     "prepare": "is-ci || husky",
-    "test": "wireit",
+    "test": "NODE_NO_WARNINGS=1 vitest run",
     "test:int": "act -s INTEGRATION_TEST_APPROVER_TOKEN=$(gh auth token) -j int-tests"
   },
-  "wireit": {
-    "format": {
-      "command": "oxfmt",
-      "files": [
-        "**/*.ts",
-        "**/*.json"
-      ]
-    },
-    "build": {
-      "command": "npm run package",
-      "dependencies": [
-        "format"
-      ]
-    },
-    "pre-push": {
-      "dependencies": [
-        "lint",
-        "format:check",
-        "check:package"
-      ]
-    },
-    "coverage": {
-      "command": "npx make-coverage-badge --output-path ./badges/coverage.svg",
-      "dependencies": [
-        "test"
-      ]
-    },
-    "check:package": {
-      "command": "test -z \"$(git status --porcelain)\"",
-      "dependencies": [
-        "package"
-      ]
-    },
-    "test": {
-      "command": "npx vitest run",
-      "env": {
-        "NODE_NO_WARNINGS": "1"
-      }
-    }
-  },
   "dependencies": {
-    "@actions/core": "^1.0.0",
-    "@actions/github": "^6.0.0",
-    "effect": "^3.0.0"
+    "@actions/core": "^3.0.0",
+    "@actions/github": "^9.0.0",
+    "effect": "^3.20.0"
   },
   "devDependencies": {
     "@effect/vitest": "^0.26.0",
-    "@github/local-action": "^6.0.0",
+    "@github/local-action": "^7.0.0",
     "@rollup/plugin-commonjs": "^28.0.0",
     "@rollup/plugin-node-resolve": "^16.0.0",
     "@rollup/plugin-typescript": "^12.0.0",
@@ -92,8 +53,7 @@
     "oxlint": "^1.0.0",
     "rollup": "^4.0.0",
     "typescript": "^5.0.0",
-    "vitest": "^3.0.0",
-    "wireit": "^0.14.0"
+    "vitest": "^3.0.0"
   },
   "optionalDependencies": {
     "@rollup/rollup-linux-x64-gnu": "*"
@@ -104,7 +64,8 @@
     },
     "oxlint": {
       "vite-plus": "-"
-    }
+    },
+    "undici": "^6.28.0"
   },
   "engines": {
     "node": ">=24"

@@ -33,7 +33,7 @@ export interface IGitHubService {
   closeIssue(issueNumber: number, stateReason?: "completed" | "not_planned"): Result<void>;
   listIssueComments(issueNumber: number, since?: Date): Result<Comment[]>;
   addIssueComment(issueNumber: number, body: string): Result<void>;
-  checkUserPermission(username: string): Result<boolean>; // TODO: should return the permisison!
+  checkUserPermission(username: string): Result<boolean>; // TODO: should return the permission!
   checkTeamMembership(teamSlug: string, username: string): Result<boolean>;
 }
 
