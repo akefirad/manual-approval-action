@@ -1,2 +1,3 @@
 [codespell]
-ignore-words-list = afterAll,oxfmt,oxlint
+ignore-words-list = afterAll,oxfmt,oxlint,FO
+skip = package-lock.json
