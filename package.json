@@ -41,7 +41,7 @@
   "devDependencies": {
     "@effect/vitest": "^0.30.0",
     "@github/local-action": "^7.0.0",
-    "@rollup/plugin-commonjs": "^28.0.0",
+    "@rollup/plugin-commonjs": "^29.0.3",
     "@rollup/plugin-node-resolve": "^16.0.0",
     "@rollup/plugin-typescript": "^12.0.0",
     "@types/node": "^24.0.0",
