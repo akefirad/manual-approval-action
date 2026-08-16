@@ -53,6 +53,6 @@ outputs:
     description: "URL of the issue used for approval"
 
 runs:
-  using: node20
+  using: node24
   main: dist/main.js
   post: dist/cleanup.js

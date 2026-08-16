@@ -8,7 +8,7 @@ import { Environment } from "./environment.js";
 import type { Comment, Issue } from "./types.js";
 
 type GitHubResponse = {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // oxlint-disable-next-line typescript/no-explicit-any
   readonly data: any; // FIXME: This is a hack!
 };
 

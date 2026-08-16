@@ -1,0 +1,42 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "ignorePatterns": ["coverage/**", "dist/**", "linter/**", "node_modules/**", "vitest.config.mts"],
+  "plugins": ["typescript", "unicorn", "oxc", "import"],
+  "env": {
+    "node": true
+  },
+  "globals": {
+    "Atomics": "readonly",
+    "SharedArrayBuffer": "readonly"
+  },
+  "categories": {
+    "correctness": "error"
+  },
+  "rules": {
+    "no-console": "off",
+    "no-shadow": "off",
+    "no-unused-vars": "off",
+    "typescript/no-empty-object-type": "off",
+    "typescript/no-explicit-any": "error",
+    "typescript/no-unused-vars": [
+      "warn",
+      {
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_"
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": ["tests/**"],
+      "plugins": ["typescript", "unicorn", "oxc", "import", "vitest"],
+      "env": {
+        "node": true,
+        "vitest": true
+      },
+      "rules": {
+        "vitest/prefer-called-exactly-once-with": "off"
+      }
+    }
+  ]
+}
