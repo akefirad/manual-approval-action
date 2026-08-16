@@ -63,6 +63,18 @@ describe("ContentService", () => {
         expect(title).toBe(issueTitle);
       }).pipe(E.provide(subject));
     });
+
+    it.effect("should truncate titles that exceed GitHub's 256-character limit", () => {
+      const issueTitle = "T".repeat(300);
+      const deps = Layer.provide(Layer.merge(mockInputs({ issueTitle }), mockEnvironment()));
+      const subject = ContentService.DefaultWithoutDependencies.pipe(deps);
+
+      return E.gen(function* () {
+        const title = yield* ContentService.title;
+        expect(title).toHaveLength(256);
+        expect(title.endsWith("…")).toBe(true);
+      }).pipe(E.provide(subject));
+    });
   });
 
   describe("getBody", () => {
@@ -98,6 +110,18 @@ describe("ContentService", () => {
       return E.gen(function* () {
         const body = yield* ContentService.body;
         expect(body).toBe("Workflow: Test Workflow, Job: test-job, Action: test-action");
+      }).pipe(E.provide(subject));
+    });
+
+    it.effect("should truncate bodies that exceed GitHub's 65536-character limit", () => {
+      const issueBody = "B".repeat(70_000);
+      const deps = Layer.provide(Layer.merge(mockInputs({ issueBody }), mockEnvironment()));
+      const subject = ContentService.DefaultWithoutDependencies.pipe(deps);
+
+      return E.gen(function* () {
+        const body = yield* ContentService.body;
+        expect([...body].length).toBe(65536);
+        expect(body).toContain("truncated to GitHub's 65536-character issue body limit");
       }).pipe(E.provide(subject));
     });
 

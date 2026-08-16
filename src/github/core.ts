@@ -44,4 +44,5 @@ export const setFailed = (message: string) => E.sync(() => core.setFailed(messag
 // Logs
 export const debug = (message: string) => E.sync(() => core.debug(message));
 export const info = (message: string) => E.sync(() => core.info(message));
+export const warning = (message: string) => E.sync(() => core.warning(message));
 export const error = (message: string) => E.sync(() => core.error(message));

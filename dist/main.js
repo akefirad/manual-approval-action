@@ -45279,7 +45279,7 @@ function error$1(message, properties = {}) {
  * @param message warning issue message. Errors will be converted to string via toString()
  * @param properties optional properties to add to the annotation.
  */
-function warning(message, properties = {}) {
+function warning$1(message, properties = {}) {
     issueCommand('warning', toCommandProperties(properties), message instanceof Error ? message.toString() : message);
 }
 /**
@@ -45342,6 +45342,7 @@ const setFailed = (message) => sync(() => setFailed$1(message));
 // Logs
 const debug = (message) => sync(() => debug$1(message));
 const info = (message) => sync(() => info$1(message));
+const warning = (message) => sync(() => warning$1(message));
 const error = (message) => sync(() => error$1(message));
 
 class Environment extends Service()("Environment", {
@@ -45412,6 +45413,30 @@ class Inputs extends Service()("Inputs", {
         };
     }),
 }) {
+}
+
+/** GitHub issue title limit (`title is too long (maximum is 256 characters)`). */
+const GITHUB_ISSUE_TITLE_MAX_LENGTH = 256;
+/** GitHub issue body limit (`body is too long (maximum is 65536 characters)`). */
+const GITHUB_ISSUE_BODY_MAX_LENGTH = 65536;
+const ISSUE_TITLE_TRUNCATION_SUFFIX = "…";
+const ISSUE_BODY_TRUNCATION_NOTICE = "\n\n… (truncated to GitHub's 65536-character issue body limit)";
+function truncateToCodePointLimit(text, maxLength, suffix) {
+    const chars = [...text];
+    if (chars.length <= maxLength) {
+        return text;
+    }
+    const suffixChars = [...suffix];
+    if (suffixChars.length >= maxLength) {
+        return suffixChars.slice(0, maxLength).join("");
+    }
+    return chars.slice(0, maxLength - suffixChars.length).join("") + suffix;
+}
+function fitGithubIssueTitle(title) {
+    return truncateToCodePointLimit(title, GITHUB_ISSUE_TITLE_MAX_LENGTH, ISSUE_TITLE_TRUNCATION_SUFFIX);
+}
+function fitGithubIssueBody(body) {
+    return truncateToCodePointLimit(body, GITHUB_ISSUE_BODY_MAX_LENGTH, ISSUE_BODY_TRUNCATION_NOTICE);
 }
 
 // Whitelist of allowed GitHub context variables
@@ -45510,7 +45535,7 @@ function processTemplate(template, variables) {
     const githubContextPattern = /\${{[\s]*github\.([\w]+)[\s]*}}/g;
     result = result.replace(githubContextPattern, (match, property) => {
         if (!ALLOWED_GITHUB_CONTEXT_VARIABLES.has(property.toLowerCase())) {
-            warning(`Blocked access to potentially sensitive GitHub context variable: ${property}`);
+            warning$1(`Blocked access to potentially sensitive GitHub context variable: ${property}`);
             return match;
         }
         const envVar = `GITHUB_${property.toUpperCase()}`;
@@ -45528,8 +45553,16 @@ class ContentService extends Service()("ContentService", {
     effect: gen(function* () {
         const inputs = yield* Inputs;
         const env = yield* Environment;
-        const title = getTitle(inputs, env);
-        const body = getBody(inputs, env);
+        const rawTitle = getTitle(inputs, env);
+        const rawBody = getBody(inputs, env);
+        const title = fitGithubIssueTitle(rawTitle);
+        const body = fitGithubIssueBody(rawBody);
+        if (title !== rawTitle) {
+            yield* warning("Issue title exceeds GitHub's 256-character limit and was truncated.");
+        }
+        if (body !== rawBody) {
+            yield* warning("Issue body exceeds GitHub's 65536-character limit and was truncated.");
+        }
         return { title, body };
     }),
 }) {
