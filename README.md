@@ -56,7 +56,8 @@ This request will timeout in {{ timeout-seconds }} seconds.
 
 Note: If no rejection keywords are specified, users can reject by simply closing the issue.
 
-Titles longer than 256 characters and bodies longer than 65,536 characters are truncated to GitHub's API limits.
+Titles longer than 256 characters and bodies longer than 65,536 characters
+are truncated to GitHub's API limits.
 
 ## Outputs
 
