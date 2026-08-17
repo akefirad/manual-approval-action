@@ -1,6 +1,5 @@
-import { Config, Option, Redacted } from "effect";
+import { Config, Context, Layer, Option, Redacted } from "effect";
 import * as E from "effect/Effect";
-import { Service } from "effect/Effect";
 import * as core from "./core.js";
 
 export interface IEnvironment {
@@ -15,21 +14,18 @@ export interface IEnvironment {
   readonly eventName: string;
 }
 
-export class Environment extends Service<Environment>()("Environment", {
-  accessors: true,
-  effect: E.gen(function* () {
+export class Environment extends Context.Service<Environment, IEnvironment>()("Environment", {
+  make: E.gen(function* () {
     const env = yield* Config.redacted("GITHUB_TOKEN").pipe(Config.option);
     const token = Option.isSome(env)
       ? env.value
       : yield* core.getInput("github-token", { required: true }).pipe(E.map(Redacted.make));
 
-    const [owner, repo] = yield* Config.nonEmptyString("GITHUB_REPOSITORY").pipe(
-      Config.validate({
-        message: "Expected a string with format 'owner/repo'",
-        validation: (s) => /^[a-zA-Z0-9_-]+\/[a-zA-Z0-9_-]+$/.test(s),
-      }),
-      Config.map((s) => s.split("/")), // TODO: Change to NonEmptyString
-    );
+    const repository = yield* Config.nonEmptyString("GITHUB_REPOSITORY");
+    if (!/^[a-zA-Z0-9_-]+\/[a-zA-Z0-9_-]+$/.test(repository)) {
+      return yield* E.die(new Error("Expected a string with format 'owner/repo'"));
+    }
+    const [owner, repo] = repository.split("/"); // TODO: Change to NonEmptyString
 
     const eventName = yield* Config.nonEmptyString("GITHUB_EVENT_NAME") //
       .pipe(Config.withDefault("undefined-event"));
@@ -65,4 +61,6 @@ export class Environment extends Service<Environment>()("Environment", {
     core.debug(`GitHub environment: ${JSON.stringify(res)}`);
     return res;
   }),
-}) {}
+}) {
+  static readonly layer = Layer.effect(this, this.make);
+}

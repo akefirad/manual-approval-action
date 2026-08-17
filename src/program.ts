@@ -41,5 +41,5 @@ export const cleanupProgram = E.gen(function* () {
   yield* github.closeIssue(request.id, "not_planned");
 });
 
-export const main = mainProgram.pipe(E.provide(ApprovalService.Default));
-export const cleanup = cleanupProgram.pipe(E.provide(GitHubService.Default));
+export const main = mainProgram.pipe(E.provide(ApprovalService.layer));
+export const cleanup = cleanupProgram.pipe(E.provide(GitHubService.layer));

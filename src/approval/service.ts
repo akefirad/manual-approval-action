@@ -1,7 +1,6 @@
-import { Data, Schedule } from "effect";
+import { Context, Data, Layer, Schedule } from "effect";
 import * as Duration from "effect/Duration";
 import * as E from "effect/Effect";
-import { Service } from "effect/Effect";
 import { ContentService } from "../content/service.js";
 import type { Result } from "../effect/types.js";
 import * as core from "../github/core.js";
@@ -21,14 +20,8 @@ class NoApprovalResponseException extends Data.TaggedError("NoApprovalResponseEx
   message?: string;
 }> {}
 
-export class ApprovalService extends Service<ApprovalService>()("ApprovalService", {
-  dependencies: [
-    Inputs.Default,
-    Environment.Default,
-    GitHubService.Default,
-    ContentService.Default,
-  ],
-  effect: E.gen(function* () {
+export class ApprovalService extends Context.Service<ApprovalService>()("ApprovalService", {
+  make: E.gen(function* () {
     const inputs = yield* Inputs;
     const { timeoutSeconds, pollIntervalSeconds, approvalKeywords, rejectionKeywords } = inputs;
     const { title, body } = yield* ContentService;
@@ -177,7 +170,7 @@ export class ApprovalService extends Service<ApprovalService>()("ApprovalService
             E.tapErrorTag("NoApprovalResponseException", () => core.info(msgWaiting)),
             E.retry(Schedule.fixed(Duration.seconds(pollIntervalSeconds))),
             E.timeout(Duration.seconds(timeoutSeconds)),
-            E.catchTag("TimeoutException", () => handleTimeout()),
+            E.catchTag("TimeoutError", () => handleTimeout()),
           );
         }).pipe(
           E.tap((res) => core.debug(`Approval response: ${JSON.stringify(res)}`)),
@@ -185,4 +178,12 @@ export class ApprovalService extends Service<ApprovalService>()("ApprovalService
         ),
     };
   }),
-}) {}
+}) {
+  static readonly layerWithoutDependencies = Layer.effect(this, this.make);
+  static readonly layer = this.layerWithoutDependencies.pipe(
+    Layer.provide(Inputs.layer),
+    Layer.provide(Environment.layer),
+    Layer.provide(GitHubService.layer),
+    Layer.provide(ContentService.layer),
+  );
+}

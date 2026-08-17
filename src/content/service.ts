@@ -1,5 +1,5 @@
+import { Context, Layer } from "effect";
 import * as E from "effect/Effect";
-import { Service } from "effect/Effect";
 import * as core from "../github/core.js";
 import type { IEnvironment } from "../github/environment.js";
 import { Environment } from "../github/environment.js";
@@ -13,28 +13,35 @@ export interface IContentService {
   readonly body: string;
 }
 
-export class ContentService extends Service<ContentService>()("ContentService", {
-  accessors: true,
-  dependencies: [Inputs.Default, Environment.Default],
-  effect: E.gen(function* () {
-    const inputs = yield* Inputs;
-    const env = yield* Environment;
+export class ContentService extends Context.Service<ContentService, IContentService>()(
+  "ContentService",
+  {
+    make: E.gen(function* () {
+      const inputs = yield* Inputs;
+      const env = yield* Environment;
 
-    const rawTitle = getTitle(inputs, env);
-    const rawBody = getBody(inputs, env);
-    const title = fitGithubIssueTitle(rawTitle);
-    const body = fitGithubIssueBody(rawBody);
+      const rawTitle = getTitle(inputs, env);
+      const rawBody = getBody(inputs, env);
+      const title = fitGithubIssueTitle(rawTitle);
+      const body = fitGithubIssueBody(rawBody);
 
-    if (title !== rawTitle) {
-      yield* core.warning("Issue title exceeds GitHub's 256-character limit and was truncated.");
-    }
-    if (body !== rawBody) {
-      yield* core.warning("Issue body exceeds GitHub's 65536-character limit and was truncated.");
-    }
+      if (title !== rawTitle) {
+        yield* core.warning("Issue title exceeds GitHub's 256-character limit and was truncated.");
+      }
+      if (body !== rawBody) {
+        yield* core.warning("Issue body exceeds GitHub's 65536-character limit and was truncated.");
+      }
 
-    return { title, body } satisfies IContentService;
-  }),
-}) {}
+      return { title, body } satisfies IContentService;
+    }),
+  },
+) {
+  static readonly layerWithoutDependencies = Layer.effect(this, this.make);
+  static readonly layer = this.layerWithoutDependencies.pipe(
+    Layer.provide(Inputs.layer),
+    Layer.provide(Environment.layer),
+  );
+}
 
 function getTitle(inputs: IInputs, env: IEnvironment): string {
   const { issueTitle } = inputs;

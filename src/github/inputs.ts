@@ -1,5 +1,5 @@
+import { Context, Layer } from "effect";
 import * as E from "effect/Effect";
-import { Service } from "effect/Effect";
 import type { Result } from "../effect/types.js";
 import * as core from "./core.js";
 
@@ -14,9 +14,8 @@ export interface IInputs {
   pollIntervalSeconds: number;
 }
 
-export class Inputs extends Service<Inputs>()("Inputs", {
-  accessors: true,
-  effect: E.gen(function* () {
+export class Inputs extends Context.Service<Inputs, IInputs>()("Inputs", {
+  make: E.gen(function* () {
     const parseKeywords = (inputName: string, defaultKeywords: string[] = []): Result<string[]> =>
       core
         .getCommaSeparatedWords(inputName) //
@@ -42,4 +41,6 @@ export class Inputs extends Service<Inputs>()("Inputs", {
       pollIntervalSeconds,
     } satisfies IInputs;
   }),
-}) {}
+}) {
+  static readonly layer = Layer.effect(this, this.make);
+}
