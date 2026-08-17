@@ -1,6 +1,7 @@
 import { it } from "@effect/vitest";
-import { Duration, Fiber, Layer, Redacted, TestClock } from "effect";
+import { Duration, Fiber, Layer, Redacted } from "effect";
 import * as E from "effect/Effect";
+import { TestClock } from "effect/testing";
 import { afterAll, beforeAll, beforeEach, describe, expect } from "vitest";
 import { ApprovalService } from "../../src/approval/service.js";
 import { ContentService, type IContentService } from "../../src/content/service.js";
@@ -13,7 +14,7 @@ describe("ApprovalService", () => {
   const mockInputs = (inputs: Partial<IInputs> = {}) =>
     Layer.succeed(
       Inputs,
-      Inputs.make({
+      Inputs.of({
         timeoutSeconds: 1,
         approvalKeywords: ["approved!"],
         rejectionKeywords: ["reject!"],
@@ -29,7 +30,7 @@ describe("ApprovalService", () => {
   const mockEnvironment = (environment: Partial<IEnvironment> = {}) =>
     Layer.succeed(
       Environment,
-      Environment.make({
+      Environment.of({
         token: Redacted.make("ghp_1234567890abcdefghijklmnopqrstuvwxyz"),
         owner: "test-owner",
         repo: "test-repo",
@@ -45,17 +46,12 @@ describe("ApprovalService", () => {
 
   const mockContent = (content: Partial<IContentService> = {}) =>
     Layer.mock(ContentService, {
-      _tag: "ContentService",
       title: "Test title",
       body: "Test body",
       ...content,
     });
 
-  const mockGitHub = (github: Partial<IGitHubService> = {}) =>
-    Layer.mock(GitHubService, {
-      _tag: "GitHubService",
-      ...github,
-    });
+  const mockGitHub = (github: Partial<IGitHubService> = {}) => Layer.mock(GitHubService, github);
 
   const mockGitHubIssue = (
     issue: {
@@ -103,7 +99,7 @@ describe("ApprovalService", () => {
       deps.content ?? mockContent(),
       deps.github ?? mockGitHub(),
     );
-    return ApprovalService.DefaultWithoutDependencies.pipe(Layer.provide(layers));
+    return ApprovalService.layerWithoutDependencies.pipe(Layer.provide(layers));
   };
 
   beforeAll(() => {});
@@ -172,7 +168,7 @@ describe("ApprovalService", () => {
 
       return E.gen(function* () {
         const service = yield* ApprovalService;
-        const awaitFiber = yield* E.fork(service.await());
+        const awaitFiber = yield* E.forkChild(service.await());
         yield* TestClock.adjust(Duration.seconds(2));
         const response = yield* Fiber.join(awaitFiber);
         expect(response).toMatchObject({
@@ -218,7 +214,7 @@ describe("ApprovalService", () => {
 
       return E.gen(function* () {
         const service = yield* ApprovalService;
-        const awaitFiber = yield* E.fork(service.await());
+        const awaitFiber = yield* E.forkChild(service.await());
         yield* TestClock.adjust(Duration.seconds(2));
         const response = yield* Fiber.join(awaitFiber);
         expect(response).toMatchObject({
@@ -343,7 +339,7 @@ describe("ApprovalService", () => {
 
       return E.gen(function* () {
         const service = yield* ApprovalService;
-        const awaitFiber = yield* E.fork(service.await());
+        const awaitFiber = yield* E.forkChild(service.await());
         yield* TestClock.adjust(Duration.seconds(2));
         const response = yield* Fiber.join(awaitFiber);
         expect(response).toMatchObject({

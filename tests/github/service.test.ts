@@ -73,7 +73,7 @@ describe("GitHubService.checkTeamMembership", () => {
           username: "admin-user",
         },
       );
-    }).pipe(E.provide(GitHubService.Default));
+    }).pipe(E.provide(GitHubService.layer));
   });
 
   it.effect("should return true for maintain permission", () => {
@@ -102,7 +102,7 @@ describe("GitHubService.checkTeamMembership", () => {
           username: "maintainer-user",
         },
       );
-    }).pipe(E.provide(GitHubService.Default));
+    }).pipe(E.provide(GitHubService.layer));
   });
 
   it.effect("should return true for write permission", () => {
@@ -131,7 +131,7 @@ describe("GitHubService.checkTeamMembership", () => {
           username: "writer-user",
         },
       );
-    }).pipe(E.provide(GitHubService.Default));
+    }).pipe(E.provide(GitHubService.layer));
   });
 
   it.effect("should return false for read permission", () => {
@@ -160,6 +160,6 @@ describe("GitHubService.checkTeamMembership", () => {
           username: "readonly-user",
         },
       );
-    }).pipe(E.provide(GitHubService.Default));
+    }).pipe(E.provide(GitHubService.layer));
   });
 });
