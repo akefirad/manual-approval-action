@@ -1,5 +1,21 @@
 # Changelog
 
+## [2.0.0](https://github.com/akefirad/manual-approval-action/compare/v1.1.0...v2.0.0) - 2026-08-17
+
+### Breaking
+
+- **Node 24 runtime**: The action now runs on Node 24 (`runs.using: node24`). GitHub-hosted
+  runners that support Node 24 are required.
+
+### Changed
+
+- **Effect v4**: Internal implementation upgraded to Effect `4.0.0-rc.110` (from the v3-based
+  rewrite). Approval and cleanup behavior is unchanged.
+- **Issue size limits**: Titles longer than 256 characters and bodies longer than 65,536
+  characters are truncated to GitHub's API limits, with a warning in the job log.
+- **Tooling**: Oxlint/Oxfmt replace the previous linters/formatters. GitHub Actions in this
+  repository are pinned to release SHAs.
+
 ## [1.1.0](https://github.com/akefirad/manual-approval-action/compare/v1.0.0...v1.1.0) - 2025-08-15
 
 ### Changed

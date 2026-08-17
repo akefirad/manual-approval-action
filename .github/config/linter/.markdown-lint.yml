@@ -8,6 +8,10 @@ MD013:
   line_length: 100
   tables: false # Disable line length for tables
 
+# Allow repeated section names under different version headings (e.g. Changed)
+MD024:
+  siblings_only: true
+
 # Ordered list item prefix
 MD029:
   style: one_or_ordered
