@@ -113,6 +113,17 @@ export class ApprovalService extends Context.Service<ApprovalService>()("Approva
         return yield* new NoApprovalResponseException({ message: "No approval response found" });
       });
 
+    // Clearing the state is what stops the cleanup (post) step from closing the issue
+    // a second time as `not_planned` and overwriting the reason set here. Cleanup is
+    // only for a request this step never got to resolve (cancelled or killed job).
+    const resolveRequest = (message: string, reason: "completed" | "not_planned") =>
+      E.gen(function* () {
+        yield* core.info(message);
+        yield* github.addIssueComment(request.id, message);
+        yield* github.closeIssue(request.id, reason);
+        yield* core.saveState("approval_request", "");
+      });
+
     const handleResponse = (res: RepliedApprovalResponse): Result<ApprovalResponse> =>
       E.gen(function* () {
         yield* core.debug(`Handling response: ${JSON.stringify(res)}`);
@@ -121,15 +132,11 @@ export class ApprovalService extends Context.Service<ApprovalService>()("Approva
           const { approvers } = res;
           const approverText = approvers.length > 0 ? ` by @${approvers.join(", @")}` : "";
           const msg = `✅ **Approval Received${approverText}**\n\nThe manual approval request has been approved.`;
-          yield* core.info(msg);
-          yield* github.addIssueComment(request.id, msg);
-          yield* github.closeIssue(request.id, "completed");
+          yield* resolveRequest(msg, "completed");
           return res;
         } else {
           const msg = `❌ **Approval Rejected**\n\nThe manual approval request has been rejected.`;
-          yield* core.info(msg);
-          yield* github.addIssueComment(request.id, msg);
-          yield* github.closeIssue(request.id, "not_planned");
+          yield* resolveRequest(msg, "not_planned");
           return {
             ...res,
             failed: inputs.failOnRejection,
@@ -149,9 +156,7 @@ export class ApprovalService extends Context.Service<ApprovalService>()("Approva
         const reason = inputs.failOnTimeout ? "not_planned" : "completed";
         const outcome = reason === "completed" ? "approved" : "timed out";
         const msg = `⏱️ **Approval Timed Out**\n\nThe manual approval request has been ${outcome}.`;
-        yield* core.info(msg);
-        yield* github.addIssueComment(request.id, msg);
-        yield* github.closeIssue(request.id, reason);
+        yield* resolveRequest(msg, reason);
         return result;
       });
 
