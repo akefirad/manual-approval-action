@@ -36,7 +36,7 @@
   "dependencies": {
     "@actions/core": "^3.0.0",
     "@actions/github": "^9.0.0",
-    "effect": "^4.0.0-rc.110"
+    "effect": "^4.0.0-rc.111"
   },
   "devDependencies": {
     "@effect/vitest": "^4.0.0-rc.110",
