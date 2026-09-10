@@ -49,9 +49,9 @@
     "husky": "^9.0.0",
     "is-ci": "^4.0.0",
     "make-coverage-badge": "^1.0.0",
-    "oxfmt": "^0.63.0",
-    "oxlint": "^1.0.0",
-    "rollup": "^4.0.0",
+    "oxfmt": "^0.66.0",
+    "oxlint": "^1.81.0",
+    "rollup": "^4.63.1",
     "typescript": "^5.9.3",
     "vitest": "^4.1.10"
   },
