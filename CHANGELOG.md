@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.0.1](https://github.com/akefirad/manual-approval-action/compare/v2.0.0...v2.0.1) - 2026-09-13
+
+### Fixed
+
+- **Approval issues no longer close as "not planned"**: after the main step resolved a request,
+  the cleanup (post) step closed the issue a second time with `not_planned`, overwriting the
+  `completed` the main step had just written. An approved deployment therefore rendered as
+  "closed as not planned", which is misleading for anyone auditing the approval trail. The main
+  step now clears its saved state once it resolves a request, so cleanup only acts on a request
+  it never got to finish (a cancelled or killed job). Rejection and timeout kept the correct
+  reason by coincidence and are unaffected in outcome. ([#800](https://github.com/akefirad/manual-approval-action/issues/800))
+
 ## [2.0.0](https://github.com/akefirad/manual-approval-action/compare/v1.1.0...v2.0.0) - 2026-08-17
 
 ### Breaking
