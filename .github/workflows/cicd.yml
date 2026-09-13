@@ -64,6 +64,13 @@ jobs:
       issues: write
       pull-requests: write
 
+    outputs:
+      timeout-issue-url: ${{ steps.test-timeout.outputs.issue-url }}
+      timeout-rejection-issue-url: ${{ steps.test-timeout-explicit-rejection.outputs.issue-url }}
+      approval-issue-url: ${{ steps.test-approval.outputs.issue-url }}
+      rejection-issue-url: ${{ steps.test-rejection.outputs.issue-url }}
+      close-issue-url: ${{ steps.test-close.outputs.issue-url }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -334,3 +341,55 @@ jobs:
             exit 1
           fi
           echo "✓ Close test verified successfully"
+
+  # The action's post step runs after the last step of `int-tests`, so the verifications
+  # above cannot see what it leaves behind. This job re-checks the issues once every post
+  # step is done, which is where a cleanup closing a resolved request would show up.
+  int-tests-final-state:
+    name: Integration Tests (Final State)
+    needs: int-tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Verify Final Issue States
+        env:
+          REPOSITORY: ${{ github.repository }}
+          TIMEOUT_ISSUE_URL: ${{ needs.int-tests.outputs.timeout-issue-url }}
+          TIMEOUT_REJECTION_ISSUE_URL: ${{ needs.int-tests.outputs.timeout-rejection-issue-url }}
+          APPROVAL_ISSUE_URL: ${{ needs.int-tests.outputs.approval-issue-url }}
+          REJECTION_ISSUE_URL: ${{ needs.int-tests.outputs.rejection-issue-url }}
+          CLOSE_ISSUE_URL: ${{ needs.int-tests.outputs.close-issue-url }}
+        run: |
+          FAILED=0
+          while read -r EXPECTED_REASON ISSUE_URL; do
+            if [ -z "$ISSUE_URL" ]; then
+              echo "ERROR: Missing issue URL for an expected '$EXPECTED_REASON' issue"
+              FAILED=1
+              continue
+            fi
+
+            ISSUE_NUMBER=$(echo "$ISSUE_URL" | grep -oE '[0-9]+$')
+            ISSUE_API_URL="https://api.github.com/repos/$REPOSITORY/issues/$ISSUE_NUMBER"
+            ISSUE_JSON=$(curl -s "$ISSUE_API_URL")
+            ISSUE_STATE=$(echo "$ISSUE_JSON" | jq -r '.state')
+            ISSUE_REASON=$(echo "$ISSUE_JSON" | jq -r '.state_reason // empty')
+            echo "Issue $ISSUE_NUMBER: state='$ISSUE_STATE' reason='$ISSUE_REASON'"
+
+            if [ "$ISSUE_STATE" != "closed" ] || [ "$ISSUE_REASON" != "$EXPECTED_REASON" ]; then
+              echo "ERROR: Issue $ISSUE_NUMBER should be closed as '$EXPECTED_REASON'"
+              FAILED=1
+            fi
+          done <<EOF
+          not_planned $TIMEOUT_ISSUE_URL
+          completed $TIMEOUT_REJECTION_ISSUE_URL
+          completed $APPROVAL_ISSUE_URL
+          not_planned $REJECTION_ISSUE_URL
+          not_planned $CLOSE_ISSUE_URL
+          EOF
+
+          if [ "$FAILED" != "0" ]; then
+            exit 1
+          fi
+          echo "✓ Final issue states verified successfully"

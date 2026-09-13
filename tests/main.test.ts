@@ -157,6 +157,9 @@ describe("Manual Approval Action Integration", () => {
       "https://github.com/test-owner/test-repo/issues/1",
     );
 
+    // Verify the state was cleared so cleanup cannot re-close the issue as not_planned
+    expect(mockSaveState).toHaveBeenLastCalledWith("approval_request", "");
+
     // Verify no errors
     expect(mockSetFailed).not.toHaveBeenCalled();
   }, 3000);
@@ -374,6 +377,8 @@ describe("Manual Approval Action Integration", () => {
       "https://github.com/test-owner/test-repo/issues/3",
     );
 
+    expect(mockSaveState).toHaveBeenLastCalledWith("approval_request", "");
+
     // Verify setFailed was called with rejection message
     expect(mockInfo).toHaveBeenCalledWith("❌ Approval request was rejected");
     expect(mockSetFailed).toHaveBeenCalledWith("❌ Approval request was rejected");
@@ -476,6 +481,8 @@ describe("Manual Approval Action Integration", () => {
       "issue-url",
       "https://github.com/test-owner/test-repo/issues/4",
     );
+
+    expect(mockSaveState).toHaveBeenLastCalledWith("approval_request", "");
 
     // Verify setFailed was called with timeout message
     expect(mockInfo).toHaveBeenCalledWith("⏱️ Approval request timed out");
