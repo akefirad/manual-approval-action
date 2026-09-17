@@ -39,7 +39,7 @@
     "effect": "^4.0.0-rc.110"
   },
   "devDependencies": {
-    "@effect/vitest": "^4.0.0-rc.110",
+    "@effect/vitest": "^4.0.0-rc.113",
     "@github/local-action": "^7.0.0",
     "@rollup/plugin-commonjs": "^28.0.0",
     "@rollup/plugin-node-resolve": "^16.0.0",
